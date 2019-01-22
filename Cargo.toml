@@ -1,0 +1,26 @@
+[package]
+name = "tweenkit"
+version = "0.1.0"
+authors = ["Hugh Lang <hughlang@gmail.com>"]
+edition = "2018"
+
+[lib]
+name = "tween"
+path = "src/lib.rs"
+
+# [[bin]]
+# name = "prototype"
+# path = "src/prototype/main.rs"
+
+[[bin]]
+name = "mouse"
+path = "examples/animate/mouse.rs"
+
+[[bin]]
+name = "boxdemo"
+path = "examples/animate/boxdemo.rs"
+
+[dependencies]
+calculate = "0.5.1"
+# orbtk = { path = "../orbtk" }
+sdl2 = { path = "../rust-sdl2" }
