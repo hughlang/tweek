@@ -1,6 +1,8 @@
 /// A Property is a trait that allows Tween to manipulate it
 ///
 ///
+use super::interpolatable::*;
+
 
 // pub trait Property {
 //     fn get_key() -> String;
@@ -8,13 +10,15 @@
 //     fn set_value(value: String);
 // }
 
-#[derive(Default, Clone)]
 pub struct Property {
     key: String,
-    value: u32,
+    value: InterpolatableValue,
 }
 
 impl Property {
-    fn apply(value: u32) {}
+    pub fn apply(value: InterpolatableValue) {}
 }
 
+pub struct X {
+
+}
