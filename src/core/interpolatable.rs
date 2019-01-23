@@ -1,7 +1,5 @@
 extern crate sdl2;
 
-use sdl2::rect::*;
-
 
 #[derive(Copy, Clone)]
 pub enum InterpolatableType {

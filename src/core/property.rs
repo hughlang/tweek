@@ -13,11 +13,12 @@ use super::interpolatable::*;
 #[derive(Clone)]
 pub struct Property {
     key: String,
-    value: InterpolatableValue,
+    pub value: InterpolatableValue,
 }
 
 impl Property {
     pub fn apply(value: InterpolatableValue) {}
+    pub fn get_key(&self) -> &String { &self.key }
 }
 
 pub struct X {
@@ -26,13 +27,14 @@ pub struct X {
 
 #[derive(Clone)]
 pub struct FromToValue {
-	from: Option<Property>,
-    to: Option<Property>,
+	pub from: Option<Property>,
+    pub to: Option<Property>,
 }
 
 impl FromToValue {
-    fn new(&self, from: Option<Property>, to: Option<Property>) -> Self {
-        FromToValue { from: None, to: None }
+
+    pub fn new(_from: Option<Property>, _to: Option<Property>) -> Self {
+        FromToValue { from: _from, to: _to }
     }
 }
 
