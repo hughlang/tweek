@@ -3,3 +3,4 @@
 mod easing;
 mod interpolatable;
 mod property;
+mod tween;
