@@ -2,15 +2,16 @@
 ///
 ///
 extern crate sdl2;
+use std::any::Any;
 
 use super::property::*;
 use super::tween::*;
 
-pub trait Tweenable: Sized {
+pub trait Tweenable: Any {
     type Item: Tweenable;
     // fn tween(&self) -> Tween;
     fn apply(prop: Property);
-    fn currentProperty(prop: Property) -> Option<Property>;
+    fn current_property(prop: Property) -> Option<Property>;
 }
 
 pub struct Sprite {
@@ -22,7 +23,7 @@ impl Tweenable for Sprite {
     fn apply(prop: Property) {
 
     }
-    fn currentProperty(prop: Property) -> Option<Property> {
+    fn current_property(prop: Property) -> Option<Property> {
         None
     }
 }
@@ -32,7 +33,7 @@ impl Tweenable for sdl2::rect::Rect {
     fn apply(prop: Property) {
 
     }
-    fn currentProperty(prop: Property) -> Option<Property> {
+    fn current_property(prop: Property) -> Option<Property> {
         None
     }
 }

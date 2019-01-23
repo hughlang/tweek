@@ -1,5 +1,7 @@
 /// This is the core Tween model and functions.
 use std::collections::HashMap;
+use std::any::Any;
+
 use super::tweenable::*;
 use super::property::*;
 
@@ -20,7 +22,9 @@ pub trait Animation {
 }
 
 pub struct Tween {
-    propertiesMap: HashMap<String, FromToValue>,
+    target: Box<dyn Any>,
+    // item_type: TypeId,
+    properties_map: HashMap<String, FromToValue>,
 }
 
 #[allow(dead_code)]
@@ -28,17 +32,18 @@ impl Tween {
 
     fn new(&self, _target: impl Tweenable) -> Self {
         Tween{
-            propertiesMap: HashMap::new(),
+            target: Box::new(_target),
+            properties_map: HashMap::new(),
         }
     }
     fn get_properties(&self) -> Vec<FromToValue> {
-        self.propertiesMap.values().cloned().collect()
+        self.properties_map.values().cloned().collect()
     }
 
     fn add(&mut self, prop: Property, mode: TweenMode) {
         let key = prop.get_key();
         let mut value =
-            if let Some(v) = self.propertiesMap.get(key) {
+            if let Some(v) = self.properties_map.get(key) {
                 v.clone()
             } else {
                 FromToValue::new(None, None)
@@ -52,7 +57,7 @@ impl Tween {
             // TODO: target setting
         }
         // let key =
-        self.propertiesMap.insert(key.to_string(), value);
+        self.properties_map.insert(key.to_string(), value);
     }
     // fn from(&self, props: Vec<Property>) -> Tween {
     //     self
