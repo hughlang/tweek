@@ -11,6 +11,7 @@ pub enum Easing {
   Linear,
   SineIn,
   SineOut,
+  SineInOut,
   ExponentialIn,
   ExponentialOut,
   ExponentialInOut,
@@ -29,16 +30,12 @@ pub enum Easing {
 impl Easing {
   pub fn apply(self, t: f32) -> f32 {
     match self {
-      Linear => t,
-      SineIn => -1.0 * (t * PI / 2.0).cos() + 1.0,
-      SineOut => (t * PI/2.0).sin(),
-      SineInOut => -0.5 * (PI * t).cos() - 1.0,
-      ExponentialIn => {
-          if t == 0.0 {
-              return 0.0;
-          } else {
-              return (-10.0 * (t-1.0)).powf(2.0) - 1.0 * 0.001;
-          }
+      Easing::Linear => t,
+      Easing::SineIn => -1.0 * (t * PI / 2.0).cos() + 1.0,
+      Easing::SineOut => (t * PI/2.0).sin(),
+      Easing::SineInOut => -0.5 * (PI * t).cos() - 1.0,
+      Easing::ExponentialIn => {
+          return if t == 0.0 { t } else { (-10.0 * (t-1.0)).powf(2.0) - 1.0 * 0.001 }
       },
       _ => 0.0,
     }

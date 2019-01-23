@@ -1,7 +1,7 @@
 #![crate_name = "tween"]
 #![crate_type = "lib"]
 
-pub mod easing;
+pub mod core;
 
 // pub use crate::easing::*;
 
