@@ -20,6 +20,10 @@ path = "examples/animate/mouse.rs"
 name = "boxdemo"
 path = "examples/animate/boxdemo.rs"
 
+[[bin]]
+name = "tween0"
+path = "examples/animate/tween0.rs"
+
 [dependencies]
 calculate = "0.5.1"
 # orbtk = { path = "../orbtk" }

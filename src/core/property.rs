@@ -1,4 +1,4 @@
-/// A Property is a trait that allows Tween to manipulate it
+/// A Command is a trait that allows Tween to manipulate it
 ///
 
 
@@ -11,52 +11,70 @@ pub enum PropType {
 
 }
 
+pub trait Tweenable {
+    fn lerp(t: f32, end: Self) -> Self;
+    fn distance_to(other: Self) -> f32;
+}
+
+pub trait Property {
+    fn get_key(&self) -> String;
+    fn get_type(&self) -> PropType;
+}
+
 // ==============================================================
 
+
 #[derive(Clone)]
-pub struct Property {
+pub struct Command {
     key: String,
     ptype: PropType,
     pub vectors: Vec<f32>,
 }
 
-impl Property {
+impl Command {
     pub fn new(&self, _key: String, _ptype: PropType, _vectors: Vec<f32>) -> Self {
-        Property { key: _key, ptype: _ptype, vectors: _vectors}
+        Command { key: _key, ptype: _ptype, vectors: _vectors}
     }
-    pub fn get_key(&self) -> &String { &self.key }
+    // pub fn get_key(&self) -> String { self.key }
     pub fn apply_vectors(&mut self, in_vectors: Vec<f32>) {
         for (i, _) in in_vectors.iter().enumerate() {
             if in_vectors[i] > 0.0 { self.vectors[i] = in_vectors[i] }
         }
     }
-    pub fn apply(&mut self, prop: Property) {
+    pub fn apply(&mut self, prop: Command) {
         self.apply_vectors(prop.vectors);
     }
 }
 
+#[derive(Clone)]
 pub struct X {
     key: String,
     vectors: Vec<f32>,
+}
+
+impl Property for X {
+    fn get_key(&self) -> String { "frame.x".to_string() }
+    fn get_type(&self) -> PropType { PropType::Float }
 
 }
+
 
 // pub struct X {
 
 // }
 // ==============================================================
 
-#[derive(Clone)]
-pub struct FromToValue {
-	pub from: Option<Property>,
-    pub to: Option<Property>,
-}
+// #[derive(Clone)]
+// pub struct FromToValue {
+// 	pub from: Property,
+//     pub to: Property,
+// }
 
-impl FromToValue {
+// impl FromToValue {
 
-    pub fn new(_from: Option<Property>, _to: Option<Property>) -> Self {
-        FromToValue { from: _from, to: _to }
-    }
-}
+//     // pub fn new(_from: Option<Command>, _to: Option<Command>) -> Self {
+//     //     FromToValue { from: _from, to: _to }
+//     // }
+// }
 
 
