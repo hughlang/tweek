@@ -2,7 +2,6 @@
 ///
 ///
 extern crate sdl2;
-use std::any::Any;
 
 use super::property::*;
 use super::tween::*;

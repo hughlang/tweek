@@ -41,7 +41,7 @@ impl<T> Tween<T> where T: Sprite {
 
     fn add(&mut self, prop: Property, mode: TweenMode) {
         let key = prop.get_key();
-        let mut value =
+        let mut ftval =
             if let Some(v) = self.properties_map.get(key) {
                 v.clone()
             } else {
@@ -49,50 +49,23 @@ impl<T> Tween<T> where T: Sprite {
             };
 
         if mode == TweenMode::From {
-            let propcopy = prop.clone();
-            value.from = Some(propcopy);
-            // if let Some(current) = self.target.current_property(propcopy) {
+            ftval.from = Some(prop.clone());
+            if let Some(current) = self.target.current_property(prop.clone()) {
+                if ftval.to.is_none() {
+                    ftval.to = Some(current.clone());
+                }
+                let mut prop = current.clone();
 
-            // }
+
+
+            }
         } else {
-            value.to = Some(prop.clone());
-            // if let Some(x) = Box::into_raw(self.target) {
-
-            // }
-
-            // TODO: target setting
+            ftval.to = Some(prop.clone());
         }
-        // let key =
-        self.properties_map.insert(key.to_string(), value);
+        self.properties_map.insert(key.to_string(), ftval);
     }
-    // fn from(&self, props: Vec<Property>) -> Tween {
-    //     self
-    // }
-
 }
 
-/*
-	fileprivate func add(_ prop: Property, mode: TweenMode) {
-		var value = propertiesByType[prop.key] ?? FromToValue()
-
-		if mode == .from {
-			value.from = prop
-			// immediately set initial state for this property
-			if var current = target.currentProperty(for: prop) {
-				if value.to == nil {
-					value.to = current
-				}
-				current.apply(prop)
-				target.apply(current)
-			}
-		} else {
-			value.to = prop
-		}
-
-		propertiesByType[prop.key] = value
-	}
-
-*/
 impl<T> Animation for Tween<T> where T: Sprite {
     fn init() {
 

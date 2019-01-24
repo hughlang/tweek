@@ -13,17 +13,17 @@ use super::interpolatable::*;
 #[derive(Clone)]
 pub struct Property {
     key: String,
-    pub value: InterpolatableValue,
+    pub value: LerpValue,
 }
 
 impl Property {
-    pub fn apply(value: InterpolatableValue) {}
+    pub fn apply(value: LerpValue) {}
     pub fn get_key(&self) -> &String { &self.key }
 }
 
-pub struct X {
+// pub struct X {
 
-}
+// }
 
 #[derive(Clone)]
 pub struct FromToValue {
