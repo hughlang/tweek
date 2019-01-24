@@ -22,7 +22,7 @@ pub trait Animation {
 }
 
 pub struct Tween {
-    target: Box<dyn Any>,
+    target: Box<Tweenable>,
     // item_type: TypeId,
     properties_map: HashMap<String, FromToValue>,
 }
@@ -30,7 +30,7 @@ pub struct Tween {
 #[allow(dead_code)]
 impl Tween {
 
-    fn new(&self, _target: impl Tweenable) -> Self {
+    fn new<T: Tweenable + 'static>(&self, _target: T) -> Self {
         Tween{
             target: Box::new(_target),
             properties_map: HashMap::new(),
