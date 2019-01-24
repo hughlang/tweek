@@ -1,8 +1,7 @@
 /// This is the core Tween model and functions.
 use std::collections::HashMap;
-use std::cell::{Cell, RefCell};
 
-use super::tweenable::*;
+use super::sprite::*;
 use super::property::*;
 
 #[allow(dead_code)]
@@ -21,16 +20,16 @@ pub trait Animation {
 
 }
 
-pub struct Tween<T> where T: Tweenable {
+pub struct Tween<T> where T: Sprite {
     // item_type: TypeId,
     properties_map: HashMap<String, FromToValue>,
     target: T,
 }
 
 #[allow(dead_code)]
-impl<T> Tween<T> where T: Tweenable {
+impl<T> Tween<T> where T: Sprite {
 
-    fn new(&self, _target: T) -> Self where T: Tweenable {
+    fn new(&self, _target: T) -> Self where T: Sprite {
         Tween{
             properties_map: HashMap::new(),
             target: _target,
@@ -50,7 +49,11 @@ impl<T> Tween<T> where T: Tweenable {
             };
 
         if mode == TweenMode::From {
-            value.from = Some(prop.clone());
+            let propcopy = prop.clone();
+            value.from = Some(propcopy);
+            // if let Some(current) = self.target.current_property(propcopy) {
+
+            // }
         } else {
             value.to = Some(prop.clone());
             // if let Some(x) = Box::into_raw(self.target) {
@@ -90,7 +93,7 @@ impl<T> Tween<T> where T: Tweenable {
 	}
 
 */
-impl<T> Animation for Tween<T> where T: Tweenable {
+impl<T> Animation for Tween<T> where T: Sprite {
     fn init() {
 
     }
