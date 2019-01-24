@@ -50,11 +50,13 @@ impl<T> Tween<T> where T: Sprite {
 
         if mode == TweenMode::From {
             ftval.from = Some(prop.clone());
-            if let Some(current) = self.target.current_property(prop.clone()) {
+            if let Some(mut current) = self.target.current_property(prop.clone()) {
                 if ftval.to.is_none() {
                     ftval.to = Some(current.clone());
                 }
-                let mut prop = current.clone();
+                current.apply(prop.clone());
+                // let mut prop = current.clone();
+
 
 
 

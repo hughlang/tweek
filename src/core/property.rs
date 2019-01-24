@@ -1,7 +1,15 @@
 /// A Property is a trait that allows Tween to manipulate it
 ///
 
-use super::interpolatable::*;
+
+#[derive(Copy, Clone)]
+pub enum PropType {
+    Int,
+    Float,
+    Point,
+    Rect,
+
+}
 
 
 // pub trait Property {
@@ -13,12 +21,20 @@ use super::interpolatable::*;
 #[derive(Clone)]
 pub struct Property {
     key: String,
-    pub value: LerpValue,
+    ptype: PropType,
+    pub vectors: Vec<f32>,
 }
 
 impl Property {
-    pub fn apply(value: LerpValue) {}
     pub fn get_key(&self) -> &String { &self.key }
+    pub fn apply_vectors(&mut self, in_vectors: Vec<f32>) {
+        for (i, _) in in_vectors.iter().enumerate() {
+            if in_vectors[i] > 0.0 { self.vectors[i] = in_vectors[i] }
+        }
+    }
+    pub fn apply(&mut self, prop: Property) {
+        self.apply_vectors(prop.vectors);
+    }
 }
 
 // pub struct X {

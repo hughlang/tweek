@@ -51,42 +51,42 @@ impl Lerp for sdl2::rect::Rect {
 
 /// =====================================================================================
 
-pub struct LerpValue {
-    pub i_type: LerpType,
-    pub vectors: Vec<f32>,
-}
+// pub struct LerpValue {
+//     pub i_type: LerpType,
+//     pub vectors: Vec<f32>,
+// }
 
-impl Clone for LerpValue {
-    fn clone(&self) -> Self {
-        LerpValue {
-            i_type: self.i_type,
-            vectors: self.vectors.clone(),
-        }
-    }
-}
+// impl Clone for LerpValue {
+//     fn clone(&self) -> Self {
+//         LerpValue {
+//             i_type: self.i_type,
+//             vectors: self.vectors.clone(),
+//         }
+//     }
+// }
 
-impl LerpValue {
-    pub fn new(&self, value: LerpValue) -> Self {
-        LerpValue { i_type: value.i_type, vectors: value.vectors }
-    }
+// impl LerpValue {
+//     pub fn new(&self, value: LerpValue) -> Self {
+//         LerpValue { i_type: value.i_type, vectors: value.vectors }
+//     }
 
-    pub fn interpolate(&self, to: LerpValue, progress: f32) -> LerpValue {
-        let mut diff: Vec<f32> = Vec::new();
-        for i in 0..self.vectors.len() {
-            let val = self.vectors[i] + (to.vectors[i] - self.vectors[i]) * progress;
-            diff.push(val)
-        }
-        LerpValue {
-            i_type: self.i_type.clone(),
-            vectors: diff,
-        }
-    }
+//     pub fn interpolate(&self, to: LerpValue, progress: f32) -> LerpValue {
+//         let mut diff: Vec<f32> = Vec::new();
+//         for i in 0..self.vectors.len() {
+//             let val = self.vectors[i] + (to.vectors[i] - self.vectors[i]) * progress;
+//             diff.push(val)
+//         }
+//         LerpValue {
+//             i_type: self.i_type.clone(),
+//             vectors: diff,
+//         }
+//     }
 
-    // pub fn to_Lerp() -> Lerp {
+//     // pub fn to_Lerp() -> Lerp {
 
-    //     let x: f32 = 0.0;
-    //     x
-    // }
+//     //     let x: f32 = 0.0;
+//     //     x
+//     // }
 
 
-}
+// }
