@@ -2,7 +2,7 @@ extern crate sdl2;
 
 
 #[derive(Copy, Clone)]
-pub enum LerpType {
+pub enum TransformType {
     Int,
     Float,
     Point,
@@ -10,44 +10,32 @@ pub enum LerpType {
 
 }
 
-pub trait Lerp {
-    fn get_type(self) -> LerpType;
-    fn vectorize(self) -> LerpValue;
-    // fn interpolate(&self, to: Lerp, progress: f32) -> Lerp {
-    //     let value = self.vectorize();
-
-    // }
+pub trait Interpolatable {
+    fn get_type(self) -> TransformType;
+    fn vectorize(self) -> Vec<f32>;
 }
 
-impl Lerp for f32 {
-    fn get_type(self) -> LerpType { LerpType::Float }
-    fn vectorize(self) -> LerpValue {
-        LerpValue { i_type: self.get_type(), vectors: vec![self]}
-    }
+impl Interpolatable for f32 {
+    fn get_type(self) -> TransformType { TransformType::Float }
+    fn vectorize(self) -> Vec<f32> { vec![self] }
 }
 
-impl Lerp for u32 {
-    fn get_type(self) -> LerpType { LerpType::Int }
-    fn vectorize(self) -> LerpValue {
-        LerpValue { i_type: self.get_type(), vectors: vec![self as f32]}
-    }
+impl Interpolatable for i32 {
+    fn get_type(self) -> TransformType { TransformType::Int }
+    fn vectorize(self) -> Vec<f32> { vec![self as f32] }
 }
 
-impl Lerp for sdl2::rect::Point {
-    fn get_type(self) -> LerpType { LerpType::Point }
-    fn vectorize(self) -> LerpValue {
-        LerpValue { i_type: self.get_type(),
-            vectors: vec![self.x() as f32, self.y() as f32]}
-    }
+impl Interpolatable for sdl2::rect::Point {
+    fn get_type(self) -> TransformType { TransformType::Point }
+    fn vectorize(self) -> Vec<f32> { vec![self.x() as f32, self.y() as f32] }
 }
 
-impl Lerp for sdl2::rect::Rect {
-    fn get_type(self) -> LerpType { LerpType::Rect }
-    fn vectorize(self) -> LerpValue {
-        LerpValue { i_type: self.get_type(),
-            vectors: vec![self.x() as f32, self.y() as f32, self.width() as f32, self.height() as f32]}
-    }
+impl Interpolatable for sdl2::rect::Rect {
+    fn get_type(self) -> TransformType { TransformType::Rect }
+    fn vectorize(self) -> Vec<f32> { vec![self.x() as f32, self.y() as f32, self.width() as f32, self.height() as f32] }
 }
+
+
 
 /// =====================================================================================
 

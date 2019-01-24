@@ -11,12 +11,7 @@ pub enum PropType {
 
 }
 
-
-// pub trait Property {
-//     fn get_key() -> String;
-//     fn get_value() -> String;
-//     fn set_value(value: String);
-// }
+// ==============================================================
 
 #[derive(Clone)]
 pub struct Property {
@@ -26,6 +21,9 @@ pub struct Property {
 }
 
 impl Property {
+    pub fn new(&self, _key: String, _ptype: PropType, _vectors: Vec<f32>) -> Self {
+        Property { key: _key, ptype: _ptype, vectors: _vectors}
+    }
     pub fn get_key(&self) -> &String { &self.key }
     pub fn apply_vectors(&mut self, in_vectors: Vec<f32>) {
         for (i, _) in in_vectors.iter().enumerate() {
@@ -37,9 +35,16 @@ impl Property {
     }
 }
 
+pub struct X {
+    key: String,
+    vectors: Vec<f32>,
+
+}
+
 // pub struct X {
 
 // }
+// ==============================================================
 
 #[derive(Clone)]
 pub struct FromToValue {
@@ -53,4 +58,5 @@ impl FromToValue {
         FromToValue { from: _from, to: _to }
     }
 }
+
 
