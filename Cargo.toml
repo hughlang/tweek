@@ -25,6 +25,6 @@ name = "tween0"
 path = "examples/animate/tween0.rs"
 
 [dependencies]
-calculate = "0.5.1"
+nalgebra = "0.16"
 # orbtk = { path = "../orbtk" }
 sdl2 = { path = "../rust-sdl2" }

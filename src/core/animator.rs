@@ -8,18 +8,28 @@ use super::property::*;
 
 #[allow(dead_code)]
 
-#[derive(Default, Clone, Debug)]
 pub struct Animator {
-    start: Transition,
-    end: Transition,
-    current: Transition,
-    duration: f32,
+    pub start: Transition,
+    pub end: Transition,
+    pub current: Transition,
+    pub duration: f32,
+}
+
+impl Default for Animator {
+    fn default() -> Self {
+        Animator {
+            start: Transition::None,
+            end: Transition::None,
+            current: Transition::None,
+            duration: 0.0,
+        }
+    }
 }
 
 impl Animator {
-    pub fn create(_start: Property, _end: Property, _duration) -> Self {
-        Animator { start: _start, end: _end, current: start, duration: _duration, }
-    }
+    // pub fn create(_start: Property, _end: Property, _duration: f32) -> Self {
+    //     Animator { start: _start, end: _end, current: start, duration: _duration, }
+    // }
 
     pub fn render() {
 
@@ -27,7 +37,7 @@ impl Animator {
 }
 
 // Unused
-struct Interpolaendr {
+struct Interpolator {
     id: u32,
     progress: f32,
     finished: bool,

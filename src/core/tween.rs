@@ -3,6 +3,7 @@ use std::{any::TypeId, collections::HashMap, rc::Rc};
 
 use super::sprite::*;
 use super::property::*;
+use super::animator::*;
 
 #[allow(dead_code)]
 
@@ -45,7 +46,10 @@ impl Tween {
     /// Execute all functions in the queue
     pub fn play(self) {
         for prop in self.props {
-            // println!("prop={:?}", prop);
+            let mut animator = Animator::default();
+            animator.start = Transition::From(prop);
+            // animator.end = Transition::To(prop);
+            // animator.current = Transition::State(prop);
         }
     }
 

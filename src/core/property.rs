@@ -1,6 +1,7 @@
 /// A Command is a trait that allows Tween to manipulate it
 ///
 
+use na::{Matrix4, Point3, Vector3};
 
 #[derive(Copy, Clone)]
 pub enum PropType {
@@ -33,14 +34,14 @@ pub trait Property {
 #[derive(Default, Clone, Debug)]
 pub struct XPos {
     key: String,
-    vectors: Vec<f32>,
+    // vectors: Vec<f32>,
 }
 
 impl XPos {
     pub fn new(v: f32) -> Self {
         XPos {
             key: "frame.x".to_string(),
-            vectors: vec![v],
+            // vectors: vec![v],
         }
     }
 }
@@ -53,7 +54,7 @@ impl Property for XPos {
 #[derive(Default, Clone, Debug)]
 pub struct YPos {
     key: String,
-    vectors: Vec<f32>,
+    // vectors: Vec<f32>,
 }
 
 impl Property for YPos {
@@ -65,7 +66,7 @@ impl YPos {
     pub fn new(v: f32) -> Self {
         YPos {
             key: "frame.y".to_string(),
-            vectors: vec![v],
+            // vectors: vec![v],
         }
     }
 }
