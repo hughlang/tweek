@@ -24,62 +24,40 @@ pub trait Property {
 // ==============================================================
 
 
-#[derive(Clone)]
-pub struct Command {
-    key: String,
-    ptype: PropType,
-    pub vectors: Vec<f32>,
-}
-
-impl Command {
-    pub fn new(&self, _key: String, _ptype: PropType, _vectors: Vec<f32>) -> Self {
-        Command { key: _key, ptype: _ptype, vectors: _vectors}
-    }
-    // pub fn get_key(&self) -> String { self.key }
-    pub fn apply_vectors(&mut self, in_vectors: Vec<f32>) {
-        for (i, _) in in_vectors.iter().enumerate() {
-            if in_vectors[i] > 0.0 { self.vectors[i] = in_vectors[i] }
-        }
-    }
-    pub fn apply(&mut self, prop: Command) {
-        self.apply_vectors(prop.vectors);
-    }
-}
-
-#[derive(Default, Clone)]
-pub struct X {
+#[derive(Clone, Debug)]
+pub struct XPos {
     key: String,
     vectors: Vec<f32>,
 }
 
-impl X {
+impl XPos {
     pub fn new(&self, x: f32) -> Self {
-        X {
+        XPos {
             key: "frame.x".to_string(),
             vectors: vec![x],
         }
     }
 }
 
-impl Property for X {
+impl Property for XPos {
     fn get_key(&self) -> String { self.key.clone() }
     fn get_type(&self) -> PropType { PropType::Float }
 }
 
-#[derive(Default, Clone)]
-pub struct Y {
+#[derive(Default, Clone, Debug)]
+pub struct YPos {
     key: String,
     vectors: Vec<f32>,
 }
 
-impl Property for Y {
+impl Property for YPos {
     fn get_key(&self) -> String { self.key.clone() }
     fn get_type(&self) -> PropType { PropType::Float }
 }
 
-impl Y {
+impl YPos {
     pub fn new(&self, y: f32) -> Self {
-        Y {
+        YPos {
             key: "frame.y".to_string(),
             vectors: vec![y],
         }

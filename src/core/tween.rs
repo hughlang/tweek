@@ -24,7 +24,8 @@ pub struct Tween {
     delay_s: f32,
     duration_s: f32,
     progress_s: f32,
-    fn_queue: Vec<fn() -> Property>,
+    props: Vec<Box<Property>>,
+    animators: HashMap<String, String>,
 }
 
 impl Default for Tween {
@@ -33,7 +34,8 @@ impl Default for Tween {
             delay_s: 0.0,
             duration_s: 0.0,
             progress_s: 0.0,
-            fn_queue: Vec::new(),
+            props: Vec::new(),
+            animators: HashMap::new(),
         }
     }
 }
@@ -42,38 +44,41 @@ impl Tween {
 
     /// Execute all functions in the queue
     pub fn play(self) {
-        for boxfn in self.fn_queue {
-            &boxfn();
+        for prop in self.props {
+            // println!("prop={:?}", prop);
         }
     }
 
-    #[inline]
     pub fn duration(mut self, _seconds: f32) -> Self {
         self.duration_s = _seconds;
         self
     }
 
-    #[inline]
-    pub fn to(mut self, props: Vec<fn() -> Property>) -> Self {
-        self.fn_queue = props;
-        self
-    }
-
-    pub fn group(mut self, props: Vec<Box<Property>>) -> Self {
+    pub fn to(mut self, _props: Vec<Box<Property>>) -> Self {
+        self.props = _props;
         self
     }
 
 }
 
-pub fn MoveX(x: f32) -> Box<Property> {
-    Box::new(X::default())
+pub fn move_x(x: f32) -> Box<Property> {
+    println!("Move x {}", x);
+    let xpos = XPos::new(x);
+    // Box::new(XPos::new(x))
+    Box::new(xpos)
 }
 
-pub enum Anim {
-    None,
-    MoveX(f32),
-
+pub fn move_y(y: f32) -> Box<Property> {
+    println!("Move y {}", y);
+    Box::new(YPos::default())
 }
+
+
+// pub enum Anim {
+//     None,
+//     MoveX(f32),
+
+// }
 // pub struct Tween<T> where T: Sprite {
 //     // item_type: TypeId,
 //     properties_map: HashMap<String, FromToValue>,

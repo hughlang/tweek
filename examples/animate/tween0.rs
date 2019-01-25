@@ -56,7 +56,8 @@ pub fn main() -> Result<(), String> {
 
     let tween = Tween::default();
 
-    tween.group(vec![MoveX(10.0)]).duration(5.0);
+    tween.to(vec![move_x(10.0), move_y(10.0)])
+        .duration(5.0).play();
 
 
     Ok(())
