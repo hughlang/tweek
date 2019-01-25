@@ -61,16 +61,14 @@ impl Tween {
 
 }
 
-pub fn move_x(x: f32) -> Box<Property> {
-    println!("Move x {}", x);
-    let xpos = XPos::new(x);
-    // Box::new(XPos::new(x))
-    Box::new(xpos)
+pub fn move_x(v: f32) -> Box<Property> {
+    println!("Move x {}", v);
+    Box::new(XPos::new(v))
 }
 
-pub fn move_y(y: f32) -> Box<Property> {
-    println!("Move y {}", y);
-    Box::new(YPos::default())
+pub fn move_y(v: f32) -> Box<Property> {
+    println!("Move y {}", v);
+    Box::new(YPos::new(v))
 }
 
 

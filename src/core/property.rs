@@ -8,7 +8,13 @@ pub enum PropType {
     Float,
     Point,
     Rect,
+}
 
+pub enum Transition {
+    None,
+    From(Box<Property>),
+    To(Box<Property>),
+    State(Box<Property>),
 }
 
 pub trait Tweenable {
@@ -24,17 +30,17 @@ pub trait Property {
 // ==============================================================
 
 
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct XPos {
     key: String,
     vectors: Vec<f32>,
 }
 
 impl XPos {
-    pub fn new(&self, x: f32) -> Self {
+    pub fn new(v: f32) -> Self {
         XPos {
             key: "frame.x".to_string(),
-            vectors: vec![x],
+            vectors: vec![v],
         }
     }
 }
@@ -56,10 +62,10 @@ impl Property for YPos {
 }
 
 impl YPos {
-    pub fn new(&self, y: f32) -> Self {
+    pub fn new(v: f32) -> Self {
         YPos {
             key: "frame.y".to_string(),
-            vectors: vec![y],
+            vectors: vec![v],
         }
     }
 }
