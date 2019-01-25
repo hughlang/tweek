@@ -21,43 +21,59 @@ pub trait Animation {
 }
 
 pub struct Tween {
-    delay: f32,
+    delay_s: f32,
     duration_s: f32,
-    progress: f32,
+    progress_s: f32,
     fn_queue: Vec<fn() -> Property>,
 }
 
 impl Default for Tween {
     fn default() -> Self {
         Tween {
-            delay: 0.0,
+            delay_s: 0.0,
             duration_s: 0.0,
-            progress: 0.0,
+            progress_s: 0.0,
             fn_queue: Vec::new(),
         }
     }
 }
 
 impl Tween {
-    fn play() {
 
+    /// Execute all functions in the queue
+    pub fn play(self) {
+        for boxfn in self.fn_queue {
+            &boxfn();
+        }
     }
-    fn duration(mut self, _seconds: f32) -> Self {
+
+    #[inline]
+    pub fn duration(mut self, _seconds: f32) -> Self {
         self.duration_s = _seconds;
         self
     }
 
-    fn to(mut self, props: Vec<fn() -> Property>) -> Self {
+    #[inline]
+    pub fn to(mut self, props: Vec<fn() -> Property>) -> Self {
         self.fn_queue = props;
         self
     }
 
-    // fn from(mut self, props: Vec<Property>) {
-
-    // }
+    pub fn group(mut self, props: Vec<Box<Property>>) -> Self {
+        self
+    }
 
 }
 
+pub fn MoveX(x: f32) -> Box<Property> {
+    Box::new(X::default())
+}
+
+pub enum Anim {
+    None,
+    MoveX(f32),
+
+}
 // pub struct Tween<T> where T: Sprite {
 //     // item_type: TypeId,
 //     properties_map: HashMap<String, FromToValue>,

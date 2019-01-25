@@ -54,10 +54,10 @@ pub fn main() -> Result<(), String> {
         // The rest of the game loop goes here...
     }
 
-    fn prop1() -> Property {
-
-    }
     let tween = Tween::default();
+
+    tween.group(vec![MoveX(10.0)]).duration(5.0);
+
 
     Ok(())
 }
