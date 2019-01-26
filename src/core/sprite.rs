@@ -6,22 +6,16 @@ extern crate sdl2;
 use super::property::*;
 use super::tween::*;
 
-pub trait Sprite {
+
+pub struct Sprite {
     // type Item: Sprite;
     // fn tween(&self) -> Tween;
-    fn apply(&self, prop: &Property);
-    // fn current_property(&self, prop: &Property) -> &'static Option<Property>;
 }
 
-impl Sprite for sdl2::rect::Rect {
-    // type Item = sdl2::rect::Rect;
-    fn apply(&self, prop: &Property) {
+impl Sprite {
 
-    }
-    // fn current_property(&self, prop: Property) -> Option<Property> {
-    //     None
-    // }
 }
+
 
 // impl Sprite {
 //     // pub fn tween() -> Tween {

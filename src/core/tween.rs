@@ -1,11 +1,24 @@
 /// This is the core Tween model and functions.
+extern crate sdl2;
+
 use std::{any::TypeId, collections::HashMap, rc::Rc};
+use na::*;
 
 use super::sprite::*;
 use super::property::*;
 use super::animator::*;
 
-#[allow(dead_code)]
+type Position = Matrix1x2<f32>;
+
+pub enum Prop {
+    None,
+    Alpha(f32),
+    Color(Matrix1x3<f32>),
+    Position(Matrix1x2<f32>),
+    Rect(Matrix2<f32>),
+    Size(Matrix1x2<f32>),
+}
+
 
 
 #[derive(Debug, PartialEq, Eq)]
@@ -29,6 +42,7 @@ pub struct Tween {
     animators: HashMap<String, String>,
 }
 
+// TODO: new constructor with Tweenable target
 impl Default for Tween {
     fn default() -> Self {
         Tween {
@@ -45,8 +59,9 @@ impl Tween {
 
     /// Execute all functions in the queue
     pub fn play(self) {
+        let mut animator = Animator::default();
+
         for prop in self.props {
-            let mut animator = Animator::default();
             animator.start = Transition::From(prop);
             // animator.end = Transition::To(prop);
             // animator.current = Transition::State(prop);
@@ -63,6 +78,12 @@ impl Tween {
         self
     }
 
+
+
+}
+
+pub fn position(x: f32, y: f32) -> Prop {
+    Prop::Position(Position::new(x, y))
 }
 
 pub fn move_x(v: f32) -> Box<Property> {
@@ -73,6 +94,33 @@ pub fn move_x(v: f32) -> Box<Property> {
 pub fn move_y(v: f32) -> Box<Property> {
     println!("Move y {}", v);
     Box::new(YPos::new(v))
+}
+
+
+// #####################################################################################
+
+pub trait Tweenable {
+    // fn lerp(t: f32, end: Self) -> Self;
+    // fn distance_to(other: Self) -> f32;
+    fn get_key(&self) -> TypeId;
+    fn apply(&self, prop: &Prop);
+    fn get_prop(&self, key: &String) -> Prop;
+}
+
+impl Tweenable for sdl2::rect::Rect {
+    // type Item = sdl2::rect::Rect;
+    fn get_key(&self) -> TypeId { TypeId::of::<sdl2::rect::Rect>() }
+
+    fn apply(&self, prop: &Prop) {
+        match prop {
+            Prop::Position(xy) => (),
+            _ => ()
+        }
+
+    }
+    fn get_prop(&self, key: &String) -> Prop {
+        Prop::None
+    }
 }
 
 

@@ -1,7 +1,7 @@
 /// A Command is a trait that allows Tween to manipulate it
 ///
 
-use na::{Matrix4, Point3, Vector3};
+use na::*;
 
 #[derive(Copy, Clone)]
 pub enum PropType {
@@ -18,30 +18,27 @@ pub enum Transition {
     State(Box<Property>),
 }
 
-pub trait Tweenable {
-    fn lerp(t: f32, end: Self) -> Self;
-    fn distance_to(other: Self) -> f32;
-}
 
 pub trait Property {
     fn get_key(&self) -> String;
     fn get_type(&self) -> PropType;
+    // fn get_matrix(&self) -> Matrix<N: Scalar, R: U, C: U, S: Storage>;
 }
 
 // ==============================================================
 
 
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct XPos {
     key: String,
-    // vectors: Vec<f32>,
+    vectors: Matrix1<f32>,
 }
 
 impl XPos {
     pub fn new(v: f32) -> Self {
         XPos {
             key: "frame.x".to_string(),
-            // vectors: vec![v],
+            vectors: Matrix1::new(v),
         }
     }
 }
@@ -51,10 +48,10 @@ impl Property for XPos {
     fn get_type(&self) -> PropType { PropType::Float }
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct YPos {
     key: String,
-    // vectors: Vec<f32>,
+    vectors: Matrix1<f32>,
 }
 
 impl Property for YPos {
@@ -66,7 +63,7 @@ impl YPos {
     pub fn new(v: f32) -> Self {
         YPos {
             key: "frame.y".to_string(),
-            // vectors: vec![v],
+            vectors: Matrix1::new(v),
         }
     }
 }
