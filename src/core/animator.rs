@@ -8,6 +8,13 @@ use super::property::*;
 
 #[allow(dead_code)]
 
+pub enum Transition {
+    None,
+    From(Box<Property>),
+    To(Box<Property>),
+    State(Box<Property>),
+}
+
 pub struct Animator {
     pub start: Transition,
     pub end: Transition,

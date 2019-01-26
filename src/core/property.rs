@@ -11,13 +11,6 @@ pub enum PropType {
     Rect,
 }
 
-pub enum Transition {
-    None,
-    From(Box<Property>),
-    To(Box<Property>),
-    State(Box<Property>),
-}
-
 
 pub trait Property {
     fn get_key(&self) -> String;
