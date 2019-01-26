@@ -16,7 +16,6 @@ pub enum Prop {
     Alpha(f32),
     Color(ColorRGB),
     Position(Point2D),
-    Rect(Frame2D),
     Size(Frame2D),
 }
 

@@ -54,11 +54,5 @@ pub fn main() -> Result<(), String> {
         // The rest of the game loop goes here...
     }
 
-    let tween = Tween::default();
-
-    tween.to(vec![move_x(10.0), move_y(10.0)])
-        .duration(5.0).play();
-
-
     Ok(())
 }
