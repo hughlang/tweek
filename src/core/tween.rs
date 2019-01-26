@@ -10,7 +10,7 @@ use na::*;
 use super::animator::*;
 
 // type ColorRGB = Matrix1x3<f64>;
-type ColorRGBA = Matrix1x4<u8>;
+type ColorRGBA = Matrix1x4<f64>;
 type Point2D = Matrix1x2<f64>;
 type Frame2D = Matrix1x2<f64>;
 
@@ -100,8 +100,11 @@ impl Tween {
         self
     }
 
-    fn build_animators() {
+    fn build_animators(&self) {
+        for prop in self.propsMap.values() {
 
+
+        }
     }
 }
 
@@ -145,16 +148,16 @@ impl Tweenable for orbrender::render_objects::Rectangle {
         match prop {
             Prop::Alpha(_) => { Prop::Alpha(1.0) },
             Prop::Color(_) => {
-                if let Some(bgcolor) = self.background {
-                    return Prop::Color(ColorRGBA::new(0, 0, 0, 0));
+                if let Some(color) = self.background {
+                    return Prop::Color(ColorRGBA::new(color.r_f(), color.g_f(), color.b_f(), color.a_f()));
                 } else {
-                    return Prop::Color(ColorRGBA::new(0, 0, 0, 0));
+                    return Prop::Color(ColorRGBA::new(0.0, 0.0, 0.0, 0.0));
                 }
             },
+            Prop::Position(_) => Prop::Position(Point2D::new(self.position.x, self.position.y)),
+            Prop::Size(_) => Prop::Size(Frame2D::new(self.size.width, self.size.height)),
             _ => Prop::None,
         }
-        // Prop::None()
     }
-
 }
 
