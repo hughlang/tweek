@@ -9,22 +9,27 @@ name = "tween"
 path = "src/lib.rs"
 
 # [[bin]]
-# name = "prototype"
-# path = "src/prototype/main.rs"
+# name = "mouse"
+# path = "examples/animate/mouse.rs"
+#
+# [[bin]]
+# name = "boxdemo"
+# path = "examples/animate/boxdemo.rs"
+#
+# [[bin]]
+# name = "tween0"
+# path = "examples/animate/tween0.rs"
 
 [[bin]]
-name = "mouse"
-path = "examples/animate/mouse.rs"
+name = "movedemo"
+path = "examples/orb/movedemo.rs"
 
-[[bin]]
-name = "boxdemo"
-path = "examples/animate/boxdemo.rs"
-
-[[bin]]
-name = "tween0"
-path = "examples/animate/tween0.rs"
+[features]
+default = []
+wasm = []
 
 [dependencies]
 nalgebra = "0.16"
-# orbtk = { path = "../orbtk" }
-sdl2 = { path = "../rust-sdl2" }
+orbrender = { path = "../orbrender" }
+# sdl2 = { path = "../rust-sdl2" }
+

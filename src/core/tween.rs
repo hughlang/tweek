@@ -1,22 +1,23 @@
 /// This is the core Tween model and functions.
-extern crate sdl2;
+extern crate orbrender;
 
 use std::{any::TypeId, collections::HashMap, rc::Rc};
 use na::*;
 
-use super::sprite::*;
 use super::property::*;
 use super::animator::*;
 
-type Position = Matrix1x2<f32>;
+type ColorRGB = Matrix1x3<f32>;
+type Point2D = Matrix1x2<f32>;
+type Frame2D = Matrix1x2<f32>;
 
 pub enum Prop {
     None,
     Alpha(f32),
-    Color(Matrix1x3<f32>),
-    Position(Matrix1x2<f32>),
-    Rect(Matrix2<f32>),
-    Size(Matrix1x2<f32>),
+    Color(ColorRGB),
+    Position(Point2D),
+    Rect(Frame2D),
+    Size(Frame2D),
 }
 
 
@@ -39,7 +40,7 @@ pub struct Tween {
     duration_s: f32,
     progress_s: f32,
     props: Vec<Box<Property>>,
-    animators: HashMap<String, String>,
+    animators: HashMap<TypeId, Prop>,
 }
 
 // TODO: new constructor with Tweenable target
@@ -83,7 +84,7 @@ impl Tween {
 }
 
 pub fn position(x: f32, y: f32) -> Prop {
-    Prop::Position(Position::new(x, y))
+    Prop::Position(Frame2D::new(x, y))
 }
 
 pub fn move_x(v: f32) -> Box<Property> {
@@ -107,9 +108,9 @@ pub trait Tweenable {
     fn get_prop(&self, key: &String) -> Prop;
 }
 
-impl Tweenable for sdl2::rect::Rect {
-    // type Item = sdl2::rect::Rect;
-    fn get_key(&self) -> TypeId { TypeId::of::<sdl2::rect::Rect>() }
+impl Tweenable for orbrender::render_objects::Rectangle {
+
+    fn get_key(&self) -> TypeId { TypeId::of::<orbrender::render_objects::Rectangle>() }
 
     fn apply(&self, prop: &Prop) {
         match prop {
@@ -121,7 +122,23 @@ impl Tweenable for sdl2::rect::Rect {
     fn get_prop(&self, key: &String) -> Prop {
         Prop::None
     }
+
 }
+// impl Tweenable for sdl2::rect::Rect {
+//     // type Item = sdl2::rect::Rect;
+//     fn get_key(&self) -> TypeId { TypeId::of::<sdl2::rect::Rect>() }
+
+//     fn apply(&self, prop: &Prop) {
+//         match prop {
+//             Prop::Position(xy) => (),
+//             _ => ()
+//         }
+
+//     }
+//     fn get_prop(&self, key: &String) -> Prop {
+//         Prop::None
+//     }
+// }
 
 
 // pub enum Anim {
