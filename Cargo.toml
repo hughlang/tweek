@@ -24,12 +24,23 @@ path = "src/lib.rs"
 name = "movedemo"
 path = "examples/orb/movedemo.rs"
 
+[[bin]]
+name = "drawing"
+path = "examples/orb/drawing.rs"
+
+[[bin]]
+name = "dragging"
+path = "examples/orb/dragging.rs"
+
 [features]
 default = []
 wasm = []
 
 [dependencies]
 nalgebra = "0.16"
+# nalgebra-glm = "0.1"
+unwrap_to = "0.1.0"
+# timer = "0.2.0"
 orbrender = { path = "../orbrender" }
 # sdl2 = { path = "../rust-sdl2" }
 

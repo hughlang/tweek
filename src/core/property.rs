@@ -3,6 +3,48 @@
 
 use na::*;
 
+
+pub type ColorRGB = Matrix1x3<f64>;
+pub type ColorRGBA = Matrix1x4<f64>;
+pub type Point2D = Matrix1x2<f64>;
+pub type Frame2D = Matrix1x2<f64>;
+
+#[derive(Copy, Clone)]
+pub enum Prop {
+    None,
+    Alpha(f64),
+    Color(ColorRGBA),
+    Position(Point2D),
+    Size(Frame2D),
+}
+
+impl Prop {
+    /// Stupid shit helper method because Rust enums cannot emit a discriminator Int id if there are custom fields
+    pub fn prop_id(&self) -> u32 {
+        match self {
+            Prop::None => 0,
+            Prop::Alpha(_) => 1,
+            Prop::Color(_) => 2,
+            Prop::Position(_) => 3,
+            Prop::Size(_) => 4,
+        }
+    }
+}
+
+// TODO: implement Scale, Translation, and Rotation
+pub struct ObjectState {
+    pub props: Vec<Prop>,
+}
+
+impl ObjectState {
+    pub fn create(_props: &Vec<Prop>) -> Self {
+        ObjectState {
+            props: _props.clone(),
+        }
+    }
+}
+
+
 #[derive(Copy, Clone)]
 pub enum PropType {
     Int,
@@ -12,72 +54,6 @@ pub enum PropType {
 }
 
 
-pub trait Property {
-    fn get_key(&self) -> String;
-    fn get_type(&self) -> PropType;
-    // fn get_matrix(&self) -> Matrix<N: Scalar, R: U, C: U, S: Storage>;
-}
-
-// ==============================================================
-
-
-#[derive(Clone, Debug)]
-pub struct XPos {
-    key: String,
-    vectors: Matrix1<f32>,
-}
-
-impl XPos {
-    pub fn new(v: f32) -> Self {
-        XPos {
-            key: "frame.x".to_string(),
-            vectors: Matrix1::new(v),
-        }
-    }
-}
-
-impl Property for XPos {
-    fn get_key(&self) -> String { self.key.clone() }
-    fn get_type(&self) -> PropType { PropType::Float }
-}
-
-#[derive(Clone, Debug)]
-pub struct YPos {
-    key: String,
-    vectors: Matrix1<f32>,
-}
-
-impl Property for YPos {
-    fn get_key(&self) -> String { self.key.clone() }
-    fn get_type(&self) -> PropType { PropType::Float }
-}
-
-impl YPos {
-    pub fn new(v: f32) -> Self {
-        YPos {
-            key: "frame.y".to_string(),
-            vectors: Matrix1::new(v),
-        }
-    }
-}
-
-
-// pub struct X {
-
-// }
-// ==============================================================
-
-// #[derive(Clone)]
-// pub struct FromToValue {
-// 	pub from: Property,
-//     pub to: Property,
-// }
-
-// impl FromToValue {
-
-//     // pub fn new(_from: Option<Command>, _to: Option<Command>) -> Self {
-//     //     FromToValue { from: _from, to: _to }
-//     // }
-// }
+// #####################################################################################
 
 

@@ -7,34 +7,9 @@ extern crate orbrender;
 use std::{any::TypeId, collections::HashMap, rc::Rc};
 use na::*;
 
+use super::property::*;
 use super::animator::*;
 
-// type ColorRGB = Matrix1x3<f64>;
-type ColorRGBA = Matrix1x4<f64>;
-type Point2D = Matrix1x2<f64>;
-type Frame2D = Matrix1x2<f64>;
-
-#[derive(Copy, Clone)]
-pub enum Prop {
-    None,
-    Alpha(f64),
-    Color(ColorRGBA),
-    Position(Point2D),
-    Size(Frame2D),
-}
-
-impl Prop {
-    /// Stupid shit helper method because Rust enums cannot emit a discriminator Int id if there are custom fields
-    pub fn prop_id(&self) -> u32 {
-        match self {
-            Prop::None => 0,
-            Prop::Alpha(_) => 1,
-            Prop::Color(_) => 2,
-            Prop::Position(_) => 3,
-            Prop::Size(_) => 4,
-        }
-    }
-}
 
 
 #[derive(Debug, PartialEq, Eq)]
@@ -59,28 +34,13 @@ pub struct Tween<T> where T: Tweenable {
     animators: HashMap<u32, Animator>,
 }
 
-// // TODO: new constructor with Tweenable target
-// impl Default for Tween {
-//     fn default() -> Self {
-//         Tween {
-//             target: Box::new(0.0),
-//             delay_s: 0.0,
-//             duration_s: 0.0,
-//             progress_s: 0.0,
-//             // props: Vec::new(),
-//             propsMap: HashMap::new(),
-//             animators: HashMap::new(),
-//         }
-//     }
-// }
-
 impl<T> Tween<T> where T: Tweenable {
 
     /// Execute all functions in the queue
     pub fn play(self) {
 
         // for each queued prop, construct animators that have the start and end state.
-        for prop in self.props_map.values() {
+        for _prop in self.props_map.values() {
 
             // animator.start = Transition::From(prop);
             // animator.end = Transition::To(prop);
@@ -119,7 +79,17 @@ impl<T> Tween<T> where T: Tweenable {
 
         tween
     }
+
+    /// This should be called by a run loop to tell the animation to update itself
+    pub fn update(&self) {
+
+    }
+
+
 }
+
+/// This is necessary for Orbrender Window to impose thread safety
+unsafe impl<T> Send for Tween<T> where T: Tweenable {}
 
 pub fn position(x: f64, y: f64) -> Prop {
     Prop::Position(Frame2D::new(x, y))
@@ -135,6 +105,9 @@ pub fn move_y(v: f64) -> Prop {
     Prop::Position(Frame2D::new(0.0, v))
 }
 
+// #####################################################################################
+
+
 
 // #####################################################################################
 
@@ -144,6 +117,7 @@ pub trait Tweenable {
     fn get_key(&self) -> TypeId;
     fn get_prop(&self, prop: &Prop) -> Prop;
     fn apply(&mut self, prop: &Prop);
+    fn render(props: &Vec<Prop>);
 }
 
 impl Tweenable for orbrender::render_objects::Rectangle {
@@ -172,5 +146,10 @@ impl Tweenable for orbrender::render_objects::Rectangle {
             _ => Prop::None,
         }
     }
+
+    fn render(_props: &Vec<Prop>) {
+
+    }
+
 }
 
