@@ -39,7 +39,7 @@ pub fn main() -> Result<(), String> {
             .with_position(Point::new(10.0, 10.0))
             .with_background(Color::rgb(100, 123, 145));
 
-    let mut tween = Tween::animate(&rect1, vec![move_x(10.0), move_y(10.0)]).duration(3.0);
+    let mut tween = Tween::animate(&rect1, vec![move_x(100.0), move_y(100.0)]).duration(30.0);
     tween.play();
     state.index = window.insert_rectangle( 0, rect1 );
 
@@ -51,7 +51,15 @@ pub fn main() -> Result<(), String> {
             window.render();
             update.store(false, atomic::Ordering::Release);
         }
-        tween.update();
+        let id_list = tween.update();
+        for id in id_list {
+            if let Some(target) = window.get_mut_rectangle(id) {
+                tween.render(target, &id);
+                update.store(true, atomic::Ordering::Release);
+            }
+
+        }
+
 
         for event in window.events() {
             match event {

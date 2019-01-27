@@ -32,6 +32,7 @@ pub struct Tween<T> where T: Tweenable {
     start_props: Vec<Prop>,
     end_props: Vec<Prop>,
     animators: HashMap<u32, Animator>,
+    props_cache: HashMap<usize, Vec<Prop>>,
 }
 
 impl<T> Tween<T> where T: Tweenable {
@@ -45,6 +46,7 @@ impl<T> Tween<T> where T: Tweenable {
             start_props: Vec::new(),
             end_props: Vec::new(),
             animators: HashMap::new(),
+            props_cache: HashMap::new(),
         }
     }
 
@@ -84,13 +86,21 @@ impl<T> Tween<T> where T: Tweenable {
     }
 
     /// This should be called by a run loop to tell the animation to update itself
-    pub fn update(&self) {
+    pub fn update(&mut self) -> Vec<usize> {
+        let mut id_list: Vec<usize> = Vec::new();
         for animator in self.animators.values() {
-            animator.render();
+            let props = animator.update();
+            self.props_cache.insert(animator.id, props);
+            id_list.push(animator.id);
         }
+        id_list
     }
 
-
+    pub fn render(&self, _target: &mut T, _id: &usize) {
+        if let Some(props) = self.props_cache.get(_id) {
+            _target.render(props);
+        }
+    }
 }
 
 /// This is necessary for Orbrender Window to impose thread safety
@@ -122,7 +132,12 @@ pub trait Tweenable {
     fn get_key(&self) -> TypeId;
     fn get_prop(&self, prop: &Prop) -> Prop;
     fn apply(&mut self, prop: &Prop);
-    fn render(props: &Vec<Prop>);
+    fn apply_props(&mut self, props: Vec<Prop>) {
+        for prop in props {
+            self.apply(&prop);
+        }
+    }
+    fn render(&mut self, props: &Vec<Prop>);
 }
 
 impl Tweenable for orbrender::render_objects::Rectangle {
@@ -152,8 +167,10 @@ impl Tweenable for orbrender::render_objects::Rectangle {
         }
     }
 
-    fn render(_props: &Vec<Prop>) {
-
+    fn render(&mut self, props: &Vec<Prop>) {
+        for prop in props {
+            self.apply(prop);
+        }
     }
 
 }

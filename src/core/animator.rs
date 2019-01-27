@@ -30,7 +30,7 @@ pub trait Animatable {
 
 /// An Animator represents state change from one ObjectState to another ObjectState state
 pub struct Animator {
-    pub id: u32,
+    pub id: usize,
     pub start: ObjectState,
     pub end: ObjectState,
     pub current: ObjectState,
@@ -39,7 +39,7 @@ pub struct Animator {
 }
 
 impl Animator {
-    pub fn create(id: u32, props1: &Vec<Prop>, props2: &Vec<Prop>, seconds: &f64) -> Self {
+    pub fn create(id: usize, props1: &Vec<Prop>, props2: &Vec<Prop>, seconds: &f64) -> Self {
         let current_state = ObjectState::create(props1);
         let start_state = ObjectState::create(props1);
         let end_state = ObjectState::create(props2);
@@ -54,7 +54,7 @@ impl Animator {
         }
     }
 
-    pub fn render(&self) -> Vec<Prop> {
+    pub fn update(&self) -> Vec<Prop> {
         let mut results: Vec<Prop> = Vec::new();
         let elapsed = self.start_time.elapsed();
         let progress = elapsed.as_float_secs() / self.duration.as_float_secs();
@@ -84,6 +84,7 @@ impl Animator {
             Prop::Position(m1) => {
                 let m2 = unwrap_to!(target => Prop::Position);
                 let out = m1.lerp(*m2, scale);
+                println!("Interpolated to: x={} y={}", out[0], out[1]);
                 Prop::Position(out)
             },
             // Prop::Size(_) => Prop::Size(Frame2D::new(self.size.width, self.size.height)),
