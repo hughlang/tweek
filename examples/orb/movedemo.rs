@@ -48,8 +48,11 @@ pub fn main() -> Result<(), String> {
     // }
     // rect1.t
 
+    if let Some(sprite) = window.get_rectangle(0) {
+        Tween::animate(sprite, vec![move_x(10.0), move_y(10.0)]);
+        // sprite.to(vec![move_x(10.0), move_y(10.0)]);
+    }
 
-    // let tween = Tween::new(&rect1);
 
     // tween.to(vec![move_x(10.0), move_y(10.0)])
     //     .duration(5.0).play();

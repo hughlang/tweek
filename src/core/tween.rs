@@ -14,6 +14,7 @@ type ColorRGBA = Matrix1x4<f64>;
 type Point2D = Matrix1x2<f64>;
 type Frame2D = Matrix1x2<f64>;
 
+#[derive(Copy, Clone)]
 pub enum Prop {
     None,
     Alpha(f64),
@@ -50,11 +51,10 @@ pub enum TweenMode {
 // }
 
 pub struct Tween<T> where T: Tweenable {
-    target: T,
+    target: Option<T>,
     delay_s: f64,
     duration_s: f64,
     progress_s: f64,
-    // props: Vec<Prop>,
     props_map: HashMap<u32, Prop>,
     animators: HashMap<u32, Animator>,
 }
@@ -88,13 +88,12 @@ impl<T> Tween<T> where T: Tweenable {
         }
     }
 
-    pub fn new(_target: T) -> Self where T: Tweenable {
+    pub fn new() -> Self {
         Tween {
-            target: _target,
+            target: None,
             delay_s: 0.0,
             duration_s: 0.0,
             progress_s: 0.0,
-            // props: Vec::new(),
             props_map: HashMap::new(),
             animators: HashMap::new(),
         }
@@ -112,10 +111,13 @@ impl<T> Tween<T> where T: Tweenable {
         self
     }
 
-    fn build_animators(&mut self) {
-        for prop in self.props_map.values() {
-            // self.props_map.insert(prop.prop_id(), *prop);
+    pub fn animate(_target: &T, _props: Vec<Prop>) -> Self {
+        let mut tween = Tween::new();
+        for prop in _props {
+            tween.props_map.insert(prop.prop_id(), prop.clone());
         }
+
+        tween
     }
 }
 
@@ -144,17 +146,6 @@ pub trait Tweenable {
     fn apply(&mut self, prop: &Prop);
 }
 
-impl Tweenable for f32 {
-    fn get_key(&self) -> TypeId { TypeId::of::<f32>() }
-
-    fn apply(&mut self, prop: &Prop) {
-    }
-
-    fn get_prop(&self, prop: &Prop) -> Prop {
-        Prop::None
-    }
-
-}
 impl Tweenable for orbrender::render_objects::Rectangle {
 
     fn get_key(&self) -> TypeId { TypeId::of::<orbrender::render_objects::Rectangle>() }
