@@ -46,11 +46,13 @@ pub fn main() -> Result<(), String> {
     //         }
     //     }
     // }
+    // rect1.t
 
-    let tween = Tween::default();
 
-    tween.to(vec![move_x(10.0), move_y(10.0)])
-        .duration(5.0).play();
+    // let tween = Tween::new(&rect1);
+
+    // tween.to(vec![move_x(10.0), move_y(10.0)])
+    //     .duration(5.0).play();
 
     Ok(())
 }

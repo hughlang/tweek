@@ -23,21 +23,18 @@ pub enum Prop {
 }
 
 impl Prop {
+    /// Stupid shit helper method because Rust enums cannot emit a discriminator Int id if there are custom fields
     pub fn prop_id(&self) -> u32 {
-        get_prop_id(self)
+        match self {
+            Prop::None => 0,
+            Prop::Alpha(_) => 1,
+            Prop::Color(_) => 2,
+            Prop::Position(_) => 3,
+            Prop::Size(_) => 4,
+        }
     }
 }
 
-// Stupid shit helper method because Rust enums cannot emit a discriminator Int id if there are custom fields
-pub fn get_prop_id(prop: &Prop) -> u32 {
-    match prop {
-        Prop::None => 0,
-        Prop::Alpha(_) => 1,
-        Prop::Color(_) => 2,
-        Prop::Position(_) => 3,
-        Prop::Size(_) => 4,
-    }
-}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TweenMode {
@@ -52,39 +49,54 @@ pub enum TweenMode {
 
 // }
 
-pub struct Tween {
+pub struct Tween<T> where T: Tweenable {
+    target: T,
     delay_s: f64,
     duration_s: f64,
     progress_s: f64,
     // props: Vec<Prop>,
-    propsMap: HashMap<u32, Prop>,
+    props_map: HashMap<u32, Prop>,
+    animators: HashMap<u32, Animator>,
 }
 
-// TODO: new constructor with Tweenable target
-impl Default for Tween {
-    fn default() -> Self {
-        Tween {
-            delay_s: 0.0,
-            duration_s: 0.0,
-            progress_s: 0.0,
-            // props: Vec::new(),
-            propsMap: HashMap::new(),
-        }
-    }
-}
+// // TODO: new constructor with Tweenable target
+// impl Default for Tween {
+//     fn default() -> Self {
+//         Tween {
+//             target: Box::new(0.0),
+//             delay_s: 0.0,
+//             duration_s: 0.0,
+//             progress_s: 0.0,
+//             // props: Vec::new(),
+//             propsMap: HashMap::new(),
+//             animators: HashMap::new(),
+//         }
+//     }
+// }
 
-impl Tween {
+impl<T> Tween<T> where T: Tweenable {
 
     /// Execute all functions in the queue
     pub fn play(self) {
-        let mut animator = Animator::default();
 
         // for each queued prop, construct animators that have the start and end state.
-        for prop in self.propsMap.values() {
+        for prop in self.props_map.values() {
 
             // animator.start = Transition::From(prop);
             // animator.end = Transition::To(prop);
             // animator.current = Transition::State(prop);
+        }
+    }
+
+    pub fn new(_target: T) -> Self where T: Tweenable {
+        Tween {
+            target: _target,
+            delay_s: 0.0,
+            duration_s: 0.0,
+            progress_s: 0.0,
+            // props: Vec::new(),
+            props_map: HashMap::new(),
+            animators: HashMap::new(),
         }
     }
 
@@ -95,15 +107,14 @@ impl Tween {
 
     pub fn to(mut self, _props: Vec<Prop>) -> Self {
         for prop in _props {
-            self.propsMap.insert(prop.prop_id(), prop);
+            self.props_map.insert(prop.prop_id(), prop);
         }
         self
     }
 
-    fn build_animators(&self) {
-        for prop in self.propsMap.values() {
-
-
+    fn build_animators(&mut self) {
+        for prop in self.props_map.values() {
+            // self.props_map.insert(prop.prop_id(), *prop);
         }
     }
 }
@@ -133,6 +144,17 @@ pub trait Tweenable {
     fn apply(&mut self, prop: &Prop);
 }
 
+impl Tweenable for f32 {
+    fn get_key(&self) -> TypeId { TypeId::of::<f32>() }
+
+    fn apply(&mut self, prop: &Prop) {
+    }
+
+    fn get_prop(&self, prop: &Prop) -> Prop {
+        Prop::None
+    }
+
+}
 impl Tweenable for orbrender::render_objects::Rectangle {
 
     fn get_key(&self) -> TypeId { TypeId::of::<orbrender::render_objects::Rectangle>() }
