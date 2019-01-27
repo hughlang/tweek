@@ -54,13 +54,18 @@ impl Animator {
         }
     }
 
-    pub fn render(&self) {
-        // for prop in self.start.props {
+    pub fn render(&mut self) -> Vec<Prop> {
+        let mut results: Vec<Prop> = Vec::new();
         let elapsed = self.start_time.elapsed();
         let progress = elapsed.as_float_secs() / self.duration.as_float_secs();
-
-
-        // }
+        if progress > 0.0 && progress <= 1.0 {
+            for (i, prop) in self.start.props.clone().iter().enumerate() {
+                let target = self.end.props[i].clone();
+                let current = Animator::interpolate(&prop, &target, progress);
+                results.push(current);
+            }
+        }
+        results
     }
 
     /// Given two Props of same type, calculate the interpolated state

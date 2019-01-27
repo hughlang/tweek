@@ -35,18 +35,6 @@ pub struct Tween<T> where T: Tweenable {
 
 impl<T> Tween<T> where T: Tweenable {
 
-    /// Execute all functions in the queue
-    pub fn play(self) {
-
-        // for each queued prop, construct animators that have the start and end state.
-        for _prop in self.props_map.values() {
-
-            // animator.start = Transition::From(prop);
-            // animator.end = Transition::To(prop);
-            // animator.current = Transition::State(prop);
-        }
-    }
-
     pub fn new() -> Self {
         Tween {
             target: None,
@@ -77,6 +65,19 @@ impl<T> Tween<T> where T: Tweenable {
         }
 
         tween
+    }
+
+
+    /// Execute all functions in the queue
+    pub fn play(self) {
+
+        // for each queued prop, construct animators that have the start and end state.
+        for _prop in self.props_map.values() {
+
+            // animator.start = Transition::From(prop);
+            // animator.end = Transition::To(prop);
+            // animator.current = Transition::State(prop);
+        }
     }
 
     /// This should be called by a run loop to tell the animation to update itself
