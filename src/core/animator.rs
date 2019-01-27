@@ -2,7 +2,7 @@
 ///
 ///
 use std::{time::{Duration,Instant}, collections::HashMap, rc::Rc};
-use na::*;
+use cgmath::*;
 
 use super::property::*;
 use super::tween::*;
@@ -77,9 +77,8 @@ impl Animator {
             // },
             Prop::Position(m1) => {
                 let m2 = unwrap_to!(target => Prop::Position);
-                // let out = glm::slerp(&m1, &m2, scale);
-                // Prop::Position(out)
-                Prop::None
+                let out = m1.lerp(*m2, scale);
+                Prop::Position(out)
             },
             // Prop::Size(_) => Prop::Size(Frame2D::new(self.size.width, self.size.height)),
             _ => Prop::None,

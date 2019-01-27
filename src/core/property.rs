@@ -1,13 +1,12 @@
 /// A Command is a trait that allows Tween to manipulate it
 ///
 
-use na::*;
+use cgmath::*;
 
-
-pub type ColorRGB = Matrix1x3<f64>;
-pub type ColorRGBA = Matrix1x4<f64>;
-pub type Point2D = Matrix1x2<f64>;
-pub type Frame2D = Matrix1x2<f64>;
+pub type ColorRGB = Vector3<f64>;
+pub type ColorRGBA = Vector4<f64>;
+pub type Point2D = Vector2<f64>;
+pub type Frame2D = Vector2<f64>;
 
 #[derive(Copy, Clone)]
 pub enum Prop {

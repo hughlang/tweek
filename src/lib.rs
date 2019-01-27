@@ -5,10 +5,8 @@
 
 #[macro_use] extern crate unwrap_to;
 
-extern crate nalgebra as na;
-// extern crate nalgebra_glm as glm;
+extern crate cgmath;
 
-// pub use crate::nalgebra::*;
 pub use crate::core::*;
 
 pub mod core;

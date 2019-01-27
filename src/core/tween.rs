@@ -4,8 +4,7 @@ extern crate orbrender;
 // use enum_primitive_derive::*;
 // use num_traits::{FromPrimitive, ToPrimitive};
 
-use std::{any::TypeId, collections::HashMap, rc::Rc};
-use na::*;
+use std::{any::TypeId, collections::HashMap};
 
 use super::property::*;
 use super::animator::*;
