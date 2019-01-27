@@ -29,7 +29,8 @@ pub struct Tween<T> where T: Tweenable {
     delay_s: f64,
     duration_s: f64,
     progress_s: f64,
-    props_map: HashMap<u32, Prop>,
+    start_props: Vec<Prop>,
+    end_props: Vec<Prop>,
     animators: HashMap<u32, Animator>,
 }
 
@@ -41,7 +42,8 @@ impl<T> Tween<T> where T: Tweenable {
             delay_s: 0.0,
             duration_s: 0.0,
             progress_s: 0.0,
-            props_map: HashMap::new(),
+            start_props: Vec::new(),
+            end_props: Vec::new(),
             animators: HashMap::new(),
         }
     }
@@ -51,38 +53,41 @@ impl<T> Tween<T> where T: Tweenable {
         self
     }
 
-    pub fn to(mut self, _props: Vec<Prop>) -> Self {
-        for prop in _props {
-            self.props_map.insert(prop.prop_id(), prop);
-        }
-        self
-    }
-
     pub fn animate(_target: &T, _props: Vec<Prop>) -> Self {
         let mut tween = Tween::new();
+        let mut props_map: HashMap<u32, Prop> = HashMap::new();
+
+        // De-dupe props with a hashmap, just in case.
         for prop in _props {
-            tween.props_map.insert(prop.prop_id(), prop.clone());
+            props_map.insert(prop.prop_id(), prop.clone());
         }
 
+        for prop in props_map.values() {
+            let start_prop = _target.get_prop(&prop);
+            match start_prop {
+                Prop::None => {},
+                _ => {
+                    tween.start_props.push(start_prop);
+                    tween.end_props.push(prop.clone());
+                }
+            }
+        }
         tween
     }
 
 
     /// Execute all functions in the queue
-    pub fn play(self) {
-
+    pub fn play(&mut self) {
         // for each queued prop, construct animators that have the start and end state.
-        for _prop in self.props_map.values() {
-
-            // animator.start = Transition::From(prop);
-            // animator.end = Transition::To(prop);
-            // animator.current = Transition::State(prop);
-        }
+        let animator = Animator::create(0, &self.start_props, &self.end_props, &self.duration_s);
+        self.animators.insert(0, animator);
     }
 
     /// This should be called by a run loop to tell the animation to update itself
     pub fn update(&self) {
-
+        for animator in self.animators.values() {
+            animator.render();
+        }
     }
 
 

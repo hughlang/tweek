@@ -39,7 +39,8 @@ pub fn main() -> Result<(), String> {
             .with_position(Point::new(10.0, 10.0))
             .with_background(Color::rgb(100, 123, 145));
 
-    let tween = Tween::animate(&rect1, vec![move_x(10.0), move_y(10.0)]).duration(3.0);
+    let mut tween = Tween::animate(&rect1, vec![move_x(10.0), move_y(10.0)]).duration(3.0);
+    tween.play();
     state.index = window.insert_rectangle( 0, rect1 );
 
     let update = Arc::new(AtomicBool::new(true));

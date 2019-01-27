@@ -54,10 +54,11 @@ impl Animator {
         }
     }
 
-    pub fn render(&mut self) -> Vec<Prop> {
+    pub fn render(&self) -> Vec<Prop> {
         let mut results: Vec<Prop> = Vec::new();
         let elapsed = self.start_time.elapsed();
         let progress = elapsed.as_float_secs() / self.duration.as_float_secs();
+        // println!("elapsed={} progress={}", elapsed.as_float_secs(), progress);
         if progress > 0.0 && progress <= 1.0 {
             for (i, prop) in self.start.props.clone().iter().enumerate() {
                 let target = self.end.props[i].clone();
