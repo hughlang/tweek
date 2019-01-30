@@ -8,7 +8,7 @@ pub type ColorRGBA = Vector4<f64>;
 pub type Point2D = Vector2<f64>;
 pub type Frame2D = Vector2<f64>;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Prop {
     None,
     Alpha(f64),

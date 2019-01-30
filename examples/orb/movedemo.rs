@@ -54,7 +54,7 @@ pub fn main() -> Result<(), String> {
             window.render();
             update.store(false, atomic::Ordering::Release);
         }
-        tween.update();
+        // tween.update();
         if let Some(target) = window.get_mut_rectangle(square_id) {
             tween.render(target, &square_id);
             update.store(true, atomic::Ordering::Release);

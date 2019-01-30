@@ -71,29 +71,6 @@ impl<T> Tween<T> where T: Tweenable {
         tween
     }
 
-
-    /// Execute all functions in the queue
-    pub fn play(&mut self) {
-        // for each queued prop, construct animators that have the start and end state.
-        let animator = Animator::create(0, &self.start_props, &self.end_props, &self.duration_s);
-        self.animators.insert(0, animator);
-
-        // let start = Instant::now();
-        // let ticker = tick(Duration::from_millis(50));
-        // let timeout = after(Duration::from_secs(self.duration_s as u64));
-
-        // loop {
-        //     select! {
-        //         recv(ticker) -> _ => {
-        //             println!("elapsed: {:?}", start.elapsed());
-        //             self.update();
-        //         },
-        //         recv(timeout) -> _ => break,
-        //     }
-        // }
-
-    }
-
     // fn async_update(&self, sender: Sender<bool>) {
     //     for animator in self.animators.values() {
     //         let props = animator.update();
@@ -102,8 +79,56 @@ impl<T> Tween<T> where T: Tweenable {
     //     sender.send(true).unwrap();
     // }
 
+
+    /// Execute all functions in the queue
+    pub fn play(&mut self) {
+        // for each queued prop, construct animators that have the start and end state.
+        let mut animators:Vec<Animator> = Vec::new();
+        let animator = Animator::create(0, &self.start_props, &self.end_props, &self.duration_s);
+        animators.insert(0, animator);
+
+        // let (s, r) = bounded(self.animators.len());
+        // s.send(0).unwrap();
+        // let value = r.recv();
+        // println!("value={}", value.unwrap());
+
+        let (tx, rx) = bounded::<Vec<Prop>>(0);
+
+        thread::scope(|scope| {
+            let t = scope.spawn(|s| {
+                loop {
+                    for animator in &animators {
+                        let (tx, rx) = (tx.clone(), rx.clone());
+                        s.spawn(move |_| {
+                            let props = animator.update();
+                            tx.send(props).unwrap();
+                        });
+                        // let props = thread.join().unwrap();
+                        let props = rx.recv();
+                        println!("props={:?}", props);
+                    }
+                }
+            });
+        }).unwrap();
+        // loop {
+
+        // }
+        // for animator in self.animators.values() {
+        //     let props = thread::scope(|s| {
+        //         let thread = s.spawn(|_| {
+        //             animator.update()
+        //         });
+        //         thread.join().unwrap()
+        //     }).unwrap();
+        //     self.props_cache.insert(animator.id, props);
+        // }
+
+
+    }
+
     /// This should be called by a run loop to tell the animation to update itself
     pub fn update(&mut self) {
+
         for animator in self.animators.values() {
             let props = thread::scope(|s| {
                 let thread = s.spawn(|_| {
@@ -113,14 +138,6 @@ impl<T> Tween<T> where T: Tweenable {
             }).unwrap();
             self.props_cache.insert(animator.id, props);
         }
-// thread::scope(|s| {
-//     s.spawn(|_| {
-//         println!("A child thread borrowing `var`: {:?}", var);
-//     });
-// }).unwrap();
-
-        // let mut id_list: Vec<usize> = Vec::new();
-        // id_list
     }
 
     pub fn render(&self, _target: &mut T, _id: &usize) {

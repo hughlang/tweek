@@ -4,8 +4,9 @@
 #![feature(duration_float)]
 
 #[macro_use] extern crate unwrap_to;
-#[macro_use] extern crate crossbeam_channel;
 
+extern crate crossbeam_channel;
+extern crate crossbeam_utils;
 extern crate cgmath;
 // extern crate tokio;
 
