@@ -4,14 +4,17 @@
 #![feature(duration_float)]
 
 #[macro_use] extern crate unwrap_to;
+#[macro_use] extern crate crossbeam_channel;
 
 extern crate cgmath;
+// extern crate tokio;
+
+// pub use tokio::io;
+// pub use tokio::prelude::*;
+pub use crossbeam_channel::*;
+pub use crossbeam_utils::*;
 
 pub use crate::core::*;
 
 pub mod core;
 
-// pub use crate::easing::*;
-
-// pub mod tween;
-// pub mod prelude;

@@ -1,10 +1,7 @@
 use std::f32::consts::PI;
 
-const kPERIOD: f32 = 0.3;
-const M_PI_X_2: f32 = PI * 2.0;
-//
-// let kPERIOD: Double = 0.3
-// let M_PI_X_2: Double = Double.pi * 2.0
+// const kPERIOD: f32 = 0.3;
+// const M_PI_X_2: f32 = PI * 2.0;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Easing {

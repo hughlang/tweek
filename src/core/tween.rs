@@ -1,15 +1,14 @@
 /// This is the core Tween model and functions.
 extern crate orbrender;
 
-// use enum_primitive_derive::*;
-// use num_traits::{FromPrimitive, ToPrimitive};
-
+use crossbeam_channel::*;
 use std::{any::TypeId, collections::HashMap};
+use std::time::{Duration, Instant};
+use crossbeam_channel::{after, tick};
+use crossbeam_utils::thread;
 
 use super::property::*;
 use super::animator::*;
-
-
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TweenMode {
@@ -17,12 +16,6 @@ pub enum TweenMode {
     From,
     FromTo,
 }
-
-// pub trait Animation {
-//     fn play();
-//     fn duration(&self, _seconds: f64) -> Self;
-
-// }
 
 pub struct Tween<T> where T: Tweenable {
     target: Option<T>,
@@ -55,6 +48,7 @@ impl<T> Tween<T> where T: Tweenable {
         self
     }
 
+    /// Called externally. TODO: rename to "to"
     pub fn animate(_target: &T, _props: Vec<Prop>) -> Self {
         let mut tween = Tween::new();
         let mut props_map: HashMap<u32, Prop> = HashMap::new();
@@ -83,17 +77,50 @@ impl<T> Tween<T> where T: Tweenable {
         // for each queued prop, construct animators that have the start and end state.
         let animator = Animator::create(0, &self.start_props, &self.end_props, &self.duration_s);
         self.animators.insert(0, animator);
+
+        // let start = Instant::now();
+        // let ticker = tick(Duration::from_millis(50));
+        // let timeout = after(Duration::from_secs(self.duration_s as u64));
+
+        // loop {
+        //     select! {
+        //         recv(ticker) -> _ => {
+        //             println!("elapsed: {:?}", start.elapsed());
+        //             self.update();
+        //         },
+        //         recv(timeout) -> _ => break,
+        //     }
+        // }
+
     }
 
+    // fn async_update(&self, sender: Sender<bool>) {
+    //     for animator in self.animators.values() {
+    //         let props = animator.update();
+    //         self.props_cache.insert(animator.id, props);
+    //     }
+    //     sender.send(true).unwrap();
+    // }
+
     /// This should be called by a run loop to tell the animation to update itself
-    pub fn update(&mut self) -> Vec<usize> {
-        let mut id_list: Vec<usize> = Vec::new();
+    pub fn update(&mut self) {
         for animator in self.animators.values() {
-            let props = animator.update();
+            let props = thread::scope(|s| {
+                let thread = s.spawn(|_| {
+                    animator.update()
+                });
+                thread.join().unwrap()
+            }).unwrap();
             self.props_cache.insert(animator.id, props);
-            id_list.push(animator.id);
         }
-        id_list
+// thread::scope(|s| {
+//     s.spawn(|_| {
+//         println!("A child thread borrowing `var`: {:?}", var);
+//     });
+// }).unwrap();
+
+        // let mut id_list: Vec<usize> = Vec::new();
+        // id_list
     }
 
     pub fn render(&self, _target: &mut T, _id: &usize) {
@@ -102,6 +129,15 @@ impl<T> Tween<T> where T: Tweenable {
         }
     }
 }
+
+// impl<T> Future for Tween<T> where T: Tweenable {
+//     type Item = String;
+//     type Error = ();
+
+//     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+//         Ok(Async::Ready("hello world".to_string()))
+//     }
+// }
 
 /// This is necessary for Orbrender Window to impose thread safety
 unsafe impl<T> Send for Tween<T> where T: Tweenable {}

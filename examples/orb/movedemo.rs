@@ -4,7 +4,9 @@ extern crate tween;
 use tween::*;
 use orbrender::backend::Runner;
 use orbrender::prelude::*;
+use std::time::{Duration, Instant};
 
+use crossbeam_channel::tick;
 use std::sync::atomic::{self, AtomicBool};
 use std::sync::Arc;
 
@@ -34,14 +36,15 @@ pub fn main() -> Result<(), String> {
         index: 0,
     };
 
+    let square_id = 0;
     let rect1 = Rectangle::default()
             .with_size(Size::new(40.0, 40.0))
             .with_position(Point::new(10.0, 10.0))
             .with_background(Color::rgb(100, 123, 145));
 
-    let mut tween = Tween::animate(&rect1, vec![move_x(100.0), move_y(100.0)]).duration(30.0);
+    let mut tween = Tween::animate(&rect1, vec![position(300.0, 100.0)]).duration(4.0);
     tween.play();
-    state.index = window.insert_rectangle( 0, rect1 );
+    state.index = window.insert_rectangle( square_id, rect1 );
 
     let update = Arc::new(AtomicBool::new(true));
 
@@ -51,15 +54,11 @@ pub fn main() -> Result<(), String> {
             window.render();
             update.store(false, atomic::Ordering::Release);
         }
-        let id_list = tween.update();
-        for id in id_list {
-            if let Some(target) = window.get_mut_rectangle(id) {
-                tween.render(target, &id);
-                update.store(true, atomic::Ordering::Release);
-            }
-
+        tween.update();
+        if let Some(target) = window.get_mut_rectangle(square_id) {
+            tween.render(target, &square_id);
+            update.store(true, atomic::Ordering::Release);
         }
-
 
         for event in window.events() {
             match event {
