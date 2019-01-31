@@ -79,29 +79,30 @@ impl<T> Tween<T> where T: Tweenable {
     /// Execute all functions in the queue
     pub fn play(&mut self) {
         // for each queued prop, construct animators that have the start and end state.
-        let mut workers:Vec<Animator> = Vec::new();
+        // let mut workers:Vec<Animator> = Vec::new();
         let animator = Animator::create(0, &self.start_props, &self.end_props, &self.duration_s);
-        workers.push(animator);
+        self.animators.insert(0, animator);
+        // workers.push(animator);
 
-        let (tx, rx) = bounded::<Vec<Prop>>(1);
+        // let (tx, rx) = bounded::<Vec<Prop>>(1);
 
-        let _token = thread::scope(|scope| {
-            let t = scope.spawn(|s| {
-                loop {
-                    for worker in &workers {
-                        let (tx, rx) = (tx.clone(), rx.clone());
-                        s.spawn(move |_| {
-                            let ui_state = worker.update();
-                            tx.send(ui_state.props).unwrap();
-                        });
-                        let props = rx.recv().unwrap();
-                        if props.len() > 0 {
-                            println!("props={:?}", props);
-                        }
-                    }
-                }
-            });
-        });
+        // let _token = thread::scope(|scope| {
+        //     let t = scope.spawn(|s| {
+        //         loop {
+        //             for worker in &workers {
+        //                 let (tx, rx) = (tx.clone(), rx.clone());
+        //                 s.spawn(move |_| {
+        //                     let ui_state = worker.update();
+        //                     tx.send(ui_state.props).unwrap();
+        //                 });
+        //                 let props = rx.recv().unwrap();
+        //                 if props.len() > 0 {
+        //                     println!("props={:?}", props);
+        //                 }
+        //             }
+        //         }
+        //     });
+        // });
     }
 
     /// This should be called by a run loop to tell the animation to update itself
@@ -141,29 +142,15 @@ impl<T> Tween<T> where T: Tweenable {
 
     }
 
-    pub fn recalc(&mut self) {
-
-        let (tx, rx) = bounded::<Vec<Prop>>(1);
-
-
-        thread::scope(|scope| {
-                for animator in self.animators.values() {
-                    let (tx, rx) = (tx.clone(), rx.clone());
-                    scope.spawn(move |_| {
-                        let ui_state = animator.update();
-                        tx.send(ui_state.props).unwrap();
-                    });
-                    // let props = thread.join().unwrap();
-
-                    let _props: Vec<Prop> = rx.recv().unwrap();
-                    if _props.len() > 0 {
-                        println!("props={:?}", _props);
-                        self.props_cache.insert(animator.id, _props);
-                        // self.animators.insert(animator.id, _props);
-                        // Tween::save_props(animator.id, _props);
-                    }
-                }
-        }).unwrap();
+    pub fn get_updates(&mut self) -> Vec<UIState> {
+        let mut results: Vec<UIState> = Vec::new();
+        for animator in self.animators.values() {
+            let ui_state = animator.update();
+            if ui_state.props.len() > 0 {
+                results.push(ui_state);
+            }
+        }
+        results
     }
 
     pub fn render(&self, _target: &mut T, _id: &usize) {
@@ -214,6 +201,7 @@ pub trait Tweenable {
         }
     }
     fn render(&mut self, props: &Vec<Prop>);
+    fn render_update(&mut self, props: &Vec<Prop>);
 }
 
 impl Tweenable for orbrender::render_objects::Rectangle {
@@ -244,6 +232,12 @@ impl Tweenable for orbrender::render_objects::Rectangle {
     }
 
     fn render(&mut self, props: &Vec<Prop>) {
+        for prop in props {
+            self.apply(prop);
+        }
+    }
+
+    fn render_update(&mut self, props: &Vec<Prop>) {
         for prop in props {
             self.apply(prop);
         }

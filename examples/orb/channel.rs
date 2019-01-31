@@ -44,29 +44,40 @@ pub fn main() -> Result<(), String> {
             .with_background(Color::rgb(100, 123, 145));
 
     let mut tween = Tween::animate(&rect1, vec![position(300.0, 100.0)]).duration(4.0);
+    &tween.play();
+    let (tx, rx) = bounded::<Vec<UIState>>(1);
 
-    let (tx, rx) = bounded::<Vec<Prop>>(1);
-
-    thread::scope(move |scope| {
-        scope.spawn(move |_| {
-            &tween.play();
-        });
-    }).unwrap();
+    std::thread::spawn(move || {
+        loop {
+            let updates = tween.get_updates();
+            tx.send(updates);
+            std::thread::sleep(Duration::from_millis(5));
+        }
+    });
+    // thread::scope(move || {
+    //     scope.spawn(move |_| {
+    //         &tween.play();
+    //     });
+    // }).unwrap();
 
     state.index = window.insert_rectangle( square_id, rect1 );
 
-    let update = Arc::new(AtomicBool::new(true));
+    let arc_update = Arc::new(AtomicBool::new(true));
 
     Runner::new(Box::new(move || {
-        if update.load(atomic::Ordering::Acquire) {
+        if arc_update.load(atomic::Ordering::Acquire) {
             window.render();
-            update.store(false, atomic::Ordering::Release);
+            arc_update.store(false, atomic::Ordering::Release);
         }
-
-        // if let Some(target) = window.get_mut_rectangle(square_id) {
-        //     &tween.render(target, &square_id);
-        //     update.store(true, atomic::Ordering::Release);
-        // }
+        if rx.try_recv().is_ok() {
+            let updates = rx.try_recv().unwrap();
+            for update in updates {
+                if let Some(target) = window.get_mut_rectangle(update.id) {
+                    target.render_update(&update.props);
+                    arc_update.store(true, atomic::Ordering::Release);
+                }
+            }
+        }
 
         for event in window.events() {
             match event {
@@ -79,6 +90,7 @@ pub fn main() -> Result<(), String> {
                 _ => {}
             }
         }
+        std::thread::sleep(Duration::from_millis(1));
 
         true
     })).run();
