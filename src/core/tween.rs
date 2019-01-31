@@ -106,7 +106,7 @@ impl<T> Tween<T> where T: Tweenable {
     }
 
     /// This should be called by a run loop to tell the animation to update itself
-    pub fn update(&mut self) {
+    pub fn update_async(&mut self) {
 
         let (tx, rx) = bounded::<Vec<Prop>>(1);
 
@@ -142,7 +142,7 @@ impl<T> Tween<T> where T: Tweenable {
 
     }
 
-    pub fn get_updates(&mut self) -> Vec<UIState> {
+    pub fn get_updates(&self) -> Vec<UIState> {
         let mut results: Vec<UIState> = Vec::new();
         for animator in self.animators.values() {
             let ui_state = animator.update();

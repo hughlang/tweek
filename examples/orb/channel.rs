@@ -45,16 +45,16 @@ pub fn main() -> Result<(), String> {
 
     let mut tween = Tween::animate(&rect1, vec![position(300.0, 100.0)]).duration(4.0);
     &tween.play();
-    let (tx, rx) = bounded::<Vec<UIState>>(1);
+    let (tx, rx) = bounded::<Vec<UIState>>(0);
 
     std::thread::spawn(move || {
         loop {
             let updates = tween.get_updates();
-            println!("received updates={}", &updates.len());
             if &updates.len() > &0 {
+                println!("received updates={}", &updates.len());
                 tx.send(updates).unwrap();
             }
-            std::thread::sleep(Duration::from_millis(5));
+            std::thread::sleep(Duration::from_millis(1));
         }
     });
     // thread::scope(move || {
@@ -76,11 +76,12 @@ pub fn main() -> Result<(), String> {
         if rx_updates.is_ok() {
             let updates = rx_updates.unwrap();
             for update in updates {
+                println!("applying props={}", &update.props.len());
                 if let Some(target) = window.get_mut_rectangle(update.id) {
                     target.render_update(&update.props);
-                    arc_update.store(true, atomic::Ordering::Release);
                 }
             }
+            arc_update.store(true, atomic::Ordering::Release);
         }
 
         for event in window.events() {
@@ -94,7 +95,7 @@ pub fn main() -> Result<(), String> {
                 _ => {}
             }
         }
-        std::thread::sleep(Duration::from_millis(1));
+        // std::thread::sleep(Duration::from_millis(1));
 
         true
     })).run();
