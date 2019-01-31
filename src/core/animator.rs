@@ -58,8 +58,9 @@ impl Animator {
         let mut results: Vec<Prop> = Vec::new();
         let elapsed = self.start_time.elapsed();
         let progress = elapsed.as_float_secs() / self.duration.as_float_secs();
-        println!("elapsed={} progress={}", elapsed.as_float_secs(), progress);
         if progress > 0.0 && progress <= 1.0 {
+            println!("----------------------------------------------");
+            println!("elapsed={} progress={}", elapsed.as_float_secs(), progress);
             for (i, prop) in self.start.props.clone().iter().enumerate() {
                 let target = self.end.props[i].clone();
                 let current = Animator::interpolate(&prop, &target, progress);
@@ -86,7 +87,6 @@ impl Animator {
                 println!("m1={:?} m2={:?}", m1, m2);
                 let out = m1.lerp(*m2, scale);
                 println!("Interpolated to: x={} y={}", out[0], out[1]);
-                println!("----------------------------------------------");
                 Prop::Position(out)
             },
             // Prop::Size(_) => Prop::Size(Frame2D::new(self.size.width, self.size.height)),

@@ -4,8 +4,10 @@ extern crate orbrender;
 use crossbeam_channel::*;
 use std::{any::TypeId, collections::HashMap};
 use std::time::{Duration, Instant};
+use std::any::Any;
 use crossbeam_channel::{after, tick};
 use crossbeam_utils::thread;
+use crossbeam_utils::sync::Parker;
 
 use super::property::*;
 use super::animator::*;
@@ -26,7 +28,12 @@ pub struct Tween<T> where T: Tweenable {
     end_props: Vec<Prop>,
     animators: HashMap<u32, Animator>,
     props_cache: HashMap<usize, Vec<Prop>>,
+    // sender: Sender<Vec<Prop>>,
+    // receiver: Receiver<Vec<Prop>>,
 }
+
+/// This is necessary for Orbrender Window to impose thread safety
+unsafe impl<T> Send for Tween<T> where T: Tweenable {}
 
 impl<T> Tween<T> where T: Tweenable {
 
@@ -71,48 +78,59 @@ impl<T> Tween<T> where T: Tweenable {
         tween
     }
 
-    // fn async_update(&self, sender: Sender<bool>) {
-    //     for animator in self.animators.values() {
-    //         let props = animator.update();
-    //         self.props_cache.insert(animator.id, props);
-    //     }
-    //     sender.send(true).unwrap();
-    // }
-
-
     /// Execute all functions in the queue
     pub fn play(&mut self) {
         // for each queued prop, construct animators that have the start and end state.
-        let mut animators:Vec<Animator> = Vec::new();
+        let mut workers:Vec<Animator> = Vec::new();
         let animator = Animator::create(0, &self.start_props, &self.end_props, &self.duration_s);
-        animators.insert(0, animator);
+        workers.push(animator);
 
-        // let (s, r) = bounded(self.animators.len());
-        // s.send(0).unwrap();
-        // let value = r.recv();
-        // println!("value={}", value.unwrap());
+        let (tx, rx) = bounded::<Vec<Prop>>(1);
 
-        let (tx, rx) = bounded::<Vec<Prop>>(0);
-
-        thread::scope(|scope| {
+        let _token = thread::scope(|scope| {
             let t = scope.spawn(|s| {
                 loop {
-                    for animator in &animators {
+                    for worker in &workers {
                         let (tx, rx) = (tx.clone(), rx.clone());
                         s.spawn(move |_| {
-                            let props = animator.update();
+                            let props = worker.update();
                             tx.send(props).unwrap();
                         });
-                        // let props = thread.join().unwrap();
-                        let props = rx.recv();
-                        println!("props={:?}", props);
+                        let props = rx.recv().unwrap();
+                        if props.len() > 0 {
+                            println!("props={:?}", props);
+                        }
                     }
                 }
             });
-        }).unwrap();
-        // loop {
+        });
+    }
 
-        // }
+    /// This should be called by a run loop to tell the animation to update itself
+    pub fn update(&mut self) {
+
+        let (tx, rx) = bounded::<Vec<Prop>>(1);
+
+
+        thread::scope(|scope| {
+                for animator in self.animators.values() {
+                    let (tx, rx) = (tx.clone(), rx.clone());
+                    scope.spawn(move |_| {
+                        let props = animator.update();
+                        tx.send(props).unwrap();
+                    });
+                    // let props = thread.join().unwrap();
+
+                    let _props: Vec<Prop> = rx.recv().unwrap();
+                    if _props.len() > 0 {
+                        println!("props={:?}", _props);
+                        self.props_cache.insert(animator.id, _props);
+                        // self.animators.insert(animator.id, _props);
+                        // Tween::save_props(animator.id, _props);
+                    }
+                }
+        }).unwrap();
+
         // for animator in self.animators.values() {
         //     let props = thread::scope(|s| {
         //         let thread = s.spawn(|_| {
@@ -123,21 +141,6 @@ impl<T> Tween<T> where T: Tweenable {
         //     self.props_cache.insert(animator.id, props);
         // }
 
-
-    }
-
-    /// This should be called by a run loop to tell the animation to update itself
-    pub fn update(&mut self) {
-
-        for animator in self.animators.values() {
-            let props = thread::scope(|s| {
-                let thread = s.spawn(|_| {
-                    animator.update()
-                });
-                thread.join().unwrap()
-            }).unwrap();
-            self.props_cache.insert(animator.id, props);
-        }
     }
 
     pub fn render(&self, _target: &mut T, _id: &usize) {
@@ -155,9 +158,6 @@ impl<T> Tween<T> where T: Tweenable {
 //         Ok(Async::Ready("hello world".to_string()))
 //     }
 // }
-
-/// This is necessary for Orbrender Window to impose thread safety
-unsafe impl<T> Send for Tween<T> where T: Tweenable {}
 
 pub fn position(x: f64, y: f64) -> Prop {
     Prop::Position(Frame2D::new(x, y))

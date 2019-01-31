@@ -2,6 +2,7 @@
 #![crate_type = "lib"]
 
 #![feature(duration_float)]
+// #![feature(type_ascription)]
 
 #[macro_use] extern crate unwrap_to;
 

@@ -21,6 +21,10 @@ path = "src/lib.rs"
 # path = "examples/animate/tween0.rs"
 
 [[bin]]
+name = "channel"
+path = "examples/orb/channel.rs"
+
+[[bin]]
 name = "movedemo"
 path = "examples/orb/movedemo.rs"
 
