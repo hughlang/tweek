@@ -37,10 +37,10 @@ pub struct UIState {
 }
 
 impl UIState {
-    pub fn create(_id: usize, _props: &Vec<Prop>) -> Self {
+    pub fn create(_id: usize, _props: Vec<Prop>) -> Self {
         UIState {
             id: _id,
-            props: _props.clone(),
+            props: _props,
         }
     }
 }

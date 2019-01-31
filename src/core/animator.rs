@@ -33,22 +33,19 @@ pub struct Animator {
     pub id: usize,
     pub start: UIState,
     pub end: UIState,
-    pub current: UIState,
     pub start_time: Instant,
     pub duration: Duration,
 }
 
 impl Animator {
     pub fn create(id: usize, props1: &Vec<Prop>, props2: &Vec<Prop>, seconds: &f64) -> Self {
-        let current_state = UIState::create(id, props1);
-        let start_state = UIState::create(id, props1);
-        let end_state = UIState::create(id, props2);
+        let start_state = UIState::create(id, props1.clone());
+        let end_state = UIState::create(id, props2.clone());
         let time = Duration::from_float_secs(*seconds);
         Animator {
             id: id,
             start: start_state,
             end: end_state,
-            current: current_state,
             start_time: Instant::now(),
             duration: time,
         }
@@ -61,13 +58,12 @@ impl Animator {
         if progress > 0.0 && progress <= 1.0 {
             // println!("----------------------------------------------");
             // println!("elapsed={} progress={}", elapsed.as_float_secs(), progress);
-            for (i, prop) in self.start.props.clone().iter().enumerate() {
-                let target = self.end.props[i].clone();
-                let current = Animator::interpolate(&prop, &target, progress);
+            for (i, prop) in self.start.props.iter().enumerate() {
+                let current = Animator::interpolate(prop, &self.end.props[i], progress);
                 props.push(current);
             }
         }
-        UIState::create(self.id, &props)
+        UIState::create(self.id, props)
     }
 
     /// Given two Props of same type, calculate the interpolated state
@@ -86,7 +82,7 @@ impl Animator {
                 let m2 = unwrap_to!(target => Prop::Position);
                 // println!("m1={:?} m2={:?}", m1, m2);
                 let out = m1.lerp(*m2, scale);
-                println!("Interpolated to: x={} y={}", out[0], out[1]);
+                // println!("Interpolated to: x={} y={}", out[0], out[1]);
                 Prop::Position(out)
             },
             // Prop::Size(_) => Prop::Size(Frame2D::new(self.size.width, self.size.height)),
