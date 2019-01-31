@@ -50,7 +50,10 @@ pub fn main() -> Result<(), String> {
     std::thread::spawn(move || {
         loop {
             let updates = tween.get_updates();
-            tx.send(updates);
+            println!("received updates={}", &updates.len());
+            if &updates.len() > &0 {
+                tx.send(updates).unwrap();
+            }
             std::thread::sleep(Duration::from_millis(5));
         }
     });
@@ -69,8 +72,9 @@ pub fn main() -> Result<(), String> {
             window.render();
             arc_update.store(false, atomic::Ordering::Release);
         }
-        if rx.try_recv().is_ok() {
-            let updates = rx.try_recv().unwrap();
+        let rx_updates = rx.try_recv();
+        if rx_updates.is_ok() {
+            let updates = rx_updates.unwrap();
             for update in updates {
                 if let Some(target) = window.get_mut_rectangle(update.id) {
                     target.render_update(&update.props);
