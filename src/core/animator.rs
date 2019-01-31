@@ -40,9 +40,9 @@ pub struct Animator {
 
 impl Animator {
     pub fn create(id: usize, props1: &Vec<Prop>, props2: &Vec<Prop>, seconds: &f64) -> Self {
-        let current_state = UIState::create(props1);
-        let start_state = UIState::create(props1);
-        let end_state = UIState::create(props2);
+        let current_state = UIState::create(id, props1);
+        let start_state = UIState::create(id, props1);
+        let end_state = UIState::create(id, props2);
         let time = Duration::from_float_secs(*seconds);
         Animator {
             id: id,
@@ -67,7 +67,7 @@ impl Animator {
                 props.push(current);
             }
         }
-        UIState::create(&props)
+        UIState::create(self.id, &props)
     }
 
     /// Given two Props of same type, calculate the interpolated state

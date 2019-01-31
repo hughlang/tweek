@@ -32,12 +32,14 @@ impl Prop {
 
 // TODO: implement Scale, Translation, and Rotation
 pub struct UIState {
+    pub id: usize,
     pub props: Vec<Prop>,
 }
 
 impl UIState {
-    pub fn create(_props: &Vec<Prop>) -> Self {
+    pub fn create(_id: usize, _props: &Vec<Prop>) -> Self {
         UIState {
+            id: _id,
             props: _props.clone(),
         }
     }
