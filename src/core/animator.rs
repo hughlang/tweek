@@ -1,13 +1,20 @@
 /// An Animator has start and end properties that can be rendered in an animation
 ///
 ///
-use std::{time::{Duration,Instant}, collections::HashMap, rc::Rc};
+use std::{time::{Duration,Instant}};
 use cgmath::*;
 
 use super::property::*;
-use super::tween::*;
 
 #[allow(dead_code)]
+
+pub enum AnimationState {
+    Pending,
+    Running,
+    Idle,
+    Cancelled,
+    Completed,
+}
 
 pub trait Animatable {
 
@@ -97,62 +104,62 @@ impl Animator {
 // #####################################################################################
 
 
-pub struct Animation {
-    start_time: Instant,
-    // end_time: Instant,
-    duration: Duration,
-    delay: Duration,
-    elapsed: Duration,
-	// var state: AnimationState { get set }
-	// var duration: TimeInterval { get set }
-	// var delay: TimeInterval { get set }
-	// var timeScale: Double { get set }
-	// var progress: Double { get set }
-	// var totalProgress: Double { get set }
+// pub struct Animation {
+//     start_time: Instant,
+//     // end_time: Instant,
+//     duration: Duration,
+//     delay: Duration,
+//     elapsed: Duration,
+// 	// var state: AnimationState { get set }
+// 	// var duration: TimeInterval { get set }
+// 	// var delay: TimeInterval { get set }
+// 	// var timeScale: Double { get set }
+// 	// var progress: Double { get set }
+// 	// var totalProgress: Double { get set }
 
-	// var startTime: TimeInterval { get set }
-	// var endTime: TimeInterval { get }
-	// var totalDuration: TimeInterval { get }
-	// var totalTime: TimeInterval { get }
-	// var elapsed: TimeInterval { get }
-	// var time: TimeInterval { get }
+// 	// var startTime: TimeInterval { get set }
+// 	// var endTime: TimeInterval { get }
+// 	// var totalDuration: TimeInterval { get }
+// 	// var totalTime: TimeInterval { get }
+// 	// var elapsed: TimeInterval { get }
+// 	// var time: TimeInterval { get }
 
-	// var timingFunction: TimingFunctionType { get }
-	// var spring: Spring? { get }
+// 	// var timingFunction: TimingFunctionType { get }
+// 	// var spring: Spring? { get }
 
-}
+// }
 
-impl Animation {
-    pub fn new() -> Self {
-        Animation{
-            start_time: Instant::now(),
-            duration: Duration::from_secs(0),
-            delay: Duration::from_secs(0),
-            elapsed: Duration::from_secs(0),
-        }
-    }
+// impl Animation {
+//     pub fn new() -> Self {
+//         Animation{
+//             start_time: Instant::now(),
+//             duration: Duration::from_secs(0),
+//             delay: Duration::from_secs(0),
+//             elapsed: Duration::from_secs(0),
+//         }
+//     }
 
-    pub fn render() {
+//     pub fn render() {
 
-    }
-}
+//     }
+// }
 
-impl Animatable for Animation {
+// impl Animatable for Animation {
 
-    fn play() {
+//     fn play() {
 
-    }
-    fn stop() {
+//     }
+//     fn stop() {
 
-    }
-    fn pause() {
+//     }
+//     fn pause() {
 
-    }
-    fn resume() {
+//     }
+//     fn resume() {
 
-    }
-    fn seek() {
+//     }
+//     fn seek() {
 
-    }
+//     }
 
-}
+// }
