@@ -28,21 +28,21 @@ pub trait Animatable {
 
 }
 
-/// An Animator represents state change from one ObjectState to another ObjectState state
+/// An Animator represents state change from one UIState to another UIState state
 pub struct Animator {
     pub id: usize,
-    pub start: ObjectState,
-    pub end: ObjectState,
-    pub current: ObjectState,
+    pub start: UIState,
+    pub end: UIState,
+    pub current: UIState,
     pub start_time: Instant,
     pub duration: Duration,
 }
 
 impl Animator {
     pub fn create(id: usize, props1: &Vec<Prop>, props2: &Vec<Prop>, seconds: &f64) -> Self {
-        let current_state = ObjectState::create(props1);
-        let start_state = ObjectState::create(props1);
-        let end_state = ObjectState::create(props2);
+        let current_state = UIState::create(props1);
+        let start_state = UIState::create(props1);
+        let end_state = UIState::create(props2);
         let time = Duration::from_float_secs(*seconds);
         Animator {
             id: id,
@@ -54,8 +54,8 @@ impl Animator {
         }
     }
 
-    pub fn update(&self) -> Vec<Prop> {
-        let mut results: Vec<Prop> = Vec::new();
+    pub fn update(&self) -> UIState {
+        let mut props: Vec<Prop> = Vec::new();
         let elapsed = self.start_time.elapsed();
         let progress = elapsed.as_float_secs() / self.duration.as_float_secs();
         if progress > 0.0 && progress <= 1.0 {
@@ -64,10 +64,10 @@ impl Animator {
             for (i, prop) in self.start.props.clone().iter().enumerate() {
                 let target = self.end.props[i].clone();
                 let current = Animator::interpolate(&prop, &target, progress);
-                results.push(current);
+                props.push(current);
             }
         }
-        results
+        UIState::create(&props)
     }
 
     /// Given two Props of same type, calculate the interpolated state

@@ -31,13 +31,13 @@ impl Prop {
 }
 
 // TODO: implement Scale, Translation, and Rotation
-pub struct ObjectState {
+pub struct UIState {
     pub props: Vec<Prop>,
 }
 
-impl ObjectState {
+impl UIState {
     pub fn create(_props: &Vec<Prop>) -> Self {
-        ObjectState {
+        UIState {
             props: _props.clone(),
         }
     }

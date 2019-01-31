@@ -5,9 +5,7 @@ use crossbeam_channel::*;
 use std::{any::TypeId, collections::HashMap};
 use std::time::{Duration, Instant};
 use std::any::Any;
-use crossbeam_channel::{after, tick};
 use crossbeam_utils::thread;
-use crossbeam_utils::sync::Parker;
 
 use super::property::*;
 use super::animator::*;
@@ -93,8 +91,8 @@ impl<T> Tween<T> where T: Tweenable {
                     for worker in &workers {
                         let (tx, rx) = (tx.clone(), rx.clone());
                         s.spawn(move |_| {
-                            let props = worker.update();
-                            tx.send(props).unwrap();
+                            let ui_state = worker.update();
+                            tx.send(ui_state.props).unwrap();
                         });
                         let props = rx.recv().unwrap();
                         if props.len() > 0 {
@@ -116,8 +114,8 @@ impl<T> Tween<T> where T: Tweenable {
                 for animator in self.animators.values() {
                     let (tx, rx) = (tx.clone(), rx.clone());
                     scope.spawn(move |_| {
-                        let props = animator.update();
-                        tx.send(props).unwrap();
+                        let ui_state = animator.update();
+                        tx.send(ui_state.props).unwrap();
                     });
                     // let props = thread.join().unwrap();
 
@@ -141,6 +139,31 @@ impl<T> Tween<T> where T: Tweenable {
         //     self.props_cache.insert(animator.id, props);
         // }
 
+    }
+
+    pub fn recalc(&mut self) {
+
+        let (tx, rx) = bounded::<Vec<Prop>>(1);
+
+
+        thread::scope(|scope| {
+                for animator in self.animators.values() {
+                    let (tx, rx) = (tx.clone(), rx.clone());
+                    scope.spawn(move |_| {
+                        let ui_state = animator.update();
+                        tx.send(ui_state.props).unwrap();
+                    });
+                    // let props = thread.join().unwrap();
+
+                    let _props: Vec<Prop> = rx.recv().unwrap();
+                    if _props.len() > 0 {
+                        println!("props={:?}", _props);
+                        self.props_cache.insert(animator.id, _props);
+                        // self.animators.insert(animator.id, _props);
+                        // Tween::save_props(animator.id, _props);
+                    }
+                }
+        }).unwrap();
     }
 
     pub fn render(&self, _target: &mut T, _id: &usize) {
