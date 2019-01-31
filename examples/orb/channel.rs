@@ -4,20 +4,20 @@ extern crate tween;
 use tween::*;
 use orbrender::backend::Runner;
 use orbrender::prelude::*;
-use std::time::{Duration, Instant};
-
-use crossbeam_utils::thread;
+use orbrender::render_objects::Rectangle;
+use orbrender::window::WindowBuilder;
+use std::time::{Duration};
 
 use std::sync::atomic::{self, AtomicBool};
 use std::sync::Arc;
 
-use crate::{
-    orbrender::events::*,
-    orbrender::render_objects::{Rectangle, RenderObject, Text, Image},
-    orbrender::structs::*,
-    // orbrender::traits::Window,
-    orbrender::window::WindowBuilder,
-};
+// use crate::{
+//     // orbrender::events::*,
+//     // orbrender::render_objects::{Rectangle, RenderObject, Text, Image},
+//     // orbrender::structs::*,
+//     // orbrender::traits::Window,
+//     orbrender::window::WindowBuilder,
+// };
 
 struct AnimState {
     pub frame: (f64, f64, f64, f64),
@@ -51,17 +51,11 @@ pub fn main() -> Result<(), String> {
         loop {
             let updates = tween.get_updates();
             if &updates.len() > &0 {
-                println!("received updates={}", &updates.len());
                 tx.send(updates).unwrap();
             }
             std::thread::sleep(Duration::from_millis(1));
         }
     });
-    // thread::scope(move || {
-    //     scope.spawn(move |_| {
-    //         &tween.play();
-    //     });
-    // }).unwrap();
 
     state.index = window.insert_rectangle( square_id, rect1 );
 
@@ -76,7 +70,6 @@ pub fn main() -> Result<(), String> {
         if rx_updates.is_ok() {
             let updates = rx_updates.unwrap();
             for update in updates {
-                println!("applying props={}", &update.props.len());
                 if let Some(target) = window.get_mut_rectangle(update.id) {
                     target.render_update(&update.props);
                 }
@@ -95,7 +88,7 @@ pub fn main() -> Result<(), String> {
                 _ => {}
             }
         }
-        // std::thread::sleep(Duration::from_millis(1));
+        std::thread::sleep(Duration::from_millis(1));
 
         true
     })).run();

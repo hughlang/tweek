@@ -25,8 +25,8 @@ name = "channel"
 path = "examples/orb/channel.rs"
 
 [[bin]]
-name = "movedemo"
-path = "examples/orb/movedemo.rs"
+name = "crossbeam"
+path = "examples/orb/crossbeam.rs"
 
 [[bin]]
 name = "drawing"

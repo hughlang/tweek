@@ -2,10 +2,10 @@
 extern crate orbrender;
 
 use crossbeam_channel::*;
-use std::{any::TypeId, collections::HashMap};
-use std::time::{Duration, Instant};
-use std::any::Any;
 use crossbeam_utils::thread;
+use std::{collections::HashMap};
+use std::time::{Duration, Instant};
+// use std::any::Any;
 
 use super::property::*;
 use super::animator::*;
@@ -192,7 +192,6 @@ pub fn move_y(v: f64) -> Prop {
 pub trait Tweenable {
     // fn lerp(t: f64, end: Self) -> Self;
     // fn distance_to(other: Self) -> f64;
-    fn get_key(&self) -> TypeId;
     fn get_prop(&self, prop: &Prop) -> Prop;
     fn apply(&mut self, prop: &Prop);
     fn apply_props(&mut self, props: Vec<Prop>) {
@@ -205,8 +204,6 @@ pub trait Tweenable {
 }
 
 impl Tweenable for orbrender::render_objects::Rectangle {
-
-    fn get_key(&self) -> TypeId { TypeId::of::<orbrender::render_objects::Rectangle>() }
 
     fn apply(&mut self, prop: &Prop) {
         match prop {
