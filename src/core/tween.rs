@@ -17,7 +17,11 @@ pub enum TweenMode {
     FromTo,
 }
 
+/// A Tween represents a group of animation Props that will be applied to the set of animators.
+/// Only one duration timeline exists for all animators.
+/// An AnimationState enum controls what animation can happen.
 pub struct Tween {
+    state: AnimState,
     delay_s: f64,
     duration_s: f64,
     progress_s: f64,
@@ -34,6 +38,7 @@ impl Tween {
 
     pub fn new() -> Self {
         Tween {
+            state: AnimState::Idle,
             delay_s: 0.0,
             duration_s: 0.0,
             progress_s: 0.0,
@@ -78,59 +83,24 @@ impl Tween {
         // let mut workers:Vec<Animator> = Vec::new();
         let animator = Animator::create(0, &self.start_props, &self.end_props, &self.duration_s);
         self.animators.insert(0, animator);
-    }
-
-    /// This should be called by a run loop to tell the animation to update itself
-    pub fn update_async(&mut self) {
-
-        let (tx, rx) = bounded::<Vec<Prop>>(1);
-        thread::scope(|scope| {
-                for animator in self.animators.values() {
-                    let (tx, rx) = (tx.clone(), rx.clone());
-                    scope.spawn(move |_| {
-                        let ui_state = animator.update();
-                        tx.send(ui_state.props).unwrap();
-                    });
-                    // let props = thread.join().unwrap();
-
-                    let _props: Vec<Prop> = rx.recv().unwrap();
-                    if _props.len() > 0 {
-                        println!("props={:?}", _props);
-                        self.props_cache.insert(animator.id, _props);
-                        // self.animators.insert(animator.id, _props);
-                        // Tween::save_props(animator.id, _props);
-                    }
-                }
-        }).unwrap();
-
-        // for animator in self.animators.values() {
-        //     let props = thread::scope(|s| {
-        //         let thread = s.spawn(|_| {
-        //             animator.update()
-        //         });
-        //         thread.join().unwrap()
-        //     }).unwrap();
-        //     self.props_cache.insert(animator.id, props);
-        // }
-
+        self.state = AnimState::Running;
     }
 
     pub fn get_updates(&self) -> Vec<UIState> {
         let mut results: Vec<UIState> = Vec::new();
-        for animator in self.animators.values() {
-            let ui_state = animator.update();
-            if ui_state.props.len() > 0 {
-                results.push(ui_state);
-            }
+        match self.state {
+            AnimState::Running => {
+                for animator in self.animators.values() {
+                    let ui_state = animator.update();
+                    if ui_state.props.len() > 0 {
+                        results.push(ui_state);
+                    }
+                }
+            },
+            _ => ()
         }
         results
     }
-
-    // pub fn render(&self, _target: &Tweenable, _id: &usize) {
-    //     if let Some(props) = self.props_cache.get(_id) {
-    //         _target.render(props);
-    //     }
-    // }
 }
 
 pub fn position(x: f64, y: f64) -> Prop {

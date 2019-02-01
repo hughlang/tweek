@@ -8,7 +8,7 @@ use super::property::*;
 
 #[allow(dead_code)]
 
-pub enum AnimationState {
+pub enum AnimState {
     Pending,
     Running,
     Idle,

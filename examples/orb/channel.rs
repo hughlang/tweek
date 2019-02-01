@@ -27,15 +27,10 @@ struct AnimState {
 pub fn main() -> Result<(), String> {
     // let
     let mut window = WindowBuilder::new()
-        .with_title("Tween :: movedemo")
+        .with_title("Tween :: channel demo")
         .with_background(Color::rgb(59, 67, 74))
         .with_size(Size::new(800.0, 600.0))
         .build();
-
-    let mut state = AnimState {
-        frame: (10.0, 40.0, 40.0, 40.0),
-        index: 0,
-    };
 
     let square_id = 0;
     let rect1 = Rectangle::default()
@@ -56,8 +51,6 @@ pub fn main() -> Result<(), String> {
             std::thread::sleep(Duration::from_millis(1));
         }
     });
-
-    state.index = window.insert_rectangle( square_id, rect1 );
 
     let arc_update = Arc::new(AtomicBool::new(true));
 
