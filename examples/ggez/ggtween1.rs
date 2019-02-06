@@ -36,7 +36,7 @@ struct Assets {
 
 impl Assets {
     fn new(_ctx: &mut Context) -> GameResult<Assets> {
-        let square_item = ItemState::new(0.0, 0.0, 50.0, 50.0)?;
+        let square_item = ItemState::new(SQUARE_ITEM_ID, 0.0, 0.0, 50.0, 50.0)?;
         Ok(Assets {
             square_item,
         })
@@ -44,14 +44,16 @@ impl Assets {
 }
 
 struct ItemState {
+    id: usize,
     bounds: graphics::Rect,
     fill_color: graphics::Color,
 }
 
 impl ItemState {
-    fn new(x: f32, y: f32, w: f32, h: f32) -> GameResult<ItemState> {
+    fn new(id: usize, x: f32, y: f32, w: f32, h: f32) -> GameResult<ItemState> {
         let rect = graphics::Rect::new(x, y, w, h);
         Ok(ItemState {
+            id: id,
             bounds: rect,
             fill_color: graphics::WHITE,
         })
@@ -123,7 +125,8 @@ impl event::EventHandler for MainState {
         if let Some(tween) = &self.square_tween {
             if let Some(update) = tween.update_item(&SQUARE_ITEM_ID) {
                 self.assets.square_item.bounds.render_update(&update.props);
-                self.square_state = update;
+                self.assets.square_item.fill_color.render_update(&update.props);
+                // self.square_state = update;
             }
         }
         Ok(())
@@ -132,7 +135,7 @@ impl event::EventHandler for MainState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, graphics::BLACK);
 
-        let r1 = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::Fill, self.assets.square_item.bounds, graphics::WHITE)?;
+        let r1 = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::Fill, self.assets.square_item.bounds, self.assets.square_item.fill_color)?;
         let x = r1.blend_mode();
 
         let drawparams = graphics::DrawParam::new();
