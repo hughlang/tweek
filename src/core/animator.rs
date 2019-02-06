@@ -85,6 +85,13 @@ impl Animator {
             //         return Prop::Color(ColorRGBA::new(0.0, 0.0, 0.0, 0.0));
             //     }
             // },
+            Prop::Alpha(v1) => {
+                let v2 = unwrap_to!(target => Prop::Alpha);
+                let out = v1.lerp(*v2, scale);
+                println!("Interpolated to: {}", out[0]);
+                Prop::Alpha(out)
+
+            },
             Prop::Position(m1) => {
                 let m2 = unwrap_to!(target => Prop::Position);
                 // println!("m1={:?} m2={:?}", m1, m2);

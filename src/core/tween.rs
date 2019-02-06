@@ -68,7 +68,9 @@ impl Tween {
         }
 
         for prop in props_map.values() {
+            println!("found prop={:?}", prop);
             let start_prop = _target.get_prop(&prop);
+
             match start_prop {
                 Prop::None => {
                     // If the object itself doesn't support the given property, use a default value
@@ -110,6 +112,7 @@ impl Tween {
         if self.tween_id == 0 {
             self.tween_id = self.animators.len();
         }
+        println!("start={:?} end={:?}", &self.start_props, &self.end_props);
         let animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.duration_s);
         self.animators.insert(self.tween_id, animator);
         self.state = AnimState::Running;
