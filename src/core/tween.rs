@@ -122,8 +122,6 @@ pub fn move_y(v: f64) -> Prop {
 // #####################################################################################
 
 pub trait Tweenable {
-    // fn lerp(t: f64, end: Self) -> Self;
-    // fn distance_to(other: Self) -> f64;
     fn get_prop(&self, prop: &Prop) -> Prop;
     fn apply(&mut self, prop: &Prop);
     fn apply_props(&mut self, props: Vec<Prop>) {

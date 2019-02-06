@@ -54,8 +54,8 @@ pub fn main() -> Result<(), String> {
         // for msg in &rx {
             for update in msg {
                 window.get_mut_rectangle(update.id).unwrap().render_update(&update.props);
-                window.render();
             }
+            window.render();
         // }
 
         // let rx_updates = rx.try_recv();
