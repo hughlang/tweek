@@ -1,5 +1,4 @@
 /// This is the core Tween model and functions.
-extern crate orbrender;
 extern crate ggez;
 
 use crossbeam_channel::*;
@@ -198,33 +197,5 @@ impl Tweenable for ggez::graphics::Rect {
             _ => Prop::None,
         }
     }
-}
-
-impl Tweenable for orbrender::render_objects::Rectangle {
-
-    fn apply(&mut self, prop: &Prop) {
-        match prop {
-            Prop::Position(pos) => { self.position.x = pos[0]; self.position.y = pos[1] },
-            _ => ()
-        }
-    }
-
-    fn get_prop(&self, prop: &Prop) -> Prop {
-        match prop {
-            Prop::Alpha(_) => { Prop::Alpha(FloatProp::new(1.0)) },
-            Prop::Color(_) => {
-                if let Some(color) = self.background {
-                    return Prop::Color(ColorRGBA::new(color.r_f(), color.g_f(), color.b_f(), color.a_f()));
-                } else {
-                    return Prop::Color(ColorRGBA::new(0.0, 0.0, 0.0, 0.0));
-                }
-            },
-            Prop::Position(_) => Prop::Position(Point2D::new(self.position.x, self.position.y)),
-            Prop::Size(_) => Prop::Size(Frame2D::new(self.size.width, self.size.height)),
-            _ => Prop::None,
-        }
-    }
-
-
 }
 

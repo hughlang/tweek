@@ -21,22 +21,6 @@ path = "src/lib.rs"
 # path = "examples/animate/tween0.rs"
 
 [[bin]]
-name = "channel"
-path = "examples/orb/channel.rs"
-
-[[bin]]
-name = "crossbeam"
-path = "examples/orb/crossbeam.rs"
-
-[[bin]]
-name = "drawing"
-path = "examples/orb/drawing.rs"
-
-[[bin]]
-name = "dragging"
-path = "examples/orb/dragging.rs"
-
-[[bin]]
 name = "ggloop"
 path = "examples/ggez/ggloop.rs"
 
@@ -58,6 +42,5 @@ unwrap_to = "0.1.0"
 crossbeam-channel = "0.3"
 crossbeam-utils = "0.6.5"
 ggez = { path = "../ggez" }
-orbrender = { path = "../orbrender" }
 # sdl2 = { path = "../rust-sdl2" }
 
