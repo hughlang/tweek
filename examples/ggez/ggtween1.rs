@@ -52,7 +52,7 @@ impl MainState {
         println!("Game resource path: {:?}", ctx.filesystem);
 
         let assets = Assets::new(ctx)?;
-        let mut tween = Tween::animate(&assets.square_rect, vec![position(640.0, 480.0)]).duration(4.0).with_id(SQUARE_ITEM_ID);
+        let mut tween = Tween::animate(&assets.square_rect, vec![position(640.0, 480.0), alpha(0.5)]).duration(2.0).with_id(SQUARE_ITEM_ID);
         &tween.play();
 
         let s = MainState {
@@ -89,10 +89,9 @@ impl event::EventHandler for MainState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
+        graphics::clear(ctx, graphics::BLACK);
 
-        let r1 =
-            graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::Fill, self.assets.square_rect, graphics::WHITE)?;
+        let r1 = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::Fill, self.assets.square_rect, graphics::WHITE)?;
         graphics::draw(ctx, &r1, DrawParam::default())?;
 
         graphics::present(ctx)?;
@@ -113,7 +112,7 @@ pub fn main() -> GameResult {
     };
 
     let cb = ContextBuilder::new("tween0", "tweenkit")
-        .window_setup(conf::WindowSetup::default().title("Astroblasto!"))
+        .window_setup(conf::WindowSetup::default().title("Tween test"))
         .window_mode(conf::WindowMode::default().dimensions(640.0, 480.0))
         .add_resource_path(resource_dir);
 

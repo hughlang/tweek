@@ -156,6 +156,9 @@ pub fn move_y(v: f64) -> Prop {
     Prop::Position(Frame2D::new(0.0, v))
 }
 
+pub fn alpha(v: f64) -> Prop {
+    Prop::Alpha(FloatProp::new(v))
+}
 
 // #####################################################################################
 
@@ -182,7 +185,7 @@ impl Tweenable for ggez::graphics::Rect {
 
     fn get_prop(&self, prop: &Prop) -> Prop {
         match prop {
-            Prop::Alpha(_) => { Prop::Alpha(1.0) },
+            Prop::Alpha(_) => { Prop::Alpha(FloatProp::new(1.0)) },
             // Prop::Color(_) => {
             //     if let Some(color) = self.background {
             //         return Prop::Color(ColorRGBA::new(color.r_f(), color.g_f(), color.b_f(), color.a_f()));
@@ -208,7 +211,7 @@ impl Tweenable for orbrender::render_objects::Rectangle {
 
     fn get_prop(&self, prop: &Prop) -> Prop {
         match prop {
-            Prop::Alpha(_) => { Prop::Alpha(1.0) },
+            Prop::Alpha(_) => { Prop::Alpha(FloatProp::new(1.0)) },
             Prop::Color(_) => {
                 if let Some(color) = self.background {
                     return Prop::Color(ColorRGBA::new(color.r_f(), color.g_f(), color.b_f(), color.a_f()));

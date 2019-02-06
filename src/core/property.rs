@@ -3,6 +3,7 @@
 
 use cgmath::*;
 
+pub type FloatProp = Vector1<f64>;
 pub type ColorRGB = Vector3<f64>;
 pub type ColorRGBA = Vector4<f64>;
 pub type Point2D = Vector2<f64>;
@@ -11,7 +12,7 @@ pub type Frame2D = Vector2<f64>;
 #[derive(Copy, Clone, Debug)]
 pub enum Prop {
     None,
-    Alpha(f64),
+    Alpha(FloatProp),
     Color(ColorRGBA),
     Position(Point2D),
     Size(Frame2D),
