@@ -28,8 +28,7 @@ pub struct Tween {
     progress_s: f64,
     start_props: Vec<Prop>,
     end_props: Vec<Prop>,
-    animators: HashMap<u32, Animator>,
-    props_cache: HashMap<usize, Vec<Prop>>,
+    animators: HashMap<usize, Animator>,
 }
 
 /// This is necessary for Orbrender Window to impose thread safety
@@ -46,13 +45,34 @@ impl Tween {
             start_props: Vec::new(),
             end_props: Vec::new(),
             animators: HashMap::new(),
-            props_cache: HashMap::new(),
         }
     }
 
     pub fn duration(mut self, _seconds: f64) -> Self {
         self.duration_s = _seconds;
         self
+    }
+
+    pub fn to(_target: &Tweenable, _props: Vec<Prop>) -> Self {
+        let mut tween = Tween::new();
+        let mut props_map: HashMap<u32, Prop> = HashMap::new();
+
+        // De-dupe props with a hashmap, just in case.
+        for prop in _props {
+            props_map.insert(prop.prop_id(), prop.clone());
+        }
+
+        for prop in props_map.values() {
+            let start_prop = _target.get_prop(&prop);
+            match start_prop {
+                Prop::None => {},
+                _ => {
+                    tween.start_props.push(start_prop);
+                    tween.end_props.push(prop.clone());
+                }
+            }
+        }
+        tween
     }
 
     /// Called externally. TODO: rename to "to"
@@ -79,12 +99,12 @@ impl Tween {
     }
 
     /// Execute all functions in the queue
-    pub fn play(&mut self) {
-        // for each queued prop, construct animators that have the start and end state.
-        // let mut workers:Vec<Animator> = Vec::new();
-        let animator = Animator::create(0, &self.start_props, &self.end_props, &self.duration_s);
-        self.animators.insert(0, animator);
+    pub fn play(&mut self) -> usize {
+        let item_id = self.animators.len();
+        let animator = Animator::create(item_id, &self.start_props, &self.end_props, &self.duration_s);
+        self.animators.insert(item_id, animator);
         self.state = AnimState::Running;
+        item_id
     }
 
     pub fn get_updates(&self) -> Vec<UIState> {
@@ -101,6 +121,11 @@ impl Tween {
             _ => ()
         }
         results
+    }
+
+
+    pub fn update_all(&self) {
+        // For each animator, do stuff
     }
 }
 
@@ -124,13 +149,13 @@ pub fn move_y(v: f64) -> Prop {
 pub trait Tweenable {
     fn get_prop(&self, prop: &Prop) -> Prop;
     fn apply(&mut self, prop: &Prop);
-    fn apply_props(&mut self, props: Vec<Prop>) {
+    // fn render_update(&mut self, props: &Vec<Prop>);
+    fn render_update(&mut self, props: &Vec<Prop>) {
         for prop in props {
-            self.apply(&prop);
+            self.apply(prop);
         }
     }
-    fn render(&mut self, props: &Vec<Prop>);
-    fn render_update(&mut self, props: &Vec<Prop>);
+
 }
 
 impl Tweenable for ggez::graphics::Rect {
@@ -157,19 +182,6 @@ impl Tweenable for ggez::graphics::Rect {
             _ => Prop::None,
         }
     }
-
-    fn render(&mut self, props: &Vec<Prop>) {
-        for prop in props {
-            self.apply(prop);
-        }
-    }
-
-    fn render_update(&mut self, props: &Vec<Prop>) {
-        for prop in props {
-            self.apply(prop);
-        }
-    }
-
 }
 
 impl Tweenable for orbrender::render_objects::Rectangle {
@@ -197,17 +209,6 @@ impl Tweenable for orbrender::render_objects::Rectangle {
         }
     }
 
-    fn render(&mut self, props: &Vec<Prop>) {
-        for prop in props {
-            self.apply(prop);
-        }
-    }
-
-    fn render_update(&mut self, props: &Vec<Prop>) {
-        for prop in props {
-            self.apply(prop);
-        }
-    }
 
 }
 

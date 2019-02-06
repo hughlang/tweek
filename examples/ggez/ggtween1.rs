@@ -17,7 +17,7 @@ struct Assets {
 }
 
 impl Assets {
-    fn new(ctx: &mut Context) -> GameResult<Assets> {
+    fn new(_ctx: &mut Context) -> GameResult<Assets> {
         let square_rect = graphics::Rect::new(100.0, 200.0, 50.0, 50.0);
         Ok(Assets {
             square_rect,
@@ -38,7 +38,7 @@ impl MainState {
 
         let assets = Assets::new(ctx)?;
         let mut tweens: Vec<Tween> = Vec::new();
-        let mut tween = Tween::animate(&assets.square_rect, vec![position(300.0, 100.0)]).duration(4.0);
+        let mut tween = Tween::animate(&assets.square_rect, vec![position(640.0, 480.0)]).duration(4.0);
         &tween.play();
         tweens.push(tween);
 
@@ -84,7 +84,7 @@ pub fn main() -> GameResult {
         path::PathBuf::from("./resources")
     };
 
-    let cb = ContextBuilder::new("tween0", "ggez")
+    let cb = ContextBuilder::new("tween0", "tweenkit")
         .window_setup(conf::WindowSetup::default().title("Astroblasto!"))
         .window_mode(conf::WindowMode::default().dimensions(640.0, 480.0))
         .add_resource_path(resource_dir);
