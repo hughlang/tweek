@@ -11,19 +11,6 @@ use std::time::{Duration};
 use std::sync::atomic::{self, AtomicBool};
 use std::sync::Arc;
 
-// use crate::{
-//     // orbrender::events::*,
-//     // orbrender::render_objects::{Rectangle, RenderObject, Text, Image},
-//     // orbrender::structs::*,
-//     // orbrender::traits::Window,
-//     orbrender::window::WindowBuilder,
-// };
-
-struct AnimState {
-    pub frame: (f64, f64, f64, f64),
-    pub index: usize,
-}
-
 pub fn main() -> Result<(), String> {
     // let
     let mut window = WindowBuilder::new()
@@ -33,6 +20,8 @@ pub fn main() -> Result<(), String> {
         .build();
 
     let square_id = 0;
+    // let mut running = false;
+
     let rect1 = Rectangle::default()
             .with_size(Size::new(40.0, 40.0))
             .with_position(Point::new(10.0, 10.0))
@@ -40,7 +29,7 @@ pub fn main() -> Result<(), String> {
 
     let mut tween = Tween::animate(&rect1, vec![position(300.0, 100.0)]).duration(4.0);
     &tween.play();
-    let (tx, rx) = bounded::<Vec<UIState>>(0);
+    let (tx, rx) = bounded::<Vec<UIState>>(1);
 
     std::thread::spawn(move || {
         loop {
@@ -52,6 +41,8 @@ pub fn main() -> Result<(), String> {
         }
     });
 
+    window.insert_rectangle( square_id, rect1 );
+
     let arc_update = Arc::new(AtomicBool::new(true));
 
     Runner::new(Box::new(move || {
@@ -59,16 +50,24 @@ pub fn main() -> Result<(), String> {
             window.render();
             arc_update.store(false, atomic::Ordering::Release);
         }
-        let rx_updates = rx.try_recv();
-        if rx_updates.is_ok() {
-            let updates = rx_updates.unwrap();
-            for update in updates {
-                if let Some(target) = window.get_mut_rectangle(update.id) {
-                    target.render_update(&update.props);
-                }
+        let msg = rx.recv().unwrap();
+        // for msg in &rx {
+            for update in msg {
+                window.get_mut_rectangle(update.id).unwrap().render_update(&update.props);
+                window.render();
             }
-            arc_update.store(true, atomic::Ordering::Release);
-        }
+        // }
+
+        // let rx_updates = rx.try_recv();
+        // if rx_updates.is_ok() {
+        //     let updates = rx_updates.unwrap();
+        //     for update in updates {
+        //         if let Some(target) = window.get_mut_rectangle(update.id) {
+        //             target.render_update(&update.props);
+        //         }
+        //     }
+        //     arc_update.store(true, atomic::Ordering::Release);
+        // }
 
         for event in window.events() {
             match event {

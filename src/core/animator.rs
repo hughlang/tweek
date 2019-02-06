@@ -63,10 +63,10 @@ impl Animator {
         let elapsed = self.start_time.elapsed();
         let progress = elapsed.as_float_secs() / self.duration.as_float_secs();
         if progress > 0.0 && progress <= 1.0 {
-            // println!("----------------------------------------------");
-            // println!("elapsed={} progress={}", elapsed.as_float_secs(), progress);
             for (i, prop) in self.start.props.iter().enumerate() {
                 let current = Animator::interpolate(prop, &self.end.props[i], progress);
+                // println!("----------------------------------------------");
+                // println!("elapsed={} progress={}", elapsed.as_float_secs(), progress);
                 props.push(current);
             }
         }
@@ -89,7 +89,7 @@ impl Animator {
                 let m2 = unwrap_to!(target => Prop::Position);
                 // println!("m1={:?} m2={:?}", m1, m2);
                 let out = m1.lerp(*m2, scale);
-                // println!("Interpolated to: x={} y={}", out[0], out[1]);
+                println!("Interpolated to: x={} y={}", out[0], out[1]);
                 Prop::Position(out)
             },
             // Prop::Size(_) => Prop::Size(Frame2D::new(self.size.width, self.size.height)),

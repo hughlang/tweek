@@ -1,5 +1,6 @@
 /// This is the core Tween model and functions.
 extern crate orbrender;
+extern crate ggez;
 
 use crossbeam_channel::*;
 use crossbeam_utils::thread;
@@ -132,6 +133,45 @@ pub trait Tweenable {
     }
     fn render(&mut self, props: &Vec<Prop>);
     fn render_update(&mut self, props: &Vec<Prop>);
+}
+
+impl Tweenable for ggez::graphics::Rect {
+
+    fn apply(&mut self, prop: &Prop) {
+        match prop {
+            Prop::Position(pos) => { self.x = pos[0] as f32; self.y = pos[1] as f32 },
+            _ => ()
+        }
+    }
+
+    fn get_prop(&self, prop: &Prop) -> Prop {
+        match prop {
+            Prop::Alpha(_) => { Prop::Alpha(1.0) },
+            // Prop::Color(_) => {
+            //     if let Some(color) = self.background {
+            //         return Prop::Color(ColorRGBA::new(color.r_f(), color.g_f(), color.b_f(), color.a_f()));
+            //     } else {
+            //         return Prop::Color(ColorRGBA::new(0.0, 0.0, 0.0, 0.0));
+            //     }
+            // },
+            Prop::Position(_) => Prop::Position(Point2D::new(self.x as f64, self.y as f64)),
+            Prop::Size(_) => Prop::Size(Frame2D::new(self.w as f64, self.h as f64)),
+            _ => Prop::None,
+        }
+    }
+
+    fn render(&mut self, props: &Vec<Prop>) {
+        for prop in props {
+            self.apply(prop);
+        }
+    }
+
+    fn render_update(&mut self, props: &Vec<Prop>) {
+        for prop in props {
+            self.apply(prop);
+        }
+    }
+
 }
 
 impl Tweenable for orbrender::render_objects::Rectangle {
