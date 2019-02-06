@@ -29,6 +29,7 @@ pub struct Tween {
     start_props: Vec<Prop>,
     end_props: Vec<Prop>,
     animators: HashMap<usize, Animator>,
+    tween_id: usize,
 }
 
 /// This is necessary for Orbrender Window to impose thread safety
@@ -45,11 +46,18 @@ impl Tween {
             start_props: Vec::new(),
             end_props: Vec::new(),
             animators: HashMap::new(),
+            tween_id: 0,
         }
     }
 
     pub fn duration(mut self, _seconds: f64) -> Self {
         self.duration_s = _seconds;
+        self
+    }
+
+    /// Optional function to manually set the tween_id for a single object
+    pub fn with_id(mut self, id: usize) -> Self {
+        self.tween_id = id;
         self
     }
 
@@ -100,11 +108,13 @@ impl Tween {
 
     /// Execute all functions in the queue
     pub fn play(&mut self) -> usize {
-        let item_id = self.animators.len();
-        let animator = Animator::create(item_id, &self.start_props, &self.end_props, &self.duration_s);
-        self.animators.insert(item_id, animator);
+        if self.tween_id == 0 {
+            self.tween_id = self.animators.len();
+        }
+        let animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.duration_s);
+        self.animators.insert(self.tween_id, animator);
         self.state = AnimState::Running;
-        item_id
+        self.tween_id
     }
 
     pub fn get_updates(&self) -> Vec<UIState> {
@@ -123,9 +133,12 @@ impl Tween {
         results
     }
 
-
-    pub fn update_all(&self) {
-        // For each animator, do stuff
+    pub fn update_item(&self, id: &usize) -> Option<UIState> {
+        if let Some(animator) = self.animators.get(id) {
+            let ui_state = animator.update();
+            return Some(ui_state);
+        }
+        None
     }
 }
 

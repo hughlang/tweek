@@ -6,11 +6,28 @@ extern crate tween;
 use ggez::conf;
 use ggez::event;
 use ggez::graphics::{self, Drawable, DrawParam};
+use ggez::timer;
 use ggez::{Context, ContextBuilder, GameResult};
 
 use std::env;
 use std::path;
 use tween::*;
+
+const SQUARE_ITEM_ID: usize = 100;
+
+
+// #[derive(Debug)]
+// enum ActorType {
+//     Shape,
+//     Image,
+// }
+
+
+// #[derive(Debug)]
+// struct Actor {
+//     tag: ActorType,
+//     bbox_size: f32,
+// }
 
 struct Assets {
     square_rect: graphics::Rect,
@@ -18,7 +35,7 @@ struct Assets {
 
 impl Assets {
     fn new(_ctx: &mut Context) -> GameResult<Assets> {
-        let square_rect = graphics::Rect::new(100.0, 200.0, 50.0, 50.0);
+        let square_rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
         Ok(Assets {
             square_rect,
         })
@@ -27,9 +44,7 @@ impl Assets {
 
 struct MainState {
     assets: Assets,
-    tweens: Vec<Tween>,
-    screen_width: f32,
-    screen_height: f32,
+    square_tween: Option<Tween>,
 }
 
 impl MainState {
@@ -37,29 +52,39 @@ impl MainState {
         println!("Game resource path: {:?}", ctx.filesystem);
 
         let assets = Assets::new(ctx)?;
-        let mut tweens: Vec<Tween> = Vec::new();
-        let mut tween = Tween::animate(&assets.square_rect, vec![position(640.0, 480.0)]).duration(4.0);
+        let mut tween = Tween::animate(&assets.square_rect, vec![position(640.0, 480.0)]).duration(4.0).with_id(SQUARE_ITEM_ID);
         &tween.play();
-        tweens.push(tween);
 
         let s = MainState {
-            assets,
-            tweens,
-            screen_width: ctx.conf.window_mode.width,
-            screen_height: ctx.conf.window_mode.height,
+            assets: assets,
+            square_tween: Some(tween),
         };
         Ok(s)
     }
 }
 
+// fn draw_actor(
+//     assets: &mut Assets,
+//     ctx: &mut Context,
+//     actor: &Actor,
+//     world_coords: (f32, f32),
+// ) -> GameResult {
+//     let drawparams = graphics::DrawParam::new()
+//         .dest(pos)
+//         // .rotation(actor.facing as f32)
+//         // .offset(Point2::new(0.5, 0.5));
+//     graphics::draw(ctx, image, drawparams)
+// }
+
+
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        for tween in &self.tweens {
-            let updates = tween.get_updates();
-            for update in updates {
+        if let Some(tween) = &self.square_tween {
+            if let Some(update) = tween.update_item(&SQUARE_ITEM_ID) {
                 self.assets.square_rect.render_update(&update.props);
             }
         }
+
         Ok(())
     }
 
@@ -71,6 +96,9 @@ impl event::EventHandler for MainState {
         graphics::draw(ctx, &r1, DrawParam::default())?;
 
         graphics::present(ctx)?;
+
+        timer::yield_now();
+
         Ok(())
     }
 }
