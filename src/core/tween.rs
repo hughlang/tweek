@@ -1,8 +1,6 @@
 /// This is the core Tween model and functions.
 extern crate ggez;
 
-use crossbeam_channel::*;
-use crossbeam_utils::thread;
 use std::{collections::HashMap};
 use std::time::{Duration, Instant};
 // use std::any::Any;
@@ -72,7 +70,9 @@ impl Tween {
         for prop in props_map.values() {
             let start_prop = _target.get_prop(&prop);
             match start_prop {
-                Prop::None => {},
+                Prop::None => {
+                    // If the object itself doesn't support the given property, use a default value
+                },
                 _ => {
                     tween.start_props.push(start_prop);
                     tween.end_props.push(prop.clone());
@@ -139,6 +139,8 @@ impl Tween {
         }
         None
     }
+
+
 }
 
 pub fn position(x: f64, y: f64) -> Prop {
@@ -170,7 +172,6 @@ pub trait Tweenable {
             self.apply(prop);
         }
     }
-
 }
 
 impl Tweenable for ggez::graphics::Rect {
@@ -197,5 +198,21 @@ impl Tweenable for ggez::graphics::Rect {
             _ => Prop::None,
         }
     }
+}
+
+impl Tweenable for ggez::graphics::Color {
+    fn apply(&mut self, prop: &Prop) {
+        match prop {
+            Prop::Alpha(val) => { self.a = val[0] as f32 },
+            _ => ()
+        }
+    }
+    fn get_prop(&self, prop: &Prop) -> Prop {
+        match prop {
+            Prop::Alpha(_) => { Prop::Alpha(FloatProp::new(1.0)) },
+            _ => Prop::None,
+        }
+    }
+
 }
 

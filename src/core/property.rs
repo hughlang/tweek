@@ -31,7 +31,10 @@ impl Prop {
     }
 }
 
+// impl
 // TODO: implement Scale, Translation, and Rotation
+
+#[derive(Default)]
 pub struct UIState {
     pub id: usize,
     pub props: Vec<Prop>,
@@ -43,6 +46,14 @@ impl UIState {
             id: _id,
             props: _props,
         }
+    }
+
+    pub fn get_prop_value(&self, prop_id: u32) -> Prop {
+        let mut iter = self.props.iter().filter( |x| x.prop_id() == prop_id );
+        if let Some(item) = &iter.next() {
+            return *item.clone();
+        }
+        Prop::None
     }
 }
 
