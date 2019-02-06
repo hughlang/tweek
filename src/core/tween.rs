@@ -58,6 +58,35 @@ impl Tween {
         self
     }
 
+    pub fn with(objects: &Vec<&Tweenable>, props:Vec<Prop>) -> Self {
+        let mut tween = Tween::new();
+        let mut props_map: HashMap<u32, Prop> = HashMap::new();
+
+        // De-dupe props with a hashmap, just in case.
+        for prop in props {
+            props_map.insert(prop.prop_id(), prop.clone());
+        }
+
+        for prop in props_map.values() {
+            println!("found prop={:?}", prop);
+
+            for object in objects {
+                let start_prop = object.get_prop(&prop);
+
+                match start_prop {
+                    Prop::None => {
+                        // If the object itself doesn't support the given property, use a default value
+                    },
+                    _ => {
+                        tween.start_props.push(start_prop);
+                        tween.end_props.push(prop.clone());
+                    }
+                }
+            }
+        }
+        tween
+
+    }
     pub fn to(_target: &Tweenable, _props: Vec<Prop>) -> Self {
         let mut tween = Tween::new();
         let mut props_map: HashMap<u32, Prop> = HashMap::new();

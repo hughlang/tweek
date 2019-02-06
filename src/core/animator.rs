@@ -88,7 +88,7 @@ impl Animator {
             Prop::Alpha(v1) => {
                 let v2 = unwrap_to!(target => Prop::Alpha);
                 let out = v1.lerp(*v2, scale);
-                println!("Interpolated to: {}", out[0]);
+                // println!("Interpolated to: {}", out[0]);
                 Prop::Alpha(out)
 
             },

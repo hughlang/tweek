@@ -71,7 +71,8 @@ impl MainState {
         println!("Game resource path: {:?}", ctx.filesystem);
 
         let assets = Assets::new(ctx)?;
-        let mut tween = Tween::to(&assets.square_item.fill_color, vec![position(640.0, 480.0), alpha(0.1)]).duration(2.0).with_id(SQUARE_ITEM_ID);
+        let item = &assets.square_item;
+        let mut tween = Tween::with(&vec![&item.bounds, &item.fill_color], vec![position(640.0, 480.0), alpha(0.1)]).duration(2.0).with_id(SQUARE_ITEM_ID);
         &tween.play();
 
         let s = MainState {
