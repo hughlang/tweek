@@ -8,12 +8,14 @@ use ggez::event;
 use ggez::graphics::{self, Drawable, DrawParam};
 use ggez::timer;
 use ggez::{Context, ContextBuilder, GameResult};
+use ggez::nalgebra as na;
 
 use std::env;
 use std::path;
 use tween::*;
 
 const SQUARE_ITEM_ID: usize = 100;
+const ROUND_ITEM_ID: usize = 101;
 
 
 // #[derive(Debug)]
@@ -32,13 +34,17 @@ const SQUARE_ITEM_ID: usize = 100;
 struct Assets {
     // square_rect: graphics::Rect,
     square_item: ItemState,
+    round_item: ItemState,
 }
 
 impl Assets {
     fn new(_ctx: &mut Context) -> GameResult<Assets> {
         let square_item = ItemState::new(SQUARE_ITEM_ID, 0.0, 0.0, 50.0, 50.0)?;
+        let mut round_item = ItemState::new(ROUND_ITEM_ID, 500.0, 200.0, 80.0, 80.0)?;
+        round_item.fill_color = graphics::Color::from_rgb_u32(0xCD09AA);
         Ok(Assets {
             square_item,
+            round_item,
         })
     }
 }
@@ -64,6 +70,7 @@ impl ItemState {
 struct MainState {
     assets: Assets,
     square_tween: Option<Tween>,
+    round_tween: Option<Tween>,
 }
 
 impl MainState {
@@ -71,13 +78,21 @@ impl MainState {
         println!("Game resource path: {:?}", ctx.filesystem);
 
         let assets = Assets::new(ctx)?;
-        let item = &assets.square_item;
-        let mut tween = Tween::with(&vec![&item.bounds, &item.fill_color], vec![position(640.0, 480.0), alpha(0.1)]).duration(2.0).with_id(SQUARE_ITEM_ID);
-        &tween.play();
+        let item1 = &assets.square_item;
+
+        let mut tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color],
+            vec![position(400.0, 300.0), size(100.0, 100.0), alpha(0.1)]).duration(2.0).with_id(SQUARE_ITEM_ID);
+        &tween1.play();
+
+        let item2 = &assets.round_item;
+        let mut tween2 = Tween::with(&vec![&item2.bounds, &item2.fill_color],
+            vec![position(40.0, 400.0), alpha(0.2)]).duration(2.0).with_id(ROUND_ITEM_ID);
+        &tween2.play();
 
         let s = MainState {
             assets: assets,
-            square_tween: Some(tween),
+            square_tween: Some(tween1),
+            round_tween: Some(tween2),
         };
         Ok(s)
     }
@@ -86,13 +101,21 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
+        // Here is where you tell which objects to update in each run loop.
+        // MainState will have one or more Tween objects that need to be updated.
         if let Some(tween) = &self.square_tween {
             if let Some(update) = tween.update_item(&SQUARE_ITEM_ID) {
                 self.assets.square_item.bounds.render_update(&update.props);
                 self.assets.square_item.fill_color.render_update(&update.props);
-                // self.square_state = update;
             }
         }
+        if let Some(tween) = &self.round_tween {
+            if let Some(update) = tween.update_item(&ROUND_ITEM_ID) {
+                self.assets.round_item.bounds.render_update(&update.props);
+                self.assets.round_item.fill_color.render_update(&update.props);
+            }
+        }
+
         Ok(())
     }
 
@@ -100,13 +123,17 @@ impl event::EventHandler for MainState {
         graphics::clear(ctx, graphics::BLACK);
 
         let r1 = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::Fill, self.assets.square_item.bounds, self.assets.square_item.fill_color)?;
-        let x = r1.blend_mode();
-
         let drawparams = graphics::DrawParam::new();
         //     .dest(Point2::new(r1.buffer, y));
             // .rotation(actor.facing as f32)
             // .offset(Point2::new(0.5, 0.5));
         let _result = graphics::draw(ctx, &r1, drawparams);
+
+
+        let p2 = na::Point2::new(self.assets.round_item.bounds.x, self.assets.round_item.bounds.y);
+        let r2 = graphics::Mesh::new_circle(ctx, graphics::DrawMode::Fill, p2, self.assets.round_item.bounds.h / 2.0, 1.0, self.assets.round_item.fill_color)?;
+        // let drawparams = graphics::DrawParam::new();
+        let _result = graphics::draw(ctx, &r2, drawparams);
 
         graphics::present(ctx)?;
 
@@ -115,16 +142,6 @@ impl event::EventHandler for MainState {
         Ok(())
     }
 }
-
-fn _create_drawable(ctx: &mut Context, rect: &graphics::Rect, ui_state: &UIState) -> GameResult {
-    let r1 = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::Fill, rect.clone(), graphics::WHITE)?;
-    let drawparams = graphics::DrawParam::new();
-        //     .dest(Point2::new(r1.buffer, y));
-            // .rotation(actor.facing as f32)
-            // .offset(Point2::new(0.5, 0.5));
-    graphics::draw(ctx, &r1, drawparams)
-}
-
 
 pub fn main() -> GameResult {
     let resource_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {

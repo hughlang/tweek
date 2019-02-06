@@ -21,14 +21,6 @@ path = "src/lib.rs"
 # path = "examples/animate/tween0.rs"
 
 [[bin]]
-name = "ggloop"
-path = "examples/ggez/ggloop.rs"
-
-[[bin]]
-name = "ggsimple"
-path = "examples/ggez/ggsimple.rs"
-
-[[bin]]
 name = "ggtween1"
 path = "examples/ggez/ggtween1.rs"
 
@@ -42,5 +34,4 @@ unwrap_to = "0.1.0"
 crossbeam-channel = "0.3"
 crossbeam-utils = "0.6.5"
 ggez = { path = "../ggez" }
-# sdl2 = { path = "../rust-sdl2" }
 

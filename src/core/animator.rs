@@ -99,7 +99,12 @@ impl Animator {
                 println!("Interpolated to: x={} y={}", out[0], out[1]);
                 Prop::Position(out)
             },
-            // Prop::Size(_) => Prop::Size(Frame2D::new(self.size.width, self.size.height)),
+            Prop::Size(v1) => {
+                let v2 = unwrap_to!(target => Prop::Size);
+                let out = v1.lerp(*v2, scale);
+                // println!("Interpolated to: {}", out[0]);
+                Prop::Size(out)
+            },
             _ => Prop::None,
         };
 
