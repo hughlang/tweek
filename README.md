@@ -2,6 +2,11 @@
 
 This is my attempt to write a Tween animation library for Rust.
 
+## Examples
+
+* cargo run --bin ggtween1
+* cargo run --bin ggease
+
 
 ## Developer Notes
 

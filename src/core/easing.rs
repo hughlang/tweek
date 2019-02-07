@@ -61,6 +61,66 @@ impl Easing {
             Easing::BackInOut    => Bezier::new(0.68, -0.55, 0.265, 1.55),
         }
     }
+
+    /// Convenience for printing the name
+    pub fn name(&self) -> String {
+        match self {
+            Easing::Linear => "Linear".to_string(),
+            Easing::SineIn => "SineIn".to_string(),
+            Easing::SineOut => "SineOut".to_string(),
+            Easing::SineInOut => "SineInOut".to_string(),
+            Easing::QuadIn => "QuadIn".to_string(),
+            Easing::QuadOut => "QuadOut".to_string(),
+            Easing::QuadInOut => "QuadInOut".to_string(),
+            Easing::CubicIn => "CubicIn".to_string(),
+            Easing::CubicOut => "CubicOut".to_string(),
+            Easing::CubicInOut => "CubicInOut".to_string(),
+            Easing::QuartIn => "QuartIn".to_string(),
+            Easing::QuartOut => "QuartOut".to_string(),
+            Easing::QuartInOut => "QuartInOut".to_string(),
+            Easing::QuintIn => "QuintIn".to_string(),
+            Easing::QuintOut => "QuintOut".to_string(),
+            Easing::QuintInOut => "QuintInOut".to_string(),
+            Easing::ExpoIn => "ExpoIn".to_string(),
+            Easing::ExpoOut => "ExpoOut".to_string(),
+            Easing::ExpoInOut => "ExpoInOut".to_string(),
+            Easing::CircIn => "CircIn".to_string(),
+            Easing::CircOut => "CircOut".to_string(),
+            Easing::CircInOut => "CircInOut".to_string(),
+            Easing::BackIn => "BackIn".to_string(),
+            Easing::BackOut => "BackOut".to_string(),
+            Easing::BackInOut => "BackInOut".to_string(),
+        }
+    }
+
+    pub fn get_list() -> Vec<Easing> {
+        let mut list: Vec<Easing> = Vec::new();
+        list.push(Easing::SineIn);
+        list.push(Easing::SineOut);
+        list.push(Easing::SineInOut);
+        list.push(Easing::QuadIn);
+        list.push(Easing::QuadOut);
+        list.push(Easing::QuadInOut);
+        list.push(Easing::CubicIn);
+        list.push(Easing::CubicOut);
+        list.push(Easing::CubicInOut);
+        list.push(Easing::QuartIn);
+        list.push(Easing::QuartOut);
+        list.push(Easing::QuartInOut);
+        list.push(Easing::QuintIn);
+        list.push(Easing::QuintOut);
+        list.push(Easing::QuintInOut);
+        list.push(Easing::ExpoIn);
+        list.push(Easing::ExpoOut);
+        list.push(Easing::ExpoInOut);
+        list.push(Easing::CircIn);
+        list.push(Easing::CircOut);
+        list.push(Easing::CircInOut);
+        list.push(Easing::BackIn);
+        list.push(Easing::BackOut);
+        list.push(Easing::BackInOut);
+        list
+    }
 }
 
 pub struct BezierSolver {

@@ -5,32 +5,25 @@ extern crate tween;
 
 use ggez::conf;
 use ggez::event::{self, MouseButton};
-use ggez::graphics::{self, Drawable, DrawParam};
-use ggez::timer;
+use ggez::graphics::{self};
 use ggez::{Context, ContextBuilder, GameResult};
-use ggez::nalgebra as na;
 
 use std::env;
 use std::path;
 use tween::*;
 
 const SQUARE_ITEM_ID: usize = 100;
-const ROUND_ITEM_ID: usize = 101;
 
 struct Assets {
-    // square_rect: graphics::Rect,
     square_item: ItemState,
-    round_item: ItemState,
 }
 
 impl Assets {
     fn new(_ctx: &mut Context) -> GameResult<Assets> {
-        let square_item = ItemState::new(SQUARE_ITEM_ID, 0.0, 0.0, 50.0, 50.0)?;
-        let mut round_item = ItemState::new(ROUND_ITEM_ID, 500.0, 200.0, 80.0, 80.0)?;
-        round_item.fill_color = graphics::Color::from_rgb_u32(0xCD09AA);
+        let mut square_item = ItemState::new(SQUARE_ITEM_ID, 0.0, 0.0, 50.0, 50.0)?;
+        square_item.fill_color = graphics::Color::from_rgb_u32(0xCD09AA);
         Ok(Assets {
             square_item,
-            round_item,
         })
     }
 }
@@ -52,34 +45,25 @@ impl ItemState {
     }
 }
 
-
 struct MainState {
     assets: Assets,
-    square_tween: Option<Tween>,
-    round_tween: Option<Tween>,
+    square_tween: Tween,
+    ease_list: Vec<Easing>,
+    ease_index: usize,
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
-        println!("Game resource path: {:?}", ctx.filesystem);
 
         let assets = Assets::new(ctx)?;
         let item1 = &assets.square_item;
 
-        let mut tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color])
-            .to(vec![position(400.0, 300.0), size(100.0, 100.0), alpha(0.1)])
-            .duration(2.0).with_id(SQUARE_ITEM_ID);
-        &tween1.play();
-
-        // let item2 = &assets.round_item;
-        // let mut tween2 = Tween::with(&vec![&item2.bounds, &item2.fill_color],
-        //     vec![position(40.0, 400.0), alpha(0.2)]).duration(2.0).ease(Easing::SineIn).with_id(ROUND_ITEM_ID);
-        // &tween2.play();
-
+        let tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]).with_id(SQUARE_ITEM_ID);
         let s = MainState {
             assets: assets,
-            square_tween: Some(tween1),
-            round_tween: None,
+            square_tween: tween1,
+            ease_list: Easing::get_list(),
+            ease_index: 0,
         };
         Ok(s)
     }
@@ -90,50 +74,39 @@ impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         // Here is where you tell which objects to update in each run loop.
         // MainState will have one or more Tween objects that need to be updated.
-        if let Some(tween) = &self.square_tween {
-            if let Some(update) = tween.update_item(&SQUARE_ITEM_ID) {
-                self.assets.square_item.bounds.render_update(&update.props);
-                self.assets.square_item.fill_color.render_update(&update.props);
-            }
+        if let Some(update) = self.square_tween.update_item(&SQUARE_ITEM_ID) {
+            self.assets.square_item.bounds.render_update(&update.props);
+            self.assets.square_item.fill_color.render_update(&update.props);
         }
-        if let Some(tween) = &self.round_tween {
-            if let Some(update) = tween.update_item(&ROUND_ITEM_ID) {
-                self.assets.round_item.bounds.render_update(&update.props);
-                self.assets.round_item.fill_color.render_update(&update.props);
-            }
-        }
-
         Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, graphics::BLACK);
 
-        let r1 = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::Fill, self.assets.square_item.bounds, self.assets.square_item.fill_color)?;
+        let r1 = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::Fill,
+            self.assets.square_item.bounds, self.assets.square_item.fill_color)?;
         let drawparams = graphics::DrawParam::new();
-        //     .dest(Point2::new(r1.buffer, y));
-            // .rotation(actor.facing as f32)
-            // .offset(Point2::new(0.5, 0.5));
         let _result = graphics::draw(ctx, &r1, drawparams);
 
-
-        let p2 = na::Point2::new(self.assets.round_item.bounds.x, self.assets.round_item.bounds.y);
-        let r2 = graphics::Mesh::new_circle(ctx, graphics::DrawMode::Fill, p2, self.assets.round_item.bounds.h / 2.0, 1.0, self.assets.round_item.fill_color)?;
-        // let drawparams = graphics::DrawParam::new();
-        let _result = graphics::draw(ctx, &r2, drawparams);
-
         graphics::present(ctx)?;
-
-        timer::yield_now();
-
+        // timer::yield_now();
         Ok(())
     }
 
     /// Mouse event handling. On mouseup, start a new tween action.
     fn mouse_button_up_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
         println!("Mouse button released: {:?}, x: {}, y: {}", button, x, y);
+        let item1 = &self.assets.square_item;
+        let easing = &self.ease_list[self.ease_index];
+        self.ease_index += 1;
+        let mut tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]).with_id(SQUARE_ITEM_ID)
+            .to(vec![position(x as f64, y as f64)])
+            .duration(2.0);
+            // .ease(easing.clone())
+        &tween1.play();
+        self.square_tween = tween1;
     }
-
 }
 
 pub fn main() -> GameResult {
@@ -147,10 +120,11 @@ pub fn main() -> GameResult {
 
     let cb = ContextBuilder::new("tween0", "tweenkit")
         .window_setup(conf::WindowSetup::default().title("Ease test"))
-        .window_mode(conf::WindowMode::default().dimensions(640.0, 480.0))
+        .window_mode(conf::WindowMode::default().dimensions(800.0, 600.0))
         .add_resource_path(resource_dir);
 
     let (ctx, events_loop) = &mut cb.build()?;
+    // println!("Game resource path: {:?}", ctx.filesystem);
 
     let game = &mut MainState::new(ctx)?;
     event::run(ctx, events_loop, game)

@@ -1,7 +1,6 @@
 /// This is the core Tween model and functions.
 extern crate ggez;
 
-use cgmath::*;
 use std::{collections::HashMap};
 use super::property::*;
 use super::animator::*;
@@ -28,6 +27,24 @@ pub struct Tween {
     easing: Easing,
 }
 
+/// This is a sad Clone hack to get partial copy of a Tween.
+/// Some fields are reset to empty. This is meant to be used for re-use of a Tween
+/// because of borrowing issues
+impl Clone for Tween {
+    fn clone(&self) -> Self {
+        Tween {
+            state: AnimState::Idle,
+            delay_s: 0.0,
+            duration_s: 0.0,
+            start_props: self.start_props.clone(),
+            end_props: self.end_props.clone(),
+            animators: HashMap::new(),
+            tween_id: 0,
+            easing: Easing::Linear,
+        }
+    }
+}
+
 /// This is necessary for Orbrender Window to impose thread safety
 unsafe impl Send for Tween {}
 
@@ -44,21 +61,6 @@ impl Tween {
             tween_id: 0,
             easing: Easing::Linear,
         }
-    }
-
-    pub fn duration(mut self, _seconds: f64) -> Self {
-        self.duration_s = _seconds;
-        self
-    }
-
-    pub fn delay(mut self, _seconds: f64) -> Self {
-        self.delay_s = _seconds;
-        self
-    }
-
-    pub fn ease(mut self, easing: Easing) -> Self {
-        self.easing = easing;
-        self
     }
 
     /// Optional function to manually set the tween_id for a single object
@@ -106,27 +108,19 @@ impl Tween {
         self
     }
 
-    /// Called externally. TODO: rename to "to"
-    pub fn animate(_target: &Tweenable, _props: Vec<Prop>) -> Self {
-        let mut tween = Tween::new();
-        let mut props_map: HashMap<u32, Prop> = HashMap::new();
+    pub fn duration(mut self, _seconds: f64) -> Self {
+        self.duration_s = _seconds;
+        self
+    }
 
-        // De-dupe props with a hashmap, just in case.
-        for prop in _props {
-            props_map.insert(prop.prop_id(), prop.clone());
-        }
+    pub fn delay(mut self, _seconds: f64) -> Self {
+        self.delay_s = _seconds;
+        self
+    }
 
-        for prop in props_map.values() {
-            let start_prop = _target.get_prop(&prop);
-            match start_prop {
-                Prop::None => {},
-                _ => {
-                    tween.start_props.push(start_prop);
-                    tween.end_props.push(prop.clone());
-                }
-            }
-        }
-        tween
+    pub fn ease(mut self, easing: Easing) -> Self {
+        self.easing = easing;
+        self
     }
 
     /// Execute all functions in the queue
