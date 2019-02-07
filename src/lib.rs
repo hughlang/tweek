@@ -5,6 +5,8 @@
 // #![feature(type_ascription)]
 
 #[macro_use] extern crate unwrap_to;
+#[macro_use] extern crate custom_derive;
+#[macro_use] extern crate enum_derive;
 
 extern crate crossbeam_channel;
 extern crate crossbeam_utils;

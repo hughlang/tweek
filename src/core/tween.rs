@@ -4,6 +4,7 @@ extern crate ggez;
 use std::{collections::HashMap};
 use super::property::*;
 use super::animator::*;
+use super::easing::*;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TweenMode {
@@ -23,6 +24,7 @@ pub struct Tween {
     end_props: Vec<Prop>,
     animators: HashMap<usize, Animator>,
     tween_id: usize,
+    easing: Easing,
 }
 
 /// This is necessary for Orbrender Window to impose thread safety
@@ -39,6 +41,7 @@ impl Tween {
             end_props: Vec::new(),
             animators: HashMap::new(),
             tween_id: 0,
+            easing: Easing::Linear,
         }
     }
 
@@ -52,11 +55,37 @@ impl Tween {
         self
     }
 
+    pub fn ease(mut self, easing: Easing) -> Self {
+        self.easing = easing;
+        self
+    }
+
     /// Optional function to manually set the tween_id for a single object
     pub fn with_id(mut self, id: usize) -> Self {
         self.tween_id = id;
         self
     }
+
+    /// Function to initialize a Tween with the vector of Tweenables
+    /// The starting state of all Props are stored
+    // pub fn with(objects: &Vec<&Tweenable>) -> Self {
+    //     let mut tween = Tween::new();
+    //     let mut props_map: HashMap<u32, Prop> = HashMap::new();
+
+    //     for object in objects {
+    //         let start_prop = object.get_prop(&prop);
+
+    //         match start_prop {
+    //             Prop::None => {
+    //                 // If the object itself doesn't support the given property, use a default value
+    //             },
+    //             _ => {
+    //                 tween.start_props.push(start_prop);
+    //             }
+    //         }
+    //     }
+    //     tween
+    // }
 
     /// Function which receives a list of Tweenable objects, from which properties are read and
     /// aggregated into on list of properties. Not pretty, but necessary for the way ggez manages changes
@@ -117,7 +146,8 @@ impl Tween {
             self.tween_id = self.animators.len();
         }
         println!("start={:?} end={:?}", &self.start_props, &self.end_props);
-        let animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.duration_s);
+        let animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.duration_s, &self.easing);
+
         self.animators.insert(self.tween_id, animator);
         self.state = AnimState::Running;
         self.tween_id

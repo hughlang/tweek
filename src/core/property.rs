@@ -10,13 +10,15 @@ pub type Point2D = Vector2<f64>;
 pub type Frame2D = Vector2<f64>;
 pub type Bezier = Vector4<f64>;
 
-#[derive(Copy, Clone, Debug)]
-pub enum Prop {
-    None,
-    Alpha(FloatProp),
-    Color(ColorRGBA),
-    Position(Point2D),
-    Size(Frame2D),
+custom_derive! {
+    #[derive(Copy, Clone, Debug)]
+    pub enum Prop {
+        None,
+        Alpha(FloatProp),
+        Color(ColorRGBA),
+        Position(Point2D),
+        Size(Frame2D),
+    }
 }
 
 impl Prop {

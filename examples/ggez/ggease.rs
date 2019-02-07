@@ -4,7 +4,7 @@ extern crate ggez;
 extern crate tween;
 
 use ggez::conf;
-use ggez::event;
+use ggez::event::{self, MouseButton};
 use ggez::graphics::{self, Drawable, DrawParam};
 use ggez::timer;
 use ggez::{Context, ContextBuilder, GameResult};
@@ -16,20 +16,6 @@ use tween::*;
 
 const SQUARE_ITEM_ID: usize = 100;
 const ROUND_ITEM_ID: usize = 101;
-
-
-// #[derive(Debug)]
-// enum ActorType {
-//     Shape,
-//     Image,
-// }
-
-
-// #[derive(Debug)]
-// struct Actor {
-//     tag: ActorType,
-//     bbox_size: f32,
-// }
 
 struct Assets {
     // square_rect: graphics::Rect,
@@ -84,15 +70,15 @@ impl MainState {
             vec![position(400.0, 300.0), size(100.0, 100.0), alpha(0.1)]).duration(2.0).with_id(SQUARE_ITEM_ID);
         &tween1.play();
 
-        let item2 = &assets.round_item;
-        let mut tween2 = Tween::with(&vec![&item2.bounds, &item2.fill_color],
-            vec![position(40.0, 400.0), alpha(0.2)]).duration(2.0).ease(Easing::SineIn).with_id(ROUND_ITEM_ID);
-        &tween2.play();
+        // let item2 = &assets.round_item;
+        // let mut tween2 = Tween::with(&vec![&item2.bounds, &item2.fill_color],
+        //     vec![position(40.0, 400.0), alpha(0.2)]).duration(2.0).ease(Easing::SineIn).with_id(ROUND_ITEM_ID);
+        // &tween2.play();
 
         let s = MainState {
             assets: assets,
             square_tween: Some(tween1),
-            round_tween: Some(tween2),
+            round_tween: None,
         };
         Ok(s)
     }
@@ -141,6 +127,12 @@ impl event::EventHandler for MainState {
 
         Ok(())
     }
+
+    /// Mouse event handling. On mouseup, start a new tween action.
+    fn mouse_button_up_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
+        println!("Mouse button released: {:?}, x: {}, y: {}", button, x, y);
+    }
+
 }
 
 pub fn main() -> GameResult {
@@ -153,7 +145,7 @@ pub fn main() -> GameResult {
     };
 
     let cb = ContextBuilder::new("tween0", "tweenkit")
-        .window_setup(conf::WindowSetup::default().title("Tween test"))
+        .window_setup(conf::WindowSetup::default().title("Ease test"))
         .window_mode(conf::WindowMode::default().dimensions(640.0, 480.0))
         .add_resource_path(resource_dir);
 

@@ -16,9 +16,9 @@ path = "src/lib.rs"
 # name = "boxdemo"
 # path = "examples/animate/boxdemo.rs"
 #
-# [[bin]]
-# name = "tween0"
-# path = "examples/animate/tween0.rs"
+[[bin]]
+name = "gggease"
+path = "examples/ggez/ggease.rs"
 
 [[bin]]
 name = "ggtween1"
@@ -31,6 +31,8 @@ wasm = []
 [dependencies]
 cgmath = "0.17.0"
 unwrap_to = "0.1.0"
+enum_derive = "0.1.7"
+custom_derive = "0.1.1"
 crossbeam-channel = "0.3"
 crossbeam-utils = "0.6.5"
 ggez = { path = "../ggez" }

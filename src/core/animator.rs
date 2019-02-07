@@ -5,6 +5,7 @@ use std::{time::{Duration,Instant}};
 use cgmath::*;
 
 use super::property::*;
+use super::easing::*;
 
 #[allow(dead_code)]
 
@@ -42,10 +43,11 @@ pub struct Animator {
     pub end: UIState,
     pub start_time: Instant,
     pub duration: Duration,
+    pub easing: Easing,
 }
 
 impl Animator {
-    pub fn create(id: usize, props1: &Vec<Prop>, props2: &Vec<Prop>, seconds: &f64) -> Self {
+    pub fn create(id: usize, props1: &Vec<Prop>, props2: &Vec<Prop>, seconds: &f64, ease: &Easing) -> Self {
         let start_state = UIState::create(id, props1.clone());
         let end_state = UIState::create(id, props2.clone());
         let time = Duration::from_float_secs(*seconds);
@@ -55,18 +57,24 @@ impl Animator {
             end: end_state,
             start_time: Instant::now(),
             duration: time,
+            easing: ease.clone(),
         }
     }
 
     pub fn update(&self) -> UIState {
         let mut props: Vec<Prop> = Vec::new();
         let elapsed = self.start_time.elapsed();
-        let progress = elapsed.as_float_secs() / self.duration.as_float_secs();
+        let mut progress = elapsed.as_float_secs() / self.duration.as_float_secs();
+        if self.easing != Easing::Linear {
+            let curve = self.easing.curve();
+            let solver = BezierSolver::from(curve.clone());
+            progress = solver.solve(progress);
+        }
         if progress > 0.0 && progress <= 1.0 {
             for (i, prop) in self.start.props.iter().enumerate() {
                 let current = Animator::interpolate(prop, &self.end.props[i], progress);
-                // println!("----------------------------------------------");
-                // println!("elapsed={} progress={}", elapsed.as_float_secs(), progress);
+                println!("----------------------------------------------");
+                println!("elapsed={} progress={}", elapsed.as_float_secs(), progress);
                 props.push(current);
             }
         }
