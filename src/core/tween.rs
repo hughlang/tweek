@@ -47,7 +47,7 @@ impl Tween {
         self
     }
 
-    pub fn dekat(mut self, _seconds: f64) -> Self {
+    pub fn delay(mut self, _seconds: f64) -> Self {
         self.delay_s = _seconds;
         self
     }
