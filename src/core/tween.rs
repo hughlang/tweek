@@ -1,6 +1,7 @@
 /// This is the core Tween model and functions.
 extern crate ggez;
 
+use cgmath::*;
 use std::{collections::HashMap};
 use super::property::*;
 use super::animator::*;
@@ -68,53 +69,41 @@ impl Tween {
 
     /// Function to initialize a Tween with the vector of Tweenables
     /// The starting state of all Props are stored
-    // pub fn with(objects: &Vec<&Tweenable>) -> Self {
-    //     let mut tween = Tween::new();
-    //     let mut props_map: HashMap<u32, Prop> = HashMap::new();
-
-    //     for object in objects {
-    //         let start_prop = object.get_prop(&prop);
-
-    //         match start_prop {
-    //             Prop::None => {
-    //                 // If the object itself doesn't support the given property, use a default value
-    //             },
-    //             _ => {
-    //                 tween.start_props.push(start_prop);
-    //             }
-    //         }
-    //     }
-    //     tween
-    // }
-
-    /// Function which receives a list of Tweenable objects, from which properties are read and
-    /// aggregated into on list of properties. Not pretty, but necessary for the way ggez manages changes
-    pub fn with(objects: &Vec<&Tweenable>, props:Vec<Prop>) -> Self {
+    pub fn with(objects: &Vec<&Tweenable>) -> Self {
         let mut tween = Tween::new();
-        let mut props_map: HashMap<u32, Prop> = HashMap::new();
+        let prop_list = Prop::get_prop_list();
 
-        // De-dupe props with a hashmap, just in case.
-        for prop in props {
-            props_map.insert(prop.prop_id(), prop.clone());
-        }
-
-        for prop in props_map.values() {
-
+        for prop in prop_list {
             for object in objects {
                 let start_prop = object.get_prop(&prop);
-
                 match start_prop {
-                    Prop::None => {
-                        // If the object itself doesn't support the given property, use a default value
-                    },
+                    Prop::None => {},
                     _ => {
                         tween.start_props.push(start_prop);
-                        tween.end_props.push(prop.clone());
                     }
                 }
             }
         }
         tween
+    }
+
+    /// Function which reads the list of props and finds the matching ones
+    /// already saved in self.start_props.
+    pub fn to(mut self, props:Vec<Prop>) -> Self {
+        // let prop_ids: Vec<u32> = props.iter().map(|x| x.prop_id()).collect();
+        let mut temp_map: HashMap<u32, Prop> = HashMap::new();
+        for prop in self.start_props {
+            temp_map.insert(prop.prop_id(), prop.clone());
+        }
+        let mut match_props: Vec<Prop> = Vec::new();
+        for prop in &props {
+            if let Some(start_prop) = temp_map.get(&prop.prop_id()) {
+                match_props.push(start_prop.clone());
+            }
+        }
+        self.end_props = props;
+        self.start_props = match_props;
+        self
     }
 
     /// Called externally. TODO: rename to "to"

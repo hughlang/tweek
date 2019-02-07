@@ -17,12 +17,12 @@ path = "src/lib.rs"
 # path = "examples/animate/boxdemo.rs"
 #
 [[bin]]
-name = "gggease"
+name = "ggease"
 path = "examples/ggez/ggease.rs"
 
-[[bin]]
-name = "ggtween1"
-path = "examples/ggez/ggtween1.rs"
+# [[bin]]
+# name = "ggtween1"
+# path = "examples/ggez/ggtween1.rs"
 
 [features]
 default = []

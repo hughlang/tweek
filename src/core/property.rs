@@ -10,16 +10,16 @@ pub type Point2D = Vector2<f64>;
 pub type Frame2D = Vector2<f64>;
 pub type Bezier = Vector4<f64>;
 
-custom_derive! {
-    #[derive(Copy, Clone, Debug)]
-    pub enum Prop {
-        None,
-        Alpha(FloatProp),
-        Color(ColorRGBA),
-        Position(Point2D),
-        Size(Frame2D),
-    }
+#[derive(Copy, Clone, Debug)]
+pub enum Prop {
+    None,
+    Alpha(FloatProp),
+    Color(ColorRGBA),
+    Position(Point2D),
+    Size(Frame2D),
 }
+
+// pub const PROP_LIST: Vec<Prop> = vec![Prop::Alpha, Prop::Color, Prop::Position:: Prop::Size];
 
 impl Prop {
     /// Stupid shit helper method because Rust enums cannot emit a discriminator Int id if there are custom fields
@@ -31,6 +31,14 @@ impl Prop {
             Prop::Position(_) => 3,
             Prop::Size(_) => 4,
         }
+    }
+    pub fn get_prop_list() -> Vec<Prop> {
+        let mut results: Vec<Prop> = Vec::new();
+        results.push(Prop::Alpha(FloatProp::zero()));
+        results.push(Prop::Color(ColorRGBA::zero()));
+        results.push(Prop::Position(Point2D::zero()));
+        results.push(Prop::Size(Frame2D::zero()));
+        results
     }
 }
 
