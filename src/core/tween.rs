@@ -43,7 +43,7 @@ pub struct Tween {
     animators: HashMap<usize, Animator>,
     easing: Easing,
     hooks: Vec<Box<Events>>,
-    callbacks: Vec<Box<FnMut(TweenEvent) + 'static>>,
+    callbacks: Vec<Box<FnMut(TweenEvent, &str) + 'static>>,
 }
 
 impl Tween {
@@ -150,7 +150,7 @@ impl Tween {
         None
     }
 
-    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TweenEvent) + 'static {
+    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TweenEvent, &str) + 'static {
         self.callbacks.push(Box::new(cb));
     }
 }
@@ -177,8 +177,9 @@ impl Animatable for Tween {
     }
 
     fn play(&mut self) {
+
         for cb in self.callbacks.iter_mut() {
-            (&mut *cb)(TweenEvent::Play(1));
+            (&mut *cb)(TweenEvent::Play(1), &self.global_id);
         }
         // self.add_events_hook(Tweek);
         // for hook in &self.hooks {

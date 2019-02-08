@@ -51,21 +51,23 @@ pub enum TweenEvent {
 /// when using a Timeline. TBD
 pub struct Tweek {
     tween_db: HashSet<Tween>,
+    timelines: Vec<Timeline>,
 }
 
 impl Tweek {
     pub fn new() -> Self {
         Tweek {
             tween_db: HashSet::new(),
+            timelines: Vec::new(),
         }
     }
 
-    fn add_tween(tween: &Tween) {
-
+    fn add_tween(tween: &mut Tween) {
+        tween.add_callback(move |e, g| println!("Callback ????"));
 
     }
 
-    pub fn player_event_handler(&self, event: TweenEvent, caller: &Playable) {
+    pub fn player_event_handler(&self, event: TweenEvent) {
 
     }
 
