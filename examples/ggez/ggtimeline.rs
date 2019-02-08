@@ -56,7 +56,7 @@ impl MainState {
         let assets = Assets::new(ctx)?;
         let item1 = &assets.square_item;
 
-        let tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]).with_id(SQUARE_ITEM_ID);
+        let tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]);
         let s = MainState {
             assets: assets,
             square_tween: tween1,
@@ -98,7 +98,7 @@ impl event::EventHandler for MainState {
         let item1 = &self.assets.square_item;
         let _easing = &self.ease_list[self.ease_index];
         self.ease_index += 1;
-        let mut tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]).with_id(SQUARE_ITEM_ID)
+        let mut tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color])
             .to(vec![position(x as f64, y as f64)])
             .duration(2.0);
             // .ease(easing.clone())

@@ -7,6 +7,7 @@
 
 extern crate cgmath;
 extern crate ggez;
+extern crate uuid;
 
 pub use crate::core::*;
 pub mod core;

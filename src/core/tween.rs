@@ -146,8 +146,9 @@ impl Tween {
 impl Animatable for Tween {
 
     fn play(&mut self) {
+        // self.add_events_hook(Tweek);
         for hook in &self.hooks {
-            hook.on_start();
+            hook.on_start(self.tween_id);
         }
         if self.tween_id == 0 {
             self.tween_id = self.animators.len();

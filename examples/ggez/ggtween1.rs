@@ -66,7 +66,7 @@ impl MainState {
 
         let mut tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color])
             .to(vec![position(400.0, 300.0), size(100.0, 100.0), alpha(0.1)])
-            .duration(2.0).with_id(SQUARE_ITEM_ID);
+            .duration(2.0);
         // tween1.add_events_hook(Tweek);
 
         &tween1.play();
@@ -74,7 +74,7 @@ impl MainState {
         let item2 = &assets.round_item;
         let mut tween2 = Tween::with(&vec![&item2.bounds, &item2.fill_color])
             .to(vec![position(40.0, 400.0), alpha(0.2)])
-            .duration(2.0).ease(Easing::SineIn).with_id(ROUND_ITEM_ID);
+            .duration(2.0).ease(Easing::SineIn);
         &tween2.play();
 
         let s = MainState {
