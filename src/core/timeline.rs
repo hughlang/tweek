@@ -52,6 +52,9 @@ impl Timeline {
 		}
 		timeline
 	}
+	pub fn notify(&self, event: TweenEvent, id: &str) {
+
+	}
 	// pub fn add(&self, tween: Tween) -> Self {
 	//
 	// }

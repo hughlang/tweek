@@ -1,10 +1,8 @@
 extern crate ggez;
 
 use std::{collections::HashSet};
-use uuid::Uuid;
 
-use super::property::*;
-use super::animator::*;
+// use super::property::*;
 use super::timeline::*;
 use super::tween::*;
 
@@ -52,6 +50,7 @@ pub enum TweenEvent {
 pub struct Tweek {
     tween_db: HashSet<Tween>,
     timelines: Vec<Timeline>,
+    subscribers: Vec<Box<FnMut(TweenEvent, &str) + 'static>>,
 }
 
 impl Tweek {
@@ -59,13 +58,35 @@ impl Tweek {
         Tweek {
             tween_db: HashSet::new(),
             timelines: Vec::new(),
+            subscribers: Vec::new(),
         }
     }
 
-    fn add_tween(tween: &mut Tween) {
-        tween.add_callback(move |e, g| println!("Callback ????"));
+    pub fn add_subscriber<C>(&mut self, cb: C) where C: FnMut(TweenEvent, &str) + 'static {
+        self.subscribers.push(Box::new(cb));
+    }
+
+    pub fn add_timeline(&mut self, timeline: Timeline) {
+        self.timelines.push(timeline);
+    }
+
+    // fn get_timeline(&self, )
+    pub fn add_tween<'a>(&'a self, tween: &'a mut Tween) {
+        // let timelines = &self.timelines;
+        tween.add_callback(|e, g| {
+            // for cb in self.subscribers.iter_mut() {
+            //     (&mut *cb)(e, g);
+            // }
+        });
+    }
+
+    pub fn register_tween(tween: &mut Tween) {
+        tween.add_callback(move |e, g| {
+
+        });
 
     }
+
 
     pub fn player_event_handler(&self, event: TweenEvent) {
 
