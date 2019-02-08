@@ -9,16 +9,7 @@ use super::tween::*;
 //-- Base -----------------------------------------------------------------------
 
 
-pub trait Animatable {
-    fn play(&mut self);
-    fn stop(&mut self);
-    fn pause(&mut self);
-    // fn resume(&mut self);
-    // fn seek(&mut self, pos: f64);
-	fn add_events_hook<E: Events + 'static>(&mut self, hook: E);
 
-
-}
 
 //-- Main -----------------------------------------------------------------------
 
@@ -64,27 +55,6 @@ impl Timeline {
 	// pub fn add(&self, tween: Tween) -> Self {
 	//
 	// }
-
-}
-
-impl Animatable for Timeline {
-
-	/// Main method for starting play of all tweens
-    fn play(&mut self) {
-        for hook in &self.hooks {
-            hook.on_start();
-        }
-	}
-    fn stop(&mut self) {
-
-	}
-    fn pause(&mut self) {
-
-	}
-
-    fn add_events_hook<E: Events + 'static>(&mut self, hook: E) {
-        self.hooks.push(Box::new(hook));
-    }
 
 }
 

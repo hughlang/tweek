@@ -1837,6 +1837,9 @@ dependencies = [
 name = "uuid"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "rand 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "vec_map"

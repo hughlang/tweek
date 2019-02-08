@@ -1,11 +1,12 @@
 extern crate ggez;
 
 use std::{collections::HashMap};
+use uuid::Uuid;
+
 use super::property::*;
 use super::animator::*;
 use super::timeline::*;
 use super::tween::*;
-
 
 //-- Base -----------------------------------------------------------------------
 
@@ -19,6 +20,18 @@ pub trait Events {
     fn on_error(&self, tween_id: usize, err: &str) {}
     fn on_complete(&self, tween_id: usize) {}
 }
+
+pub trait Animatable {
+    fn play(&mut self);
+    fn stop(&mut self);
+    fn pause(&mut self);
+    // fn resume(&mut self);
+    // fn seek(&mut self, pos: f64);
+	// fn add_events_hook<E: Events + 'static>(&mut self, hook: E);
+
+
+}
+
 
 pub enum TweenEvent {
     Play(usize),
@@ -41,5 +54,10 @@ impl Tweek {
             tween_db: HashMap::new(),
         }
     }
+
+    // fn add_tween(tween: Tween) -> String {
+    //     let uuid = Uuid::new_v4();
+
+    // }
 }
 

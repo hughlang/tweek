@@ -57,7 +57,7 @@ impl MainState {
         let assets = Assets::new(ctx)?;
         let item1 = &assets.square_item;
 
-        let tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]);
+        let tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]).with_id(SQUARE_ITEM_ID);
         let s = MainState {
             assets: assets,
             square_tween: tween1,

@@ -1,7 +1,10 @@
 /// This is the core Tween model and functions.
 extern crate ggez;
+extern crate uuid;
 
 use std::{collections::HashMap};
+use uuid::Uuid;
+
 use super::property::*;
 use super::animator::*;
 use super::easing::*;
@@ -28,13 +31,14 @@ pub trait Tweenable {
 /// Only one duration timeline exists for all animators.
 /// An AnimationState enum controls what animation can happen.
 pub struct Tween {
+    tween_id: usize,
+    global_id: String,
     pub delay_s: f64,
     pub duration_s: f64,
     state: AnimState,
     start_props: Vec<Prop>,
     end_props: Vec<Prop>,
     animators: HashMap<usize, Animator>,
-    tween_id: usize,
     easing: Easing,
     hooks: Vec<Box<Events>>,
     callbacks: Vec<Box<FnMut() + 'static>>,
@@ -42,21 +46,23 @@ pub struct Tween {
 
 impl Tween {
     pub fn new() -> Self {
+        let uuid = Uuid::new_v4();
         Tween {
+            tween_id: 0,
+            global_id: uuid.to_string(),
             delay_s: 0.0,
             duration_s: 0.0,
             state: AnimState::Idle,
             start_props: Vec::new(),
             end_props: Vec::new(),
             animators: HashMap::new(),
-            tween_id: 0,
             easing: Easing::Linear,
             hooks: Vec::new(),
             callbacks: Vec::new(),
         }
     }
 
-    /// Optional function to manually set the tween_id for a single object
+    // /// Optional function to manually set the tween_id for a single object
     pub fn with_id(mut self, id: usize) -> Self {
         self.tween_id = id;
         self
@@ -147,9 +153,9 @@ impl Animatable for Tween {
 
     fn play(&mut self) {
         // self.add_events_hook(Tweek);
-        for hook in &self.hooks {
-            hook.on_start(self.tween_id);
-        }
+        // for hook in &self.hooks {
+        //     hook.on_start(self.tween_id);
+        // }
         if self.tween_id == 0 {
             self.tween_id = self.animators.len();
         }
@@ -168,9 +174,9 @@ impl Animatable for Tween {
 
     }
 
-    fn add_events_hook<E: Events + 'static>(&mut self, hook: E) {
-        self.hooks.push(Box::new(hook));
-    }
+    // fn add_events_hook<E: Events + 'static>(&mut self, hook: E) {
+    //     self.hooks.push(Box::new(hook));
+    // }
 
 }
 
