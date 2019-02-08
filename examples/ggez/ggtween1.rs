@@ -67,7 +67,7 @@ impl MainState {
         let mut tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color])
             .to(vec![position(400.0, 300.0), size(100.0, 100.0), alpha(0.1)])
             .duration(2.0).with_id(SQUARE_ITEM_ID);
-        tween1.add_events_hook(Logger);
+        // tween1.add_events_hook(Tweek);
 
         &tween1.play();
 

@@ -3,34 +3,11 @@ extern crate ggez;
 // use std::{collections::HashMap};
 // use super::animator::*;
 use super::property::*;
+use super::tweek::*;
 use super::tween::*;
 
 //-- Base -----------------------------------------------------------------------
 
-/// An attempt to create event callbacks using this example:
-/// https://mattgathu.github.io/simple-events-hook-rust/
-#[allow(unused_variables)]
-pub trait Events {
-    fn on_start(&self) {}
-    fn on_error(&self, err: &str) {}
-    fn on_complete(&self) {}
-}
-
-
-/// This is an experimental implementation of the Events callback
-pub struct Logger;
-
-impl Events for Logger {
-    fn on_start(&self) {
-		println!("Started");
-	}
-    fn on_error(&self, err: &str) {
-		println!("error: {}", err);
-	}
-    fn on_complete(&self) {
-		println!("Finished");
-	}
-}
 
 pub trait Animatable {
     fn play(&mut self);
@@ -39,6 +16,7 @@ pub trait Animatable {
     // fn resume(&mut self);
     // fn seek(&mut self, pos: f64);
 	fn add_events_hook<E: Events + 'static>(&mut self, hook: E);
+
 
 }
 
@@ -65,6 +43,7 @@ impl Timeline {
 		match align {
 			TweenAlign::Normal => {
 				for tween in tweens {
+					// tween.add_events_hook(Timeline);
 					let range = TweenRange::new(tween, 0.0);
 					timeline.children.push(range);
 				}

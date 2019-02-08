@@ -6,6 +6,7 @@ use super::property::*;
 use super::animator::*;
 use super::easing::*;
 use super::timeline::*;
+use super::tweek::*;
 
 //-- Base -----------------------------------------------------------------------
 
@@ -18,6 +19,8 @@ pub trait Tweenable {
         }
     }
 }
+
+
 
 //-- Main -----------------------------------------------------------------------
 
@@ -34,8 +37,8 @@ pub struct Tween {
     tween_id: usize,
     easing: Easing,
     hooks: Vec<Box<Events>>,
+    callbacks: Vec<Box<FnMut() + 'static>>,
 }
-
 
 impl Tween {
     pub fn new() -> Self {
@@ -49,6 +52,7 @@ impl Tween {
             tween_id: 0,
             easing: Easing::Linear,
             hooks: Vec::new(),
+            callbacks: Vec::new(),
         }
     }
 
