@@ -3,6 +3,8 @@ extern crate ggez;
 extern crate uuid;
 
 use std::{collections::HashMap};
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use uuid::Uuid;
 
 use super::property::*;
@@ -147,9 +149,32 @@ impl Tween {
         }
         None
     }
+
+    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut() + 'static {
+        self.callbacks.push(Box::new(cb));
+    }
 }
 
+impl Hash for Tween {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.global_id.hash(state);
+    }
+}
+
+impl PartialEq for Tween {
+    fn eq(&self, other: &Tween) -> bool {
+        self.global_id == other.global_id
+    }
+}
+
+impl Eq for Tween {}
+
 impl Animatable for Tween {
+
+    ///
+    fn tick(&mut self) {
+
+    }
 
     fn play(&mut self) {
         // self.add_events_hook(Tweek);
