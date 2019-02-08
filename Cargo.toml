@@ -8,17 +8,13 @@ edition = "2018"
 name = "tween"
 path = "src/lib.rs"
 
-# [[bin]]
-# name = "mouse"
-# path = "examples/animate/mouse.rs"
-#
-# [[bin]]
-# name = "boxdemo"
-# path = "examples/animate/boxdemo.rs"
-#
 [[bin]]
 name = "ggease"
 path = "examples/ggez/ggease.rs"
+
+[[bin]]
+name = "ggtimeline"
+path = "examples/ggez/ggtimeline.rs"
 
 [[bin]]
 name = "ggtween1"
@@ -34,5 +30,6 @@ unwrap_to = "0.1.0"
 enum_derive = "0.1.7"
 custom_derive = "0.1.1"
 # ggez = { path = "../ggez" }
-ggez = "0.5.0-rc.0"
+ggez = { git = "https://github.com/hughlang/ggez.git" }
+# ggez = "0.5.0"
 

@@ -84,7 +84,7 @@ impl event::EventHandler for MainState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, graphics::BLACK);
 
-        let r1 = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::Fill,
+        let r1 = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(),
             self.assets.square_item.bounds, self.assets.square_item.fill_color)?;
         let drawparams = graphics::DrawParam::new();
         let _result = graphics::draw(ctx, &r1, drawparams);

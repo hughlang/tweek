@@ -5,7 +5,7 @@ extern crate tween;
 
 use ggez::conf;
 use ggez::event;
-use ggez::graphics::{self, Drawable, DrawParam};
+use ggez::graphics::{self};
 use ggez::timer;
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::nalgebra as na;
@@ -124,7 +124,7 @@ impl event::EventHandler for MainState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, graphics::BLACK);
 
-        let r1 = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::Fill, self.assets.square_item.bounds, self.assets.square_item.fill_color)?;
+        let r1 = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.assets.square_item.bounds, self.assets.square_item.fill_color)?;
         let drawparams = graphics::DrawParam::new();
         //     .dest(Point2::new(r1.buffer, y));
             // .rotation(actor.facing as f32)
@@ -133,7 +133,7 @@ impl event::EventHandler for MainState {
 
 
         let p2 = na::Point2::new(self.assets.round_item.bounds.x, self.assets.round_item.bounds.y);
-        let r2 = graphics::Mesh::new_circle(ctx, graphics::DrawMode::Fill, p2, self.assets.round_item.bounds.h / 2.0, 1.0, self.assets.round_item.fill_color)?;
+        let r2 = graphics::Mesh::new_circle(ctx, graphics::DrawMode::fill(), p2, self.assets.round_item.bounds.h / 2.0, 1.0, self.assets.round_item.fill_color)?;
         // let drawparams = graphics::DrawParam::new();
         let _result = graphics::draw(ctx, &r2, drawparams);
 
