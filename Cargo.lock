@@ -616,7 +616,7 @@ dependencies = [
 [[package]]
 name = "ggez"
 version = "0.5.0-rc.0"
-source = "git+https://github.com/hughlang/ggez.git#07f5ac71d5b7d6228428ee82c1e3a7e194389c7c"
+source = "git+https://github.com/hughlang/ggez.git#ec4e7a3a7a859e9bb7100bde7a5480ad4cd0a80f"
 dependencies = [
  "app_dirs2 2.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",

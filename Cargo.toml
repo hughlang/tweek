@@ -28,6 +28,6 @@ wasm = []
 cgmath = "0.17.0"
 unwrap_to = "0.1.0"
 ggez = { git = "https://github.com/hughlang/ggez.git" }
-# ggez = { path = "../ggez" }
+# ggez = { path = "../ggez-fork" }
 # ggez = "0.5.0"
 

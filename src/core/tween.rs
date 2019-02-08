@@ -7,12 +7,19 @@ use super::animator::*;
 use super::easing::*;
 use super::timeline::*;
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum TweenMode {
-    To,
-    From,
-    FromTo,
+//-- Base -----------------------------------------------------------------------
+
+pub trait Tweenable {
+    fn get_prop(&self, prop: &Prop) -> Prop;
+    fn apply(&mut self, prop: &Prop);
+    fn render_update(&mut self, props: &Vec<Prop>) {
+        for prop in props {
+            self.apply(prop);
+        }
+    }
 }
+
+//-- Main -----------------------------------------------------------------------
 
 /// A Tween represents a group of animation Props that will be applied to the set of animators.
 /// Only one duration timeline exists for all animators.
@@ -26,28 +33,11 @@ pub struct Tween {
     animators: HashMap<usize, Animator>,
     tween_id: usize,
     easing: Easing,
+    hooks: Vec<Box<Events>>,
 }
 
-/// This is a sad Clone hack to get partial copy of a Tween.
-/// Some fields are reset to empty. This is meant to be used for re-use of a Tween
-/// because of borrowing issues
-impl Clone for Tween {
-    fn clone(&self) -> Self {
-        Tween {
-            delay_s: 0.0,
-            duration_s: 0.0,
-            state: AnimState::Idle,
-            start_props: self.start_props.clone(),
-            end_props: self.end_props.clone(),
-            animators: HashMap::new(),
-            tween_id: 0,
-            easing: Easing::Linear,
-        }
-    }
-}
 
 impl Tween {
-
     pub fn new() -> Self {
         Tween {
             delay_s: 0.0,
@@ -58,6 +48,7 @@ impl Tween {
             animators: HashMap::new(),
             tween_id: 0,
             easing: Easing::Linear,
+            hooks: Vec::new(),
         }
     }
 
@@ -151,6 +142,9 @@ impl Tween {
 impl Animatable for Tween {
 
     fn play(&mut self) {
+        for hook in &self.hooks {
+            hook.on_start();
+        }
         if self.tween_id == 0 {
             self.tween_id = self.animators.len();
         }
@@ -169,7 +163,13 @@ impl Animatable for Tween {
 
     }
 
+    fn add_events_hook<E: Events + 'static>(&mut self, hook: E) {
+        self.hooks.push(Box::new(hook));
+    }
+
 }
+
+//-- Prop helpers -----------------------------------------------------------------------
 
 pub fn position(x: f64, y: f64) -> Prop {
     Prop::Position(Point2D::new(x, y))
@@ -183,17 +183,8 @@ pub fn size(w: f64, h: f64) -> Prop {
     Prop::Size(Frame2D::new(w, h))
 }
 
-// #####################################################################################
-
-pub trait Tweenable {
-    fn get_prop(&self, prop: &Prop) -> Prop;
-    fn apply(&mut self, prop: &Prop);
-    fn render_update(&mut self, props: &Vec<Prop>) {
-        for prop in props {
-            self.apply(prop);
-        }
-    }
-}
+//-- TODO: Move to separate file -----------------------------------------------------------------------
+// The plan is to have ggez support as a feature and would have its own module in this lib
 
 impl Tweenable for ggez::graphics::Rect {
     fn apply(&mut self, prop: &Prop) {

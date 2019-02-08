@@ -1,11 +1,11 @@
 extern crate ggez;
 
-use std::{collections::HashMap};
-use super::animator::*;
+// use std::{collections::HashMap};
+// use super::animator::*;
 use super::property::*;
 use super::tween::*;
 
-//-- Traits -----------------------------------------------------------------------
+//-- Base -----------------------------------------------------------------------
 
 /// An attempt to create event callbacks using this example:
 /// https://mattgathu.github.io/simple-events-hook-rust/
@@ -16,12 +16,30 @@ pub trait Events {
     fn on_complete(&self) {}
 }
 
+
+/// This is an experimental implementation of the Events callback
+pub struct Logger;
+
+impl Events for Logger {
+    fn on_start(&self) {
+		println!("Started");
+	}
+    fn on_error(&self, err: &str) {
+		println!("error: {}", err);
+	}
+    fn on_complete(&self) {
+		println!("Finished");
+	}
+}
+
 pub trait Animatable {
     fn play(&mut self);
     fn stop(&mut self);
     fn pause(&mut self);
     // fn resume(&mut self);
     // fn seek(&mut self, pos: f64);
+	fn add_events_hook<E: Events + 'static>(&mut self, hook: E);
+
 }
 
 //-- Main -----------------------------------------------------------------------
@@ -67,9 +85,6 @@ impl Timeline {
 	// pub fn add(&self, tween: Tween) -> Self {
 	//
 	// }
-    pub fn add_events_hook<E: Events + 'static>(&mut self, hook: E) {
-        self.hooks.push(Box::new(hook));
-    }
 
 }
 
@@ -77,7 +92,9 @@ impl Animatable for Timeline {
 
 	/// Main method for starting play of all tweens
     fn play(&mut self) {
-
+        for hook in &self.hooks {
+            hook.on_start();
+        }
 	}
     fn stop(&mut self) {
 
@@ -85,6 +102,10 @@ impl Animatable for Timeline {
     fn pause(&mut self) {
 
 	}
+
+    fn add_events_hook<E: Events + 'static>(&mut self, hook: E) {
+        self.hooks.push(Box::new(hook));
+    }
 
 }
 
