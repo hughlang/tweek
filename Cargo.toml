@@ -27,9 +27,7 @@ wasm = []
 [dependencies]
 cgmath = "0.17.0"
 unwrap_to = "0.1.0"
-enum_derive = "0.1.7"
-custom_derive = "0.1.1"
-# ggez = { path = "../ggez" }
 ggez = { git = "https://github.com/hughlang/ggez.git" }
+# ggez = { path = "../ggez" }
 # ggez = "0.5.0"
 

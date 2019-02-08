@@ -7,34 +7,6 @@ use cgmath::*;
 use super::property::*;
 use super::easing::*;
 
-#[allow(dead_code)]
-
-pub enum AnimState {
-    Pending,
-    Running,
-    Idle,
-    Cancelled,
-    Completed,
-}
-
-pub trait Animatable {
-
-    fn play();
-    fn stop();
-    fn pause();
-    fn resume();
-    fn seek();
-
-	// func play()
-	// func stop()
-	// func pause()
-	// func resume()
-	// func seek(_ offset: TimeInterval) -> Self
-	// func forward() -> Self
-	// func reverse() -> Self
-	// func restart(_ includeDelay: Bool)
-
-}
 
 /// An Animator represents state change from one UIState to another UIState state
 pub struct Animator {

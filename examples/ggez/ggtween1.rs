@@ -17,20 +17,6 @@ use tween::*;
 const SQUARE_ITEM_ID: usize = 100;
 const ROUND_ITEM_ID: usize = 101;
 
-
-// #[derive(Debug)]
-// enum ActorType {
-//     Shape,
-//     Image,
-// }
-
-
-// #[derive(Debug)]
-// struct Actor {
-//     tag: ActorType,
-//     bbox_size: f32,
-// }
-
 struct Assets {
     // square_rect: graphics::Rect,
     square_item: ItemState,
@@ -39,8 +25,8 @@ struct Assets {
 
 impl Assets {
     fn new(_ctx: &mut Context) -> GameResult<Assets> {
-        let square_item = ItemState::new(SQUARE_ITEM_ID, 0.0, 0.0, 50.0, 50.0)?;
-        let mut round_item = ItemState::new(ROUND_ITEM_ID, 500.0, 200.0, 80.0, 80.0)?;
+        let square_item = ItemState::new(0.0, 0.0, 50.0, 50.0)?;
+        let mut round_item = ItemState::new(500.0, 200.0, 80.0, 80.0)?;
         round_item.fill_color = graphics::Color::from_rgb_u32(0xCD09AA);
         Ok(Assets {
             square_item,
@@ -50,16 +36,14 @@ impl Assets {
 }
 
 struct ItemState {
-    id: usize,
     bounds: graphics::Rect,
     fill_color: graphics::Color,
 }
 
 impl ItemState {
-    fn new(id: usize, x: f32, y: f32, w: f32, h: f32) -> GameResult<ItemState> {
+    fn new(x: f32, y: f32, w: f32, h: f32) -> GameResult<ItemState> {
         let rect = graphics::Rect::new(x, y, w, h);
         Ok(ItemState {
-            id: id,
             bounds: rect,
             fill_color: graphics::WHITE,
         })

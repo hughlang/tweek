@@ -5,6 +5,7 @@ use std::{collections::HashMap};
 use super::property::*;
 use super::animator::*;
 use super::easing::*;
+use super::timeline::*;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TweenMode {
@@ -17,9 +18,9 @@ pub enum TweenMode {
 /// Only one duration timeline exists for all animators.
 /// An AnimationState enum controls what animation can happen.
 pub struct Tween {
+    pub delay_s: f64,
+    pub duration_s: f64,
     state: AnimState,
-    delay_s: f64,
-    duration_s: f64,
     start_props: Vec<Prop>,
     end_props: Vec<Prop>,
     animators: HashMap<usize, Animator>,
@@ -33,9 +34,9 @@ pub struct Tween {
 impl Clone for Tween {
     fn clone(&self) -> Self {
         Tween {
-            state: AnimState::Idle,
             delay_s: 0.0,
             duration_s: 0.0,
+            state: AnimState::Idle,
             start_props: self.start_props.clone(),
             end_props: self.end_props.clone(),
             animators: HashMap::new(),
@@ -45,16 +46,13 @@ impl Clone for Tween {
     }
 }
 
-/// This is necessary for Orbrender Window to impose thread safety
-unsafe impl Send for Tween {}
-
 impl Tween {
 
     pub fn new() -> Self {
         Tween {
-            state: AnimState::Idle,
             delay_s: 0.0,
             duration_s: 0.0,
+            state: AnimState::Idle,
             start_props: Vec::new(),
             end_props: Vec::new(),
             animators: HashMap::new(),
@@ -124,17 +122,6 @@ impl Tween {
     }
 
     /// Execute all functions in the queue
-    pub fn play(&mut self) -> usize {
-        if self.tween_id == 0 {
-            self.tween_id = self.animators.len();
-        }
-        println!("start={:?} end={:?}", &self.start_props, &self.end_props);
-        let animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.duration_s, &self.easing);
-
-        self.animators.insert(self.tween_id, animator);
-        self.state = AnimState::Running;
-        self.tween_id
-    }
 
     pub fn get_updates(&self) -> Vec<UIState> {
         let mut results: Vec<UIState> = Vec::new();
@@ -159,6 +146,29 @@ impl Tween {
         }
         None
     }
+}
+
+impl Animatable for Tween {
+
+    fn play(&mut self) {
+        if self.tween_id == 0 {
+            self.tween_id = self.animators.len();
+        }
+        println!("start={:?} end={:?}", &self.start_props, &self.end_props);
+        let animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.duration_s, &self.easing);
+
+        self.animators.insert(self.tween_id, animator);
+        self.state = AnimState::Running;
+    }
+
+    fn stop(&mut self) {
+
+    }
+
+    fn pause(&mut self) {
+
+    }
+
 }
 
 pub fn position(x: f64, y: f64) -> Prop {

@@ -1,5 +1,4 @@
-/// This is a work-in-progress example. Currently, the Easing mechanism
-/// is too slow, so this is on hold.
+/// Placeholder file
 
 extern crate ggez;
 extern crate tween;
