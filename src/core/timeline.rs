@@ -74,9 +74,9 @@ impl Playable for Timeline {
 			// range.tween.borrow_mut().
 			let mut tween = range.tween.borrow_mut();
 			(&mut *tween).play();
-
 		}
 	}
+
     fn stop(&mut self) {
 
 	}

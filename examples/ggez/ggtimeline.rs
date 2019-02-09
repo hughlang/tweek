@@ -58,7 +58,9 @@ impl MainState {
             .to(vec![position(400.0, 400.0)])
             .duration(2.0);
 
-        let timeline = Timeline::create(vec![tween1], TweenAlign::Normal);
+        let mut timeline = Timeline::create(vec![tween1], TweenAlign::Normal);
+        &timeline.play();
+
         let s = MainState {
             assets: assets,
             timeline: timeline,
@@ -72,10 +74,10 @@ impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         // Here is where you tell which objects to update in each run loop.
         // MainState will have one or more Tween objects that need to be updated.
-        if let Some(update) = self.square_tween.update_item(&SQUARE_ITEM_ID) {
-            self.assets.square_item.bounds.render_update(&update.props);
-            self.assets.square_item.fill_color.render_update(&update.props);
-        }
+        // if let Some(update) = self.square_tween.update_item(&SQUARE_ITEM_ID) {
+        //     self.assets.square_item.bounds.render_update(&update.props);
+        //     self.assets.square_item.fill_color.render_update(&update.props);
+        // }
         Ok(())
     }
 
