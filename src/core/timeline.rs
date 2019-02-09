@@ -35,6 +35,7 @@ impl Timeline {
 		timeline.tweek.add_subscriber(move |e, g| {
             println!("Tweek subscriber: event={:?} id={}", e, g);
         });
+
 		match align {
 			TweenAlign::Normal => {
 				for mut tween in tweens {
@@ -57,14 +58,12 @@ impl Timeline {
 		timeline
 	}
 
-
-	pub fn notify(&self, event: TweenEvent, id: &str) {
-
+	pub fn get_updates(&self) -> Vec<UIState> {
+		let active = &self.children[0];
+		let tween = active.tween.borrow();
+		let updates = tween.get_updates();
+		updates
 	}
-	// pub fn add(&self, tween: Tween) -> Self {
-	//
-	// }
-
 }
 
 impl Playable for Timeline {
@@ -80,9 +79,11 @@ impl Playable for Timeline {
     fn stop(&mut self) {
 
 	}
+
     fn pause(&mut self) {
 
 	}
+
     fn tick(&mut self) {
 
 	}
