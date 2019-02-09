@@ -3,7 +3,6 @@ extern crate ggez;
 extern crate uuid;
 
 use std::{collections::HashMap};
-use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use uuid::Uuid;
 
@@ -43,7 +42,7 @@ pub struct Tween {
     animators: HashMap<usize, Animator>,
     easing: Easing,
     hooks: Vec<Box<Events>>,
-    callbacks: Vec<Box<FnMut(TweenEvent, &str) + 'static>>,
+    callbacks: Vec<Box<Fn(TweenEvent, &str) + 'static>>,
 }
 
 impl Tween {
@@ -150,7 +149,7 @@ impl Tween {
         None
     }
 
-    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TweenEvent, &str) + 'static {
+    pub fn add_callback<C>(&mut self, cb: C) where C: Fn(TweenEvent, &str) + 'static {
         self.callbacks.push(Box::new(cb));
     }
 }
@@ -178,13 +177,10 @@ impl Animatable for Tween {
 
     fn play(&mut self) {
 
-        for cb in self.callbacks.iter_mut() {
-            (&mut *cb)(TweenEvent::Play(1), &self.global_id);
+        for cb in self.callbacks.iter() {
+            (&*cb)(TweenEvent::Play(1), &self.global_id);
         }
-        // self.add_events_hook(Tweek);
-        // for hook in &self.hooks {
-        //     hook.on_start(self.tween_id);
-        // }
+
         if self.tween_id == 0 {
             self.tween_id = self.animators.len();
         }

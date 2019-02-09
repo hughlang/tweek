@@ -1,6 +1,8 @@
 extern crate ggez;
 
 use std::{collections::HashSet};
+use std::rc::Rc;
+use std::cell::{Cell, RefCell};
 
 // use super::property::*;
 use super::timeline::*;
@@ -36,6 +38,7 @@ pub trait Animatable {
 
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum TweenEvent {
     Play(usize),
     Pause(usize),
@@ -50,7 +53,7 @@ pub enum TweenEvent {
 pub struct Tweek {
     tween_db: HashSet<Tween>,
     timelines: Vec<Timeline>,
-    subscribers: Vec<Box<FnMut(TweenEvent, &str) + 'static>>,
+    subscribers: Vec<Rc<Fn(TweenEvent, &str) + 'static>>,
 }
 
 impl Tweek {
@@ -62,29 +65,41 @@ impl Tweek {
         }
     }
 
-    pub fn add_subscriber<C>(&mut self, cb: C) where C: FnMut(TweenEvent, &str) + 'static {
-        self.subscribers.push(Box::new(cb));
+    /// See: https://www.ralfj.de/projects/rust-101/part12.html
+    /// This method should be called by a Timeline that wants to receive callbacks from
+    /// Tweek.
+    pub fn add_subscriber<C>(&mut self, cb: C) where C: Fn(TweenEvent, &str) + 'static {
+        self.subscribers.push(Rc::new(cb));
     }
 
+    // Unused
     pub fn add_timeline(&mut self, timeline: Timeline) {
         self.timelines.push(timeline);
     }
 
-    // fn get_timeline(&self, )
-    pub fn add_tween<'a>(&'a self, tween: &'a mut Tween) {
-        // let timelines = &self.timelines;
-        tween.add_callback(|e, g| {
-            // for cb in self.subscribers.iter_mut() {
-            //     (&mut *cb)(e, g);
-            // }
+    /// This method should be called by a Timeline that wants a Tween to send events
+    /// to Tweek and then re-publish them back to the Timeline which has added itself as
+    /// the subscribers list.
+    /// Same as add_tween but without the lifetime marks
+    pub fn register_tween(&self, tween: &mut Tween) {
+        let subscribers = self.subscribers.clone();
+        tween.add_callback(move |e, g| {
+            println!("Tween callback: event={:?} id={}", e, g);
+            for cb in subscribers.iter() {
+                (&*cb)(e, g);
+            }
         });
     }
 
-    pub fn register_tween(tween: &mut Tween) {
+    // Unused. Use register_tween instead
+    pub fn add_tween<'a>(&'a self, tween: &'a mut Tween) {
+        let subscribers = self.subscribers.clone();
         tween.add_callback(move |e, g| {
-
+            println!("Tween callback: event={:?} id={}", e, g);
+            for cb in subscribers.iter() {
+                (&*cb)(e, g);
+            }
         });
-
     }
 
 
