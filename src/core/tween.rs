@@ -168,7 +168,7 @@ impl PartialEq for Tween {
 
 impl Eq for Tween {}
 
-impl Animatable for Tween {
+impl Playable for Tween {
 
     ///
     fn tick(&mut self) {

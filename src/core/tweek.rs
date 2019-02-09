@@ -2,7 +2,6 @@ extern crate ggez;
 
 use std::{collections::HashSet};
 use std::rc::Rc;
-use std::cell::{Cell, RefCell};
 
 // use super::property::*;
 use super::timeline::*;
@@ -15,26 +14,19 @@ use super::tween::*;
 /// Not sure if it's useful
 #[allow(unused_variables)]
 pub trait Events {
-    fn on_play(&mut self, caller: &Animatable) {}
+    fn on_play(&mut self, caller: &Playable) {}
     fn on_start(&self, tween_id: usize) {}
     fn on_error(&self, tween_id: usize, err: &str) {}
     fn on_complete(&self, tween_id: usize) {}
 }
 
 pub trait Playable {
-
-}
-
-/// The Animatable trait is used by Tween to...
-pub trait Animatable {
-    /// Animatibles need to check on their player state and report changes to
-    fn tick(&mut self);
     fn play(&mut self);
     fn stop(&mut self);
     fn pause(&mut self);
+    fn tick(&mut self);
     // fn resume(&mut self);
     // fn seek(&mut self, pos: f64);
-	// fn add_events_hook<E: Events + 'static>(&mut self, hook: E);
 
 }
 

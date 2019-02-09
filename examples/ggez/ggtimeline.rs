@@ -45,9 +45,7 @@ impl ItemState {
 
 struct MainState {
     assets: Assets,
-    square_tween: Tween,
-    ease_list: Vec<Easing>,
-    ease_index: usize,
+    timeline: Timeline,
 }
 
 impl MainState {
@@ -56,12 +54,14 @@ impl MainState {
         let assets = Assets::new(ctx)?;
         let item1 = &assets.square_item;
 
-        let tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]);
+        let tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color])
+            .to(vec![position(400.0, 400.0)])
+            .duration(2.0);
+
+        let timeline = Timeline::create(vec![tween1], TweenAlign::Normal);
         let s = MainState {
             assets: assets,
-            square_tween: tween1,
-            ease_list: Easing::get_list(),
-            ease_index: 0,
+            timeline: timeline,
         };
         Ok(s)
     }
@@ -92,19 +92,6 @@ impl event::EventHandler for MainState {
         Ok(())
     }
 
-    /// Mouse event handling. On mouseup, start a new tween action.
-    fn mouse_button_up_event(&mut self, _ctx: &mut Context, button: MouseButton, x: f32, y: f32) {
-        println!("Mouse button released: {:?}, x: {}, y: {}", button, x, y);
-        let item1 = &self.assets.square_item;
-        let _easing = &self.ease_list[self.ease_index];
-        self.ease_index += 1;
-        let mut tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color])
-            .to(vec![position(x as f64, y as f64)])
-            .duration(2.0);
-            // .ease(easing.clone())
-        &tween1.play();
-        self.square_tween = tween1;
-    }
 }
 
 pub fn main() -> GameResult {
@@ -117,7 +104,7 @@ pub fn main() -> GameResult {
     };
 
     let cb = ContextBuilder::new("tween0", "tweenkit")
-        .window_setup(conf::WindowSetup::default().title("Ease test"))
+        .window_setup(conf::WindowSetup::default().title("Timeline test"))
         .window_mode(conf::WindowMode::default().dimensions(800.0, 600.0))
         .add_resource_path(resource_dir);
 

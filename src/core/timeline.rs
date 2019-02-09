@@ -1,7 +1,8 @@
 extern crate ggez;
 
+use std::rc::Rc;
+use std::cell::RefCell;
 // use std::{collections::HashMap};
-// use super::animator::*;
 use super::property::*;
 use super::tweek::*;
 use super::tween::*;
@@ -17,7 +18,7 @@ use super::tween::*;
 /// either starting at the same time or sequentially.
 /// See also: https://greensock.com/asdocs/com/greensock/TimelineLite.html
 pub struct Timeline {
-    hooks: Vec<Box<Events>>,
+	tweek: Tweek,
     children: Vec<TweenRange>,
 
 }
@@ -25,16 +26,19 @@ pub struct Timeline {
 impl Timeline {
 	pub fn new() -> Self {
 		Timeline {
-			hooks: Vec::new(),
+			tweek: Tweek::new(),
 			children: Vec::new(),
 		}
 	}
 	pub fn create(tweens: Vec<Tween>, align: TweenAlign) -> Self {
 		let mut timeline = Timeline::new();
+		timeline.tweek.add_subscriber(move |e, g| {
+            println!("Tweek subscriber: event={:?} id={}", e, g);
+        });
 		match align {
 			TweenAlign::Normal => {
-				for tween in tweens {
-					// tween.add_events_hook(Timeline);
+				for mut tween in tweens {
+					timeline.tweek.register_tween(&mut tween);
 					let range = TweenRange::new(tween, 0.0);
 					timeline.children.push(range);
 				}
@@ -52,12 +56,36 @@ impl Timeline {
 		}
 		timeline
 	}
+
+
 	pub fn notify(&self, event: TweenEvent, id: &str) {
 
 	}
 	// pub fn add(&self, tween: Tween) -> Self {
 	//
 	// }
+
+}
+
+impl Playable for Timeline {
+
+	fn play(&mut self) {
+		for range in &self.children {
+			// range.tween.borrow_mut().
+			let mut tween = range.tween.borrow_mut();
+			(&mut *tween).play();
+
+		}
+	}
+    fn stop(&mut self) {
+
+	}
+    fn pause(&mut self) {
+
+	}
+    fn tick(&mut self) {
+
+	}
 
 }
 
@@ -76,7 +104,7 @@ pub enum TweenAlign {
 }
 
 pub struct TweenRange {
-    tween: Tween,
+    tween: Rc<RefCell<Tween>>,
     start: f64, // The start time in float seconds
     end: f64,   // The end time in float seconds
 }
@@ -85,7 +113,7 @@ impl TweenRange {
 	fn new(tween: Tween, start: f64) -> Self {
 		let end = start + tween.duration_s;
 		TweenRange {
-			tween: tween,
+			tween: Rc::new(RefCell::new(tween)),
 			start: start,
 			end: end,
 		}

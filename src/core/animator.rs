@@ -135,23 +135,3 @@ impl Animator {
 
 //     }
 // }
-
-// impl Animatable for Animation {
-
-//     fn play() {
-
-//     }
-//     fn stop() {
-
-//     }
-//     fn pause() {
-
-//     }
-//     fn resume() {
-
-//     }
-//     fn seek() {
-
-//     }
-
-// }
