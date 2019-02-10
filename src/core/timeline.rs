@@ -83,8 +83,8 @@ impl Timeline {
 
     pub fn get_update(&self, id: &usize) -> Option<UIState> {
 		if let Some(range) = &self.children.get(id) {
-			let tween = range.tween.borrow();
-			return tween.update_item(id);
+			let mut tween = range.tween.borrow_mut();
+			return (&mut *tween).update_item(id);
 		}
         None
     }
@@ -141,7 +141,7 @@ pub enum TweenAlign {
     Start,
 }
 
-
+#[derive(PartialEq)]
 pub enum AnimState {
     Pending,
     Running,

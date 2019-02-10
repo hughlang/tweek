@@ -45,7 +45,7 @@ impl MainState {
             .duration(2.0).ease(Easing::SineIn);
 
 
-        let mut timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Normal);
+        let mut timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Sequence);
         &timeline.play();
 
         let s = MainState {
@@ -53,15 +53,20 @@ impl MainState {
             square_item: item1,
             round_item: item2,
         };
+
         Ok(s)
     }
 
-    fn render_update(&self, item: &mut ItemState) {
-        if let Some(update) = self.timeline.get_update(&item.get_id()) {
-            item.bounds.render_update(&update.props);
-            item.fill_color.render_update(&update.props);
-        }
-    }
+    // Note: this won't work. The compiler knows if you are making a self reference
+    // mutable more than once, which is what happens when you try to call this from the
+    // run loop. I think it's also a protection against re-entrancy bugs
+    // fn render_update(&self, item: &mut ItemState) {
+    //     if let Some(update) = self.timeline.get_update(&item.get_id()) {
+    //         item.bounds.render_update(&update.props);
+    //         item.fill_color.render_update(&update.props);
+    //     }
+    // }
+
 }
 
 impl event::EventHandler for MainState {

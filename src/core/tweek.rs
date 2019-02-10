@@ -30,7 +30,6 @@ pub trait Playable {
     fn reset(&mut self);
     // fn resume(&mut self);
     // fn seek(&mut self, pos: f64);
-
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -38,6 +37,12 @@ pub enum TweenEvent {
     Play(usize),
     Pause(usize),
 }
+
+	// case pending
+	// case running
+	// case idle
+	// case cancelled
+	// case completed
 
 //-- Main -----------------------------------------------------------------------
 

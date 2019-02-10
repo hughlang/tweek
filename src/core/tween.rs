@@ -25,7 +25,17 @@ pub trait Tweenable {
     }
 }
 
+pub fn position(x: f64, y: f64) -> Prop {
+    Prop::Position(Point2D::new(x, y))
+}
 
+pub fn alpha(v: f64) -> Prop {
+    Prop::Alpha(FloatProp::new(v))
+}
+
+pub fn size(w: f64, h: f64) -> Prop {
+    Prop::Size(Frame2D::new(w, h))
+}
 
 //-- Main -----------------------------------------------------------------------
 
@@ -143,9 +153,11 @@ impl Tween {
     }
 
     pub fn update_item(&self, id: &usize) -> Option<UIState> {
-        if let Some(animator) = self.animators.get(id) {
-            let ui_state = animator.update(self.start_time, self.duration);
-            return Some(ui_state);
+        if self.state == AnimState::Running {
+            if let Some(animator) = self.animators.get(id) {
+                let ui_state = animator.update(self.start_time, self.duration);
+                return Some(ui_state);
+            }
         }
         None
     }
@@ -174,7 +186,9 @@ impl Playable for Tween {
     /// Probably use this to check the play status of each tween, based on the
     /// timeline, time elapsed, and duration, etc.
     fn tick(&mut self) {
-
+        if self.start_time.elapsed() > self.duration {
+            self.state = AnimState::Completed;
+        }
     }
 
     fn play(&mut self) {
@@ -204,20 +218,6 @@ impl Playable for Tween {
     fn reset(&mut self) {
         self.start_time = Instant::now();
     }
-}
-
-//-- Prop helpers -----------------------------------------------------------------------
-
-pub fn position(x: f64, y: f64) -> Prop {
-    Prop::Position(Point2D::new(x, y))
-}
-
-pub fn alpha(v: f64) -> Prop {
-    Prop::Alpha(FloatProp::new(v))
-}
-
-pub fn size(w: f64, h: f64) -> Prop {
-    Prop::Size(Frame2D::new(w, h))
 }
 
 //-- TODO: Move to separate file -----------------------------------------------------------------------
