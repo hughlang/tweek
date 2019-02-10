@@ -3,6 +3,7 @@ extern crate ggez;
 extern crate uuid;
 
 use std::{collections::HashMap};
+use std::{time::{Duration,Instant}};
 use std::hash::{Hash, Hasher};
 use uuid::Uuid;
 
@@ -35,13 +36,13 @@ pub struct Tween {
     pub tween_id: usize,
     pub global_id: String,
     pub delay_s: f64,
-    pub duration_s: f64,
+    pub start_time: Instant,
+    pub duration: Duration,
     state: AnimState,
     start_props: Vec<Prop>,
     end_props: Vec<Prop>,
     animators: HashMap<usize, Animator>,
     easing: Easing,
-    hooks: Vec<Box<Events>>,
     callbacks: Vec<Box<Fn(TweenEvent, &str) + 'static>>,
 }
 
@@ -52,13 +53,13 @@ impl Tween {
             tween_id: 0,
             global_id: uuid.to_string(),
             delay_s: 0.0,
-            duration_s: 0.0,
+            start_time: Instant::now(),
+            duration: Duration::from_secs(0),
             state: AnimState::Idle,
             start_props: Vec::new(),
             end_props: Vec::new(),
             animators: HashMap::new(),
             easing: Easing::Linear,
-            hooks: Vec::new(),
             callbacks: Vec::new(),
         }
     }
@@ -108,8 +109,8 @@ impl Tween {
         self
     }
 
-    pub fn duration(mut self, _seconds: f64) -> Self {
-        self.duration_s = _seconds;
+    pub fn duration(mut self, secs: f64) -> Self {
+        self.duration = Duration::from_float_secs(secs);
         self
     }
 
@@ -130,7 +131,7 @@ impl Tween {
         match self.state {
             AnimState::Running => {
                 for animator in self.animators.values() {
-                    let ui_state = animator.update();
+                    let ui_state = animator.update(self.start_time, self.duration);
                     if ui_state.props.len() > 0 {
                         results.push(ui_state);
                     }
@@ -143,7 +144,7 @@ impl Tween {
 
     pub fn update_item(&self, id: &usize) -> Option<UIState> {
         if let Some(animator) = self.animators.get(id) {
-            let ui_state = animator.update();
+            let ui_state = animator.update(self.start_time, self.duration);
             return Some(ui_state);
         }
         None
@@ -170,7 +171,8 @@ impl Eq for Tween {}
 
 impl Playable for Tween {
 
-    ///
+    /// Probably use this to check the play status of each tween, based on the
+    /// timeline, time elapsed, and duration, etc.
     fn tick(&mut self) {
 
     }
@@ -185,7 +187,7 @@ impl Playable for Tween {
             self.tween_id = self.animators.len();
         }
         println!("start={:?} end={:?}", &self.start_props, &self.end_props);
-        let animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.duration_s, &self.easing);
+        let animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.easing);
 
         self.animators.insert(self.tween_id, animator);
         self.state = AnimState::Running;
@@ -198,10 +200,6 @@ impl Playable for Tween {
     fn pause(&mut self) {
 
     }
-
-    // fn add_events_hook<E: Events + 'static>(&mut self, hook: E) {
-    //     self.hooks.push(Box::new(hook));
-    // }
 
 }
 

@@ -13,30 +13,25 @@ pub struct Animator {
     pub id: usize,
     pub start: UIState,
     pub end: UIState,
-    pub start_time: Instant,
-    pub duration: Duration,
     pub easing: Easing,
 }
 
 impl Animator {
-    pub fn create(id: usize, props1: &Vec<Prop>, props2: &Vec<Prop>, seconds: &f64, ease: &Easing) -> Self {
+    pub fn create(id: usize, props1: &Vec<Prop>, props2: &Vec<Prop>, ease: &Easing) -> Self {
         let start_state = UIState::create(id, props1.clone());
         let end_state = UIState::create(id, props2.clone());
-        let time = Duration::from_float_secs(*seconds);
         Animator {
             id: id,
             start: start_state,
             end: end_state,
-            start_time: Instant::now(),
-            duration: time,
             easing: ease.clone(),
         }
     }
 
-    pub fn update(&self) -> UIState {
+    pub fn update(&self, start_time: Instant, duration: Duration) -> UIState {
         let mut props: Vec<Prop> = Vec::new();
-        let elapsed = self.start_time.elapsed();
-        let mut progress = elapsed.as_float_secs() / self.duration.as_float_secs();
+        let elapsed = start_time.elapsed();
+        let mut progress = elapsed.as_float_secs() / duration.as_float_secs();
         if self.easing != Easing::Linear {
             let curve = self.easing.curve();
             let solver = BezierSolver::from(curve.clone());

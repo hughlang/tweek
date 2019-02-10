@@ -49,7 +49,7 @@ impl Timeline {
 				let mut pos = 0.0 as f64;
 				for mut tween in tweens {
 					let id = tween.tween_id;
-					let dur = tween.duration_s;
+					let dur = tween.duration.as_float_secs();
 					timeline.tweek.register_tween(&mut tween);
 					let range = TweenRange::new(tween, pos);
 					pos += dur;
@@ -61,14 +61,13 @@ impl Timeline {
 		timeline
 	}
 
-	// pub fn get_updates(&self) -> Option<Vec<UIState>> {
-	// 	if let Some(active) = &self.children.values().next() {
-	// 		let tween = active.tween.borrow();
-	// 		let updates = tween.get_updates();
-	// 		updates
-	// 	}
-	// 	None
-	// }
+    pub fn get_update(&self, id: &usize) -> Option<UIState> {
+		if let Some(range) = &self.children.get(id) {
+			let tween = range.tween.borrow();
+			return tween.update_item(id);
+		}
+        None
+    }
 }
 
 impl Playable for Timeline {
@@ -117,7 +116,7 @@ pub struct TweenRange {
 
 impl TweenRange {
 	fn new(tween: Tween, start: f64) -> Self {
-		let end = start + tween.duration_s;
+		let end = start + tween.duration.as_float_secs();
 		TweenRange {
 			tween: Rc::new(RefCell::new(tween)),
 			start: start,
