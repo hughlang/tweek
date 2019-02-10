@@ -9,6 +9,10 @@ name = "tween"
 path = "src/lib.rs"
 
 [[bin]]
+name = "ggrunner"
+path = "examples/ggez/ggrunner.rs"
+
+[[bin]]
 name = "ggease"
 path = "examples/ggez/ggease.rs"
 
