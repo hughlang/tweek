@@ -8,7 +8,8 @@ use ggez::event;
 use ggez::graphics::{self};
 use ggez::timer;
 use ggez::{Context, ContextBuilder, GameResult};
-use ggez::nalgebra as na;
+// use ggez::nalgebra as na;
+use ggez::mint;
 
 use std::env;
 use std::path;
@@ -17,20 +18,62 @@ use tween::*;
 const SQUARE_ITEM_ID: usize = 100;
 const ROUND_ITEM_ID: usize = 101;
 
+enum Shape {
+    Circle(mint::Point2<f32>, f32),
+    Rectangle(graphics::Rect),
+}
+
 struct ItemState {
+    id: usize,
+    shape: Shape,
     bounds: graphics::Rect,
     fill_color: graphics::Color,
     tween: Option<Tween>,
 }
 
 impl ItemState {
-    fn new(x: f32, y: f32, w: f32, h: f32) -> GameResult<ItemState> {
-        let rect = graphics::Rect::new(x, y, w, h);
+    fn new(id: usize, shape: Shape) -> GameResult<ItemState> {
+        let rect = match shape {
+            Shape::Rectangle(rect) => rect,
+            Shape::Circle(pt, r) => {
+                graphics::Rect::new(pt.x - r, pt.y - r, r * 2.0, r * 2.0)
+            },
+        };
+
         Ok(ItemState {
+            id: id,
+            shape: shape,
             bounds: rect,
-            fill_color: graphics::WHITE,
+            fill_color: graphics::BLACK,
             tween: None,
         })
+    }
+
+    pub fn update(&mut self) -> GameResult {
+        if let Some(tween) = &self.tween {
+            if let Some(update) = tween.update_item(&self.id) {
+                self.bounds.render_update(&update.props);
+                self.fill_color.render_update(&update.props);
+            }
+        }
+        Ok(())
+    }
+
+    pub fn render(&self, ctx: &mut Context) -> GameResult {
+        match self.shape {
+            Shape::Rectangle(_) => {
+                let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.bounds, self.fill_color)?;
+                let drawparams = graphics::DrawParam::new();
+                let _result = graphics::draw(ctx, &mesh, drawparams);
+            },
+            Shape::Circle(_, r) => {
+                let pt = mint::Point2{x: self.bounds.x + r, y: self.bounds.y + r};
+                let mesh = graphics::Mesh::new_circle(ctx, graphics::DrawMode::fill(), pt, r, 1.0, self.fill_color)?;
+                let drawparams = graphics::DrawParam::new();
+                let _result = graphics::draw(ctx, &mesh, drawparams);
+            },
+        }
+        Ok(())
     }
 }
 
@@ -43,7 +86,9 @@ struct MainState {
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         println!("Game resource path: {:?}", ctx.filesystem);
-        let mut item1 = ItemState::new(0.0, 0.0, 50.0, 50.0)?;
+
+        let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
+        let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
         item1.fill_color = graphics::Color::from_rgb_u32(0x333333);
 
         let mut tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]).with_id(SQUARE_ITEM_ID)
@@ -52,8 +97,10 @@ impl MainState {
         &tween1.play();
         item1.tween = Some(tween1);
 
-        let mut item2 = ItemState::new(500.0, 200.0, 80.0, 80.0)?;
+        let pt = mint::Point2{x: 500.0, y: 200.0};
+        let mut item2 = ItemState::new(ROUND_ITEM_ID, Shape::Circle(pt, 40.0))?;
         item2.fill_color = graphics::Color::from_rgb_u32(0xCD09AA);
+
         let mut tween2 = Tween::with(&vec![&item2.bounds, &item2.fill_color]).with_id(ROUND_ITEM_ID)
             .to(vec![position(40.0, 400.0), alpha(0.2)])
             .duration(2.0).ease(Easing::SineIn);
@@ -72,20 +119,9 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        // Here is where you tell which objects to update in each run loop.
-        // MainState will have one or more Tween objects that need to be updated.
-        if let Some(tween) = &self.square_item.tween {
-            if let Some(update) = tween.update_item(&SQUARE_ITEM_ID) {
-                self.square_item.bounds.render_update(&update.props);
-                self.square_item.fill_color.render_update(&update.props);
-            }
-        }
-        if let Some(tween) = &self.round_item.tween {
-            if let Some(update) = tween.update_item(&ROUND_ITEM_ID) {
-                self.round_item.bounds.render_update(&update.props);
-                self.round_item.fill_color.render_update(&update.props);
-            }
-        }
+
+        self.square_item.update()?;
+        self.round_item.update()?;
 
         Ok(())
     }
@@ -93,21 +129,12 @@ impl event::EventHandler for MainState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, graphics::WHITE);
 
-        let item = &self.square_item;
-        let r1 = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), item.bounds, item.fill_color)?;
-        let drawparams = graphics::DrawParam::new();
-        let _result = graphics::draw(ctx, &r1, drawparams);
-
-        let item = &self.round_item;
-        let p2 = na::Point2::new(item.bounds.x, item.bounds.y);
-        let r2 = graphics::Mesh::new_circle(ctx, graphics::DrawMode::fill(), p2, item.bounds.h / 2.0, 1.0, item.fill_color)?;
-        let drawparams = graphics::DrawParam::new();
-        let _result = graphics::draw(ctx, &r2, drawparams);
+        self.square_item.render(ctx)?;
+        self.round_item.render(ctx)?;
 
         graphics::present(ctx)?;
 
         timer::yield_now();
-
         Ok(())
     }
 }
