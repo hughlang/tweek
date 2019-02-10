@@ -10,7 +10,6 @@ extern crate tween;
 use ggez::graphics::{self};
 use ggez::{Context, GameResult};
 use ggez::mint;
-
 use tween::*;
 
 const SQUARE_ITEM_ID: usize = 100;
@@ -21,10 +20,23 @@ const ROUND_ITEM_ID: usize = 101;
 
 //-- Main -----------------------------------------------------------------------
 
-pub struct GGManager {
+pub struct TweenManager {
+    id: usize,
+    timeline: Timeline,
 
 }
 
+impl TweenManager {
+    // pub fn new(id: usize) -> Self {
+    //     TimelineManager {
+    //         id
+    //     }
+    // }
+
+    pub fn setup(&self) {
+
+    }
+}
 
 //-- Support -----------------------------------------------------------------------
 

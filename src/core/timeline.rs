@@ -2,7 +2,7 @@ extern crate ggez;
 
 use std::rc::Rc;
 use std::cell::RefCell;
-// use std::{collections::HashMap};
+use std::{collections::HashMap};
 use super::property::*;
 use super::tweek::*;
 use super::tween::*;
@@ -19,7 +19,7 @@ use super::tween::*;
 /// See also: https://greensock.com/asdocs/com/greensock/TimelineLite.html
 pub struct Timeline {
 	tweek: Tweek,
-    children: Vec<TweenRange>,
+    children: HashMap<usize, TweenRange>,
 
 }
 
@@ -27,7 +27,7 @@ impl Timeline {
 	pub fn new() -> Self {
 		Timeline {
 			tweek: Tweek::new(),
-			children: Vec::new(),
+			children: HashMap::new(),
 		}
 	}
 	pub fn create(tweens: Vec<Tween>, align: TweenAlign) -> Self {
@@ -39,18 +39,21 @@ impl Timeline {
 		match align {
 			TweenAlign::Normal => {
 				for mut tween in tweens {
+					let id = tween.tween_id;
 					timeline.tweek.register_tween(&mut tween);
 					let range = TweenRange::new(tween, 0.0);
-					timeline.children.push(range);
+					timeline.children.insert(id, range);
 				}
 			},
 			TweenAlign::Sequence => {
 				let mut pos = 0.0 as f64;
-				for tween in tweens {
+				for mut tween in tweens {
+					let id = tween.tween_id;
 					let dur = tween.duration_s;
+					timeline.tweek.register_tween(&mut tween);
 					let range = TweenRange::new(tween, pos);
 					pos += dur;
-					timeline.children.push(range);
+					timeline.children.insert(id, range);
 				}
 			},
 			_ => (),
@@ -58,22 +61,24 @@ impl Timeline {
 		timeline
 	}
 
-	pub fn get_updates(&self) -> Vec<UIState> {
-		let active = &self.children[0];
-		let tween = active.tween.borrow();
-		let updates = tween.get_updates();
-		updates
-	}
+	// pub fn get_updates(&self) -> Option<Vec<UIState>> {
+	// 	if let Some(active) = &self.children.values().next() {
+	// 		let tween = active.tween.borrow();
+	// 		let updates = tween.get_updates();
+	// 		updates
+	// 	}
+	// 	None
+	// }
 }
 
 impl Playable for Timeline {
 
 	fn play(&mut self) {
-		for range in &self.children {
-			// range.tween.borrow_mut().
-			let mut tween = range.tween.borrow_mut();
-			(&mut *tween).play();
-		}
+		// for range in &self.children {
+		// 	// range.tween.borrow_mut().
+		// 	let mut tween = range.tween.borrow_mut();
+		// 	(&mut *tween).play();
+		// }
 	}
 
     fn stop(&mut self) {

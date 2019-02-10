@@ -32,8 +32,8 @@ pub trait Tweenable {
 /// Only one duration timeline exists for all animators.
 /// An AnimationState enum controls what animation can happen.
 pub struct Tween {
-    tween_id: usize,
-    global_id: String,
+    pub tween_id: usize,
+    pub global_id: String,
     pub delay_s: f64,
     pub duration_s: f64,
     state: AnimState,

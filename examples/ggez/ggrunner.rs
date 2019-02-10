@@ -24,8 +24,7 @@ struct MainState {
 }
 
 impl MainState {
-    fn new(ctx: &mut Context) -> GameResult<MainState> {
-        println!("Game resource path: {:?}", ctx.filesystem);
+    fn new(_ctx: &mut Context) -> GameResult<MainState> {
 
         // Add a rectangle
         let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
@@ -35,7 +34,7 @@ impl MainState {
         let mut tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]).with_id(SQUARE_ITEM_ID)
             .to(vec![position(400.0, 300.0), size(100.0, 100.0), alpha(0.2)])
             .duration(2.0);
-        &tween1.play();
+        // &tween1.play();
         item1.tween = Some(tween1);
 
         // Add a circle
@@ -46,8 +45,11 @@ impl MainState {
             .to(vec![position(40.0, 400.0), alpha(0.2)])
             .duration(2.0).ease(Easing::SineIn);
 
-        &tween2.play();
+        // &tween2.play();
         item2.tween = Some(tween2);
+
+        // let mut timeline = Timeline::create(vec![tween1], TweenAlign::Normal);
+        // &timeline.play();
 
         let s = MainState {
             square_item: item1,

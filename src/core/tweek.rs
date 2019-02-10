@@ -1,7 +1,9 @@
 extern crate ggez;
 
-use std::{collections::HashSet};
+use std::{collections::HashMap};
 use std::rc::Rc;
+use std::cell::RefCell;
+
 
 // use super::property::*;
 use super::timeline::*;
@@ -43,16 +45,14 @@ pub enum TweenEvent {
 /// The tween_db is an attempt to centralize ownership of Tweens in one place
 /// when using a Timeline. TBD
 pub struct Tweek {
-    tween_db: HashSet<Tween>,
-    timelines: Vec<Timeline>,
+    tween_db: HashMap<String, Rc<RefCell<Tween>>>,
     subscribers: Vec<Rc<Fn(TweenEvent, &str) + 'static>>,
 }
 
 impl Tweek {
     pub fn new() -> Self {
         Tweek {
-            tween_db: HashSet::new(),
-            timelines: Vec::new(),
+            tween_db: HashMap::new(),
             subscribers: Vec::new(),
         }
     }
@@ -64,16 +64,11 @@ impl Tweek {
         self.subscribers.push(Rc::new(cb));
     }
 
-    // Unused
-    pub fn add_timeline(&mut self, timeline: Timeline) {
-        self.timelines.push(timeline);
-    }
-
     /// This method should be called by a Timeline that wants a Tween to send events
     /// to Tweek and then re-publish them back to the Timeline which has added itself as
     /// the subscribers list.
     /// Same as add_tween but without the lifetime marks
-    pub fn register_tween(&self, tween: &mut Tween) {
+    pub fn register_tween(&mut self, tween: &mut Tween) {
         let subscribers = self.subscribers.clone();
         tween.add_callback(move |e, g| {
             println!("Tween callback: event={:?} id={}", e, g);
@@ -81,6 +76,9 @@ impl Tweek {
                 (&*cb)(e, g);
             }
         });
+        // self.tween_db.insert(tween.global_id, Rc::new(RefCell::new(tween)));
+
+
     }
 
     // Unused. Use register_tween instead

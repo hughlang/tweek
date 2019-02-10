@@ -74,12 +74,12 @@ impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         // Here is where you tell which objects to update in each run loop.
         // MainState will have one or more Tween objects that need to be updated.
-        let updates = self.timeline.get_updates();
-        if updates.len() > 0 {
-            let props = &updates[0].props;
-            self.assets.square_item.bounds.render_update(&props);
-            self.assets.square_item.fill_color.render_update(&props);
-        }
+        // let updates = self.timeline.get_updates();
+        // if updates.len() > 0 {
+        //     let props = &updates[0].props;
+        //     self.assets.square_item.bounds.render_update(&props);
+        //     self.assets.square_item.fill_color.render_update(&props);
+        // }
         Ok(())
     }
 
