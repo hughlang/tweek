@@ -201,6 +201,9 @@ impl Playable for Tween {
 
     }
 
+    fn reset(&mut self) {
+        self.start_time = Instant::now();
+    }
 }
 
 //-- Prop helpers -----------------------------------------------------------------------

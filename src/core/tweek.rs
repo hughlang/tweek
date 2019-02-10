@@ -27,6 +27,7 @@ pub trait Playable {
     fn stop(&mut self);
     fn pause(&mut self);
     fn tick(&mut self);
+    fn reset(&mut self);
     // fn resume(&mut self);
     // fn seek(&mut self, pos: f64);
 

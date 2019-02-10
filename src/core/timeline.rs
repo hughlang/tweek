@@ -3,6 +3,8 @@ extern crate ggez;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::{collections::HashMap};
+use std::{time::{Duration,Instant}};
+
 use super::property::*;
 use super::tweek::*;
 use super::tween::*;
@@ -10,6 +12,22 @@ use super::tween::*;
 //-- Base -----------------------------------------------------------------------
 
 
+pub struct TweenRange {
+    tween: Rc<RefCell<Tween>>,
+    start: f64, // The start time in float seconds
+    end: f64,   // The end time in float seconds
+}
+
+impl TweenRange {
+	fn new(tween: Tween, start: f64) -> Self {
+		let end = start + tween.duration.as_float_secs();
+		TweenRange {
+			tween: Rc::new(RefCell::new(tween)),
+			start: start,
+			end: end,
+		}
+	}
+}
 
 
 //-- Main -----------------------------------------------------------------------
@@ -20,7 +38,7 @@ use super::tween::*;
 pub struct Timeline {
 	tweek: Tweek,
     children: HashMap<usize, TweenRange>,
-
+    tl_start: Instant,
 }
 
 impl Timeline {
@@ -28,8 +46,10 @@ impl Timeline {
 		Timeline {
 			tweek: Tweek::new(),
 			children: HashMap::new(),
+			tl_start: Instant::now(),
 		}
 	}
+
 	pub fn create(tweens: Vec<Tween>, align: TweenAlign) -> Self {
 		let mut timeline = Timeline::new();
 		timeline.tweek.add_subscriber(move |e, g| {
@@ -72,12 +92,16 @@ impl Timeline {
 
 impl Playable for Timeline {
 
+	/// The Timeline play method should only play the tweens where the start time
+	/// is not greater than the current elapsed time.
 	fn play(&mut self) {
-		// for range in &self.children {
-		// 	// range.tween.borrow_mut().
-		// 	let mut tween = range.tween.borrow_mut();
-		// 	(&mut *tween).play();
-		// }
+		for (_, range) in &self.children {
+			let elapsed = self.tl_start.elapsed().as_float_secs();
+			if range.start < elapsed && range.end > elapsed {}
+				let mut tween = range.tween.borrow_mut();
+				(&mut *tween).play();
+			}
+		}
 	}
 
     fn stop(&mut self) {
@@ -89,6 +113,15 @@ impl Playable for Timeline {
 	}
 
     fn tick(&mut self) {
+
+	}
+
+	fn reset(&mut self) {
+		self.tl_start = Instant::now();
+		for (_, range) in &self.children {
+			let mut tween = range.tween.borrow_mut();
+			(&mut *tween).reset();
+		}
 
 	}
 
@@ -108,22 +141,6 @@ pub enum TweenAlign {
     Start,
 }
 
-pub struct TweenRange {
-    tween: Rc<RefCell<Tween>>,
-    start: f64, // The start time in float seconds
-    end: f64,   // The end time in float seconds
-}
-
-impl TweenRange {
-	fn new(tween: Tween, start: f64) -> Self {
-		let end = start + tween.duration.as_float_secs();
-		TweenRange {
-			tween: Rc::new(RefCell::new(tween)),
-			start: start,
-			end: end,
-		}
-	}
-}
 
 pub enum AnimState {
     Pending,
