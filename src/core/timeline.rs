@@ -97,7 +97,7 @@ impl Playable for Timeline {
 	fn play(&mut self) {
 		for (_, range) in &self.children {
 			let elapsed = self.tl_start.elapsed().as_float_secs();
-			if range.start < elapsed && range.end > elapsed {}
+			if range.start < elapsed && range.end > elapsed {
 				let mut tween = range.tween.borrow_mut();
 				(&mut *tween).play();
 			}

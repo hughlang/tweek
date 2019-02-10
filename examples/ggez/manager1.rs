@@ -71,15 +71,18 @@ impl ItemState {
         })
     }
 
-    pub fn update(&mut self) -> GameResult {
-        if let Some(tween) = &self.tween {
-            if let Some(update) = tween.update_item(&self.id) {
-                self.bounds.render_update(&update.props);
-                self.fill_color.render_update(&update.props);
-            }
-        }
-        Ok(())
-    }
+    /// Getter for item id
+    pub fn get_id(&self) -> usize { self.id }
+
+    // pub fn update(&mut self) -> GameResult {
+    //     if let Some(tween) = &self.tween {
+    //         if let Some(update) = tween.update_item(&self.id) {
+    //             self.bounds.render_update(&update.props);
+    //             self.fill_color.render_update(&update.props);
+    //         }
+    //     }
+    //     Ok(())
+    // }
 
     pub fn render(&self, ctx: &mut Context) -> GameResult {
         match self.shape {
@@ -90,7 +93,7 @@ impl ItemState {
             },
             Shape::Circle(_, r) => {
                 let pt = mint::Point2{x: self.bounds.x + r, y: self.bounds.y + r};
-                let mesh = graphics::Mesh::new_circle(ctx, graphics::DrawMode::fill(), pt, r, 1.0, self.fill_color)?;
+                let mesh = graphics::Mesh::new_circle(ctx, graphics::DrawMode::fill(), pt, r, 0.5, self.fill_color)?;
                 let drawparams = graphics::DrawParam::new();
                 let _result = graphics::draw(ctx, &mesh, drawparams);
             },

@@ -19,6 +19,7 @@ const SQUARE_ITEM_ID: usize = 100;
 const ROUND_ITEM_ID: usize = 101;
 
 struct MainState {
+    timeline: Timeline,
     square_item: ItemState,
     round_item: ItemState,
 }
@@ -31,40 +32,51 @@ impl MainState {
         let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
         item1.fill_color = graphics::Color::from_rgb_u32(0x333333);
 
-        let mut tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]).with_id(SQUARE_ITEM_ID)
+        let tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]).with_id(SQUARE_ITEM_ID)
             .to(vec![position(400.0, 300.0), size(100.0, 100.0), alpha(0.2)])
             .duration(2.0);
-        // &tween1.play();
-        item1.tween = Some(tween1);
 
         // Add a circle
         let mut item2 = ItemState::new(ROUND_ITEM_ID, Shape::Circle(mint::Point2{x: 500.0, y: 200.0}, 40.0))?;
         item2.fill_color = graphics::Color::from_rgb_u32(0xCD09AA);
 
-        let mut tween2 = Tween::with(&vec![&item2.bounds, &item2.fill_color]).with_id(ROUND_ITEM_ID)
-            .to(vec![position(40.0, 400.0), alpha(0.2)])
+        let tween2 = Tween::with(&vec![&item2.bounds, &item2.fill_color]).with_id(ROUND_ITEM_ID)
+            .to(vec![position(40.0, 200.0), alpha(0.2)])
             .duration(2.0).ease(Easing::SineIn);
 
-        // &tween2.play();
-        item2.tween = Some(tween2);
 
-        // let mut timeline = Timeline::create(vec![tween1], TweenAlign::Normal);
-        // &timeline.play();
+        let mut timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Normal);
+        &timeline.play();
 
         let s = MainState {
+            timeline: timeline,
             square_item: item1,
             round_item: item2,
         };
         Ok(s)
     }
 
+    fn render_update(&self, item: &mut ItemState) {
+        if let Some(update) = self.timeline.get_update(&item.get_id()) {
+            item.bounds.render_update(&update.props);
+            item.fill_color.render_update(&update.props);
+        }
+    }
 }
 
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
+        let item = &mut self.square_item;
+        if let Some(update) = self.timeline.get_update(&item.get_id()) {
+            item.bounds.render_update(&update.props);
+            item.fill_color.render_update(&update.props);
+        }
 
-        self.square_item.update()?;
-        self.round_item.update()?;
+        let item = &mut self.round_item;
+        if let Some(update) = self.timeline.get_update(&item.get_id()) {
+            item.bounds.render_update(&update.props);
+            item.fill_color.render_update(&update.props);
+        }
 
         Ok(())
     }
