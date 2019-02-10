@@ -8,7 +8,6 @@ use ggez::event;
 use ggez::graphics::{self};
 use ggez::timer;
 use ggez::{Context, ContextBuilder, GameResult};
-// use ggez::nalgebra as na;
 use ggez::mint;
 
 use std::env;
@@ -77,7 +76,6 @@ impl ItemState {
     }
 }
 
-
 struct MainState {
     square_item: ItemState,
     round_item: ItemState,
@@ -87,6 +85,7 @@ impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         println!("Game resource path: {:?}", ctx.filesystem);
 
+        // Add a rectangle
         let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
         let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
         item1.fill_color = graphics::Color::from_rgb_u32(0x333333);
@@ -97,8 +96,8 @@ impl MainState {
         &tween1.play();
         item1.tween = Some(tween1);
 
-        let pt = mint::Point2{x: 500.0, y: 200.0};
-        let mut item2 = ItemState::new(ROUND_ITEM_ID, Shape::Circle(pt, 40.0))?;
+        // Add a circle
+        let mut item2 = ItemState::new(ROUND_ITEM_ID, Shape::Circle(mint::Point2{x: 500.0, y: 200.0}, 40.0))?;
         item2.fill_color = graphics::Color::from_rgb_u32(0xCD09AA);
 
         let mut tween2 = Tween::with(&vec![&item2.bounds, &item2.fill_color]).with_id(ROUND_ITEM_ID)

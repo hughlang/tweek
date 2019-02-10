@@ -13,10 +13,6 @@ name = "ggrunner"
 path = "examples/ggez/ggrunner.rs"
 
 [[bin]]
-name = "ggease"
-path = "examples/ggez/ggease.rs"
-
-[[bin]]
 name = "ggtimeline"
 path = "examples/ggez/ggtimeline.rs"
 
