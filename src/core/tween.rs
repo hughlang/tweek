@@ -185,18 +185,19 @@ impl Playable for Tween {
 
     fn play(&mut self) {
 
-        for cb in self.callbacks.iter() {
-            (&*cb)(TweenEvent::Play(self.tween_id), &self.global_id);
-        }
-
         if self.tween_id == 0 {
             self.tween_id = self.animators.len();
         }
         println!("start={:?} \nend={:?}", &self.start_props, &self.end_props);
-        let animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.easing);
+        let mut animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.easing);
+        animator.debug = true;
 
         self.animators.insert(self.tween_id, animator);
         self.state = AnimState::Running;
+
+        for cb in self.callbacks.iter() {
+            (&*cb)(TweenEvent::Play(self.tween_id), &self.global_id);
+        }
     }
 
     fn stop(&mut self) {

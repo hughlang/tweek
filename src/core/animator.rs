@@ -14,6 +14,7 @@ pub struct Animator {
     pub start: UIState,
     pub end: UIState,
     pub easing: Easing,
+    pub debug: bool,
 }
 
 impl Animator {
@@ -25,6 +26,7 @@ impl Animator {
             start: start_state,
             end: end_state,
             easing: ease.clone(),
+            debug: false,
         }
     }
 
@@ -40,6 +42,7 @@ impl Animator {
         if progress > 0.0 && progress <= 1.0 {
             for (i, prop) in self.start.props.iter().enumerate() {
                 let current = Animator::interpolate(prop, &self.end.props[i], progress);
+
                 // println!("----------------------------------------------");
                 // println!("elapsed={} progress={}", elapsed.as_float_secs(), progress);
                 props.push(current);

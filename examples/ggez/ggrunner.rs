@@ -72,8 +72,9 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        let item = &mut self.square_item;
         self.tweek.tick();
+
+        let item = &mut self.square_item;
         if let Some(update) = self.tweek.get_update(&item.get_id()) {
             item.bounds.render_update(&update.props);
             item.fill_color.render_update(&update.props);

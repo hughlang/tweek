@@ -154,7 +154,9 @@ impl Playable for Tweek {
     fn get_update(&mut self, id: &usize) -> Option<UIState> {
         for tl in &self.timelines {
             let mut timeline = tl.borrow_mut();
-            (&mut *timeline).reset();
+            if let Some(update) = (&mut *timeline).get_update(id) {
+                return Some(update);
+            }
         }
         None
     }
