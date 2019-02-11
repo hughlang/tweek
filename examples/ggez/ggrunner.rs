@@ -42,10 +42,9 @@ impl MainState {
 
         let tween2 = Tween::with(&vec![&item2.bounds, &item2.fill_color]).with_id(ROUND_ITEM_ID)
             .to(vec![position(40.0, 200.0), alpha(0.2)])
-            .duration(2.0).ease(Easing::SineIn);
+            .duration(3.0);
 
-
-        let mut timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Normal);
+        let mut timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Sequence);
         &timeline.play();
 
         let s = MainState {

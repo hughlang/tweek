@@ -89,10 +89,19 @@ impl Timeline {
 	}
 
 	pub fn setup(mut self) -> Self {
-		self.tweek.add_subscriber(move |e, g| {
+		self.tweek.add_subscriber( |e, g| {
             println!("Tweek subscriber: event={:?} id={}", e, g);
 			match e {
 				TweenEvent::Completed(id) => {
+					// &self.play();
+					// for (i, range) in &self.children {
+					// 	println!("play – {}", i);
+					// 	let elapsed = self.tl_start.elapsed().as_float_secs();
+					// 	if range.start < elapsed && range.end > elapsed {
+					// 		let mut tween = range.tween.borrow_mut();
+					// 		(&mut *tween).play();
+					// 	}
+					// }
 
 				},
 				_ => (),
