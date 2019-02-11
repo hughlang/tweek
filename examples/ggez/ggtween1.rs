@@ -49,8 +49,8 @@ impl ItemState {
     }
 
     pub fn update(&mut self) -> GameResult {
-        if let Some(tween) = &self.tween {
-            if let Some(update) = tween.update_item(&self.id) {
+        if let Some(tween) = &mut self.tween {
+            if let Some(update) = tween.get_update(&self.id) {
                 self.bounds.render_update(&update.props);
                 self.fill_color.render_update(&update.props);
             }

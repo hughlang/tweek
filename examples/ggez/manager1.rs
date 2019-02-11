@@ -74,15 +74,6 @@ impl ItemState {
     /// Getter for item id
     pub fn get_id(&self) -> usize { self.id }
 
-    // pub fn update(&mut self) -> GameResult {
-    //     if let Some(tween) = &self.tween {
-    //         if let Some(update) = tween.update_item(&self.id) {
-    //             self.bounds.render_update(&update.props);
-    //             self.fill_color.render_update(&update.props);
-    //         }
-    //     }
-    //     Ok(())
-    // }
 
     pub fn render(&self, ctx: &mut Context) -> GameResult {
         match self.shape {

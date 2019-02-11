@@ -5,8 +5,8 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 
-// use super::property::*;
-// use super::timeline::*;
+use super::property::*;
+use super::timeline::*;
 use super::tween::*;
 
 //-- Base -----------------------------------------------------------------------
@@ -28,6 +28,7 @@ pub trait Playable {
     fn pause(&mut self);
     fn tick(&mut self);
     fn reset(&mut self);
+    fn get_update(&mut self, id: &usize) -> Option<UIState>;
     // fn resume(&mut self);
     // fn seek(&mut self, pos: f64);
 }
@@ -54,6 +55,7 @@ pub enum TweenEvent {
 pub struct Tweek {
     tween_db: HashMap<String, Rc<RefCell<Tween>>>,
     subscribers: Vec<Rc<Fn(TweenEvent, &str) + 'static>>,
+    timelines: Vec<Rc<RefCell<Timeline>>>,
 }
 
 impl Tweek {
@@ -61,7 +63,12 @@ impl Tweek {
         Tweek {
             tween_db: HashMap::new(),
             subscribers: Vec::new(),
+            timelines: Vec::new(),
         }
+    }
+
+    pub fn add_timeline(&mut self, timeline: Timeline) {
+        self.timelines.push(Rc::new(RefCell::new(timeline)));
     }
 
     /// See: https://www.ralfj.de/projects/rust-101/part12.html
@@ -78,13 +85,13 @@ impl Tweek {
     /// Same as add_tween but without the lifetime marks
     pub fn register_tween(&mut self, tween: &mut Tween) {
         let subscribers = self.subscribers.clone();
+        // let timelines = self.timelines.
         tween.add_callback(move |e, g| {
             println!("Tween callback: event={:?} id={}", e, g);
             for cb in subscribers.iter() {
                 (&*cb)(e, g);
             }
         });
-        // self.tween_db.insert(tween.global_id, Rc::new(RefCell::new(tween)));
 
 
     }
@@ -101,7 +108,6 @@ impl Tweek {
         });
     }
 
-
     pub fn player_event_handler(&self, event: TweenEvent) {
 
     }
@@ -109,3 +115,48 @@ impl Tweek {
 
 }
 
+impl Playable for Tweek {
+	fn play(&mut self) {
+        for tl in &self.timelines {
+            let mut timeline = tl.borrow_mut();
+            (&mut *timeline).play();
+        }
+	}
+
+    fn stop(&mut self) {
+        for tl in &self.timelines {
+            let mut timeline = tl.borrow_mut();
+            (&mut *timeline).stop();
+        }
+	}
+
+    fn pause(&mut self) {
+        for tl in &self.timelines {
+            let mut timeline = tl.borrow_mut();
+            (&mut *timeline).pause();
+        }
+	}
+
+    fn tick(&mut self) {
+        for tl in &self.timelines {
+            let mut timeline = tl.borrow_mut();
+            (&mut *timeline).tick();
+        }
+	}
+
+	fn reset(&mut self) {
+        for tl in &self.timelines {
+            let mut timeline = tl.borrow_mut();
+            (&mut *timeline).reset();
+        }
+	}
+
+    fn get_update(&mut self, id: &usize) -> Option<UIState> {
+        for tl in &self.timelines {
+            let mut timeline = tl.borrow_mut();
+            (&mut *timeline).reset();
+        }
+        None
+    }
+
+}

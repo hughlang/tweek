@@ -98,15 +98,6 @@ impl Timeline {
 		self
 	}
 
-
-
-    pub fn get_update(&self, id: &usize) -> Option<UIState> {
-		if let Some(range) = &self.children.get(id) {
-			let mut tween = range.tween.borrow_mut();
-			return (&mut *tween).update_item(id);
-		}
-        None
-    }
 }
 
 impl Playable for Timeline {
@@ -148,6 +139,14 @@ impl Playable for Timeline {
 		}
 
 	}
+
+    fn get_update(&mut self, id: &usize) -> Option<UIState> {
+		if let Some(range) = &self.children.get(id) {
+			let mut tween = range.tween.borrow_mut();
+			return (&mut *tween).get_update(id);
+		}
+        None
+    }
 
 }
 

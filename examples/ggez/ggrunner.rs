@@ -6,7 +6,7 @@ extern crate ggez;
 extern crate tween;
 
 use ggez::conf;
-use ggez::event::{self, MouseButton};
+use ggez::event::{self};
 use ggez::graphics::{self};
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::mint;
@@ -19,7 +19,7 @@ const SQUARE_ITEM_ID: usize = 100;
 const ROUND_ITEM_ID: usize = 101;
 
 struct MainState {
-    timeline: Timeline,
+    tweek: Tweek,
     square_item: ItemState,
     round_item: ItemState,
 }
@@ -45,11 +45,12 @@ impl MainState {
             .duration(3.0);
 
         let mut tweek = Tweek::new();
-        let mut timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Sequence, &mut tweek);
-        &timeline.play();
+        let timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Normal, &mut tweek);
+        tweek.add_timeline(timeline);
+        &tweek.play();
 
         let s = MainState {
-            timeline: timeline,
+            tweek: tweek,
             square_item: item1,
             round_item: item2,
         };
@@ -72,14 +73,14 @@ impl MainState {
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         let item = &mut self.square_item;
-        self.timeline.tick();
-        if let Some(update) = self.timeline.get_update(&item.get_id()) {
+        self.tweek.tick();
+        if let Some(update) = self.tweek.get_update(&item.get_id()) {
             item.bounds.render_update(&update.props);
             item.fill_color.render_update(&update.props);
         }
 
         let item = &mut self.round_item;
-        if let Some(update) = self.timeline.get_update(&item.get_id()) {
+        if let Some(update) = self.tweek.get_update(&item.get_id()) {
             item.bounds.render_update(&update.props);
             item.fill_color.render_update(&update.props);
         }

@@ -134,8 +134,7 @@ impl Tween {
         self
     }
 
-    /// Execute all functions in the queue
-
+    /// UNUSED
     pub fn get_updates(&self) -> Vec<UIState> {
         let mut results: Vec<UIState> = Vec::new();
         match self.state {
@@ -150,16 +149,6 @@ impl Tween {
             _ => ()
         }
         results
-    }
-
-    pub fn update_item(&self, id: &usize) -> Option<UIState> {
-        if self.state == AnimState::Running {
-            if let Some(animator) = self.animators.get(id) {
-                let ui_state = animator.update(self.start_time, self.duration);
-                return Some(ui_state);
-            }
-        }
-        None
     }
 
     pub fn add_callback<C>(&mut self, cb: C) where C: Fn(TweenEvent, &str) + 'static {
@@ -221,6 +210,17 @@ impl Playable for Tween {
     fn reset(&mut self) {
         self.start_time = Instant::now();
     }
+
+    fn get_update(&mut self, id: &usize) -> Option<UIState> {
+        if self.state == AnimState::Running {
+            if let Some(animator) = self.animators.get(id) {
+                let ui_state = animator.update(self.start_time, self.duration);
+                return Some(ui_state);
+            }
+        }
+        None
+    }
+
 }
 
 //-- TODO: Move to separate file -----------------------------------------------------------------------
