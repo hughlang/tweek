@@ -44,7 +44,8 @@ impl MainState {
             .to(vec![position(40.0, 200.0), alpha(0.2)])
             .duration(3.0);
 
-        let mut timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Sequence);
+        let mut tweek = Tweek::new();
+        let mut timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Sequence, &mut tweek);
         &timeline.play();
 
         let s = MainState {

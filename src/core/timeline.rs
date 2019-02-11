@@ -36,7 +36,6 @@ impl TweenRange {
 /// either starting at the same time or sequentially.
 /// See also: https://greensock.com/asdocs/com/greensock/TimelineLite.html
 pub struct Timeline {
-	tweek: Tweek,
     children: HashMap<usize, TweenRange>,
     tl_start: Instant,
 }
@@ -44,59 +43,48 @@ pub struct Timeline {
 impl Timeline {
 	pub fn new() -> Self {
 		Timeline {
-			tweek: Tweek::new(),
 			children: HashMap::new(),
 			tl_start: Instant::now(),
 		}
 	}
 
-	pub fn create(tweens: Vec<Tween>, align: TweenAlign) -> Self {
+	pub fn create(tweens: Vec<Tween>, align: TweenAlign, tweek: &mut Tweek) -> Self {
 		let mut timeline = Timeline::new();
-
-		// timeline.tweek.add_subscriber(move |e, g| {
-        //     println!("Tweek subscriber: event={:?} id={}", e, g);
-		// 	match e {
-		// 		TweenEvent::Completed(id) => {
-
-		// 		},
-		// 		_ => (),
-		// 	}
-        // });
 
 		match align {
 			TweenAlign::Normal => {
-				for mut tween in tweens {
-					let id = tween.tween_id;
-					timeline.tweek.add_tween(&mut tween);
-					let range = TweenRange::new(tween, 0.0);
+				for mut t in tweens {
+					let id = t.tween_id;
+					tweek.add_tween(&mut t);
+					let range = TweenRange::new(t, 0.0);
 					timeline.children.insert(id, range);
 				}
 			},
 			TweenAlign::Sequence => {
 				let mut pos = 0.0 as f64;
-				for mut tween in tweens {
-					let id = tween.tween_id;
-					let dur = tween.duration.as_float_secs();
-					timeline.tweek.add_tween(&mut tween);
-					let range = TweenRange::new(tween, pos);
+				for mut t in tweens {
+					let id = t.tween_id;
+					let dur = t.duration.as_float_secs();
+					tweek.add_tween(&mut t);
+					let range = TweenRange::new(t, pos);
 					pos += dur;
 					timeline.children.insert(id, range);
 				}
 			},
 			_ => (),
 		}
-		timeline.setup()
+		timeline.setup(tweek)
 	}
 
-	pub fn setup(mut self) -> Self {
-		self.tweek.add_subscriber( |e, g| {
+	pub fn setup(mut self, tweek: &mut Tweek) -> Self {
+		tweek.add_subscriber( |e, g| {
             println!("Tweek subscriber: event={:?} id={}", e, g);
 			match e {
 				TweenEvent::Completed(id) => {
 					// &self.play();
 					// for (i, range) in &self.children {
 					// 	println!("play – {}", i);
-					// 	let elapsed = self.tl_start.elapsed().as_float_secs();
+						// let elapsed = &self.tl_start.elapsed().as_float_secs();
 					// 	if range.start < elapsed && range.end > elapsed {
 					// 		let mut tween = range.tween.borrow_mut();
 					// 		(&mut *tween).play();
