@@ -45,7 +45,7 @@ impl MainState {
             .duration(3.0);
 
         let mut tweek = Tweek::new();
-        let timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Normal, &mut tweek);
+        let timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Sequence, &mut tweek);
         tweek.add_timeline(timeline);
         &tweek.play();
 
@@ -72,7 +72,8 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        self.tweek.tick();
+
+        self.tweek.tick(); // This is called to check on completion status of each tween
 
         let item = &mut self.square_item;
         if let Some(update) = self.tweek.get_update(&item.get_id()) {

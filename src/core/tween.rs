@@ -48,7 +48,7 @@ pub struct Tween {
     pub delay_s: f64,
     pub start_time: Instant,
     pub duration: Duration,
-    state: AnimState,
+    pub state: AnimState,
     start_props: Vec<Prop>,
     end_props: Vec<Prop>,
     animators: HashMap<usize, Animator>,
@@ -184,7 +184,7 @@ impl Playable for Tween {
     }
 
     fn play(&mut self) {
-
+        self.start_time = Instant::now();
         if self.tween_id == 0 {
             self.tween_id = self.animators.len();
         }

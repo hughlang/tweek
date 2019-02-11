@@ -125,10 +125,19 @@ impl Playable for Timeline {
 
     fn tick(&mut self) {
 		for (_, range) in &self.children {
-			let mut tween = range.tween.borrow_mut();
-			(&mut *tween).tick();
+			let elapsed = self.tl_start.elapsed().as_float_secs();
+			if range.start < elapsed && range.end > elapsed {
+				let mut tween = range.tween.borrow_mut();
+				match tween.state {
+					AnimState::Idle | AnimState::Pending => {
+						(&mut *tween).play();
+					},
+					_ => {
+						(&mut *tween).tick();
+					}
+				}
+			}
 		}
-
 	}
 
 	fn reset(&mut self) {

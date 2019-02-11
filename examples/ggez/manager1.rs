@@ -74,7 +74,6 @@ impl ItemState {
     /// Getter for item id
     pub fn get_id(&self) -> usize { self.id }
 
-
     pub fn render(&self, ctx: &mut Context) -> GameResult {
         match self.shape {
             Shape::Rectangle(_) => {
