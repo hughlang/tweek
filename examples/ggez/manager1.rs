@@ -12,31 +12,31 @@ use ggez::{Context, GameResult};
 use ggez::mint;
 use tween::*;
 
-const SQUARE_ITEM_ID: usize = 100;
-const ROUND_ITEM_ID: usize = 101;
+// const SQUARE_ITEM_ID: usize = 100;
+// const ROUND_ITEM_ID: usize = 101;
 
 //-- Base -----------------------------------------------------------------------
 
 
 //-- Main -----------------------------------------------------------------------
 
-pub struct TweenManager {
-    id: usize,
-    timeline: Timeline,
+// pub struct TweenManager {
+//     id: usize,
+//     timeline: Timeline,
 
-}
+// }
 
-impl TweenManager {
-    // pub fn new(id: usize) -> Self {
-    //     TimelineManager {
-    //         id
-    //     }
-    // }
+// impl TweenManager {
+//     // pub fn new(id: usize) -> Self {
+//     //     TimelineManager {
+//     //         id
+//     //     }
+//     // }
 
-    pub fn setup(&self) {
+//     pub fn setup(&self) {
 
-    }
-}
+//     }
+// }
 
 //-- Support -----------------------------------------------------------------------
 

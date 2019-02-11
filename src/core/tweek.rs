@@ -6,7 +6,7 @@ use std::cell::RefCell;
 
 
 // use super::property::*;
-use super::timeline::*;
+// use super::timeline::*;
 use super::tween::*;
 
 //-- Base -----------------------------------------------------------------------
@@ -34,8 +34,9 @@ pub trait Playable {
 
 #[derive(Copy, Clone, Debug)]
 pub enum TweenEvent {
-    Play(usize),
+    Completed(usize),
     Pause(usize),
+    Play(usize),
 }
 
 	// case pending
@@ -67,6 +68,7 @@ impl Tweek {
     /// This method should be called by a Timeline that wants to receive callbacks from
     /// Tweek.
     pub fn add_subscriber<C>(&mut self, cb: C) where C: Fn(TweenEvent, &str) + 'static {
+        println!("Adding subscriber");
         self.subscribers.push(Rc::new(cb));
     }
 
@@ -89,6 +91,7 @@ impl Tweek {
 
     // Unused. Use register_tween instead
     pub fn add_tween<'a>(&'a self, tween: &'a mut Tween) {
+        println!("add_tween for id={}", &tween.tween_id);
         let subscribers = self.subscribers.clone();
         tween.add_callback(move |e, g| {
             println!("Tween callback: event={:?} id={}", e, g);

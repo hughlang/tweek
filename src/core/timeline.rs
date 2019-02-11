@@ -52,15 +52,22 @@ impl Timeline {
 
 	pub fn create(tweens: Vec<Tween>, align: TweenAlign) -> Self {
 		let mut timeline = Timeline::new();
-		timeline.tweek.add_subscriber(move |e, g| {
-            println!("Tweek subscriber: event={:?} id={}", e, g);
-        });
+
+		// timeline.tweek.add_subscriber(move |e, g| {
+        //     println!("Tweek subscriber: event={:?} id={}", e, g);
+		// 	match e {
+		// 		TweenEvent::Completed(id) => {
+
+		// 		},
+		// 		_ => (),
+		// 	}
+        // });
 
 		match align {
 			TweenAlign::Normal => {
 				for mut tween in tweens {
 					let id = tween.tween_id;
-					timeline.tweek.register_tween(&mut tween);
+					timeline.tweek.add_tween(&mut tween);
 					let range = TweenRange::new(tween, 0.0);
 					timeline.children.insert(id, range);
 				}
@@ -70,7 +77,7 @@ impl Timeline {
 				for mut tween in tweens {
 					let id = tween.tween_id;
 					let dur = tween.duration.as_float_secs();
-					timeline.tweek.register_tween(&mut tween);
+					timeline.tweek.add_tween(&mut tween);
 					let range = TweenRange::new(tween, pos);
 					pos += dur;
 					timeline.children.insert(id, range);
@@ -78,8 +85,23 @@ impl Timeline {
 			},
 			_ => (),
 		}
-		timeline
+		timeline.setup()
 	}
+
+	pub fn setup(mut self) -> Self {
+		self.tweek.add_subscriber(move |e, g| {
+            println!("Tweek subscriber: event={:?} id={}", e, g);
+			match e {
+				TweenEvent::Completed(id) => {
+
+				},
+				_ => (),
+			}
+        });
+		self
+	}
+
+
 
     pub fn get_update(&self, id: &usize) -> Option<UIState> {
 		if let Some(range) = &self.children.get(id) {
@@ -95,7 +117,8 @@ impl Playable for Timeline {
 	/// The Timeline play method should only play the tweens where the start time
 	/// is not greater than the current elapsed time.
 	fn play(&mut self) {
-		for (_, range) in &self.children {
+		for (i, range) in &self.children {
+			println!("play – {}", i);
 			let elapsed = self.tl_start.elapsed().as_float_secs();
 			if range.start < elapsed && range.end > elapsed {
 				let mut tween = range.tween.borrow_mut();
@@ -113,6 +136,10 @@ impl Playable for Timeline {
 	}
 
     fn tick(&mut self) {
+		for (_, range) in &self.children {
+			let mut tween = range.tween.borrow_mut();
+			(&mut *tween).tick();
+		}
 
 	}
 

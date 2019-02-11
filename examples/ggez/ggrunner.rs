@@ -45,7 +45,7 @@ impl MainState {
             .duration(2.0).ease(Easing::SineIn);
 
 
-        let mut timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Sequence);
+        let mut timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Normal);
         &timeline.play();
 
         let s = MainState {
@@ -72,6 +72,7 @@ impl MainState {
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         let item = &mut self.square_item;
+        self.timeline.tick();
         if let Some(update) = self.timeline.get_update(&item.get_id()) {
             item.bounds.render_update(&update.props);
             item.fill_color.render_update(&update.props);

@@ -186,21 +186,24 @@ impl Playable for Tween {
     /// Probably use this to check the play status of each tween, based on the
     /// timeline, time elapsed, and duration, etc.
     fn tick(&mut self) {
-        if self.start_time.elapsed() > self.duration {
+        if self.state == AnimState::Running && self.start_time.elapsed() > self.duration {
             self.state = AnimState::Completed;
+            for cb in self.callbacks.iter() {
+                (&*cb)(TweenEvent::Completed(self.tween_id), &self.global_id);
+            }
         }
     }
 
     fn play(&mut self) {
 
         for cb in self.callbacks.iter() {
-            (&*cb)(TweenEvent::Play(1), &self.global_id);
+            (&*cb)(TweenEvent::Play(self.tween_id), &self.global_id);
         }
 
         if self.tween_id == 0 {
             self.tween_id = self.animators.len();
         }
-        println!("start={:?} end={:?}", &self.start_props, &self.end_props);
+        println!("start={:?} \nend={:?}", &self.start_props, &self.end_props);
         let animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.easing);
 
         self.animators.insert(self.tween_id, animator);
