@@ -45,7 +45,7 @@ impl MainState {
             .duration(3.0);
 
         let mut tweek = Tweek::new();
-        let timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Sequence, &mut tweek);
+        let timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Normal, &mut tweek);
         tweek.add_timeline(timeline);
         &tweek.play();
 
@@ -57,16 +57,6 @@ impl MainState {
 
         Ok(s)
     }
-
-    // Note: this won't work. The compiler knows if you are making a self reference
-    // mutable more than once, which is what happens when you try to call this from the
-    // run loop. I think it's also a protection against re-entrancy bugs
-    // fn render_update(&self, item: &mut ItemState) {
-    //     if let Some(update) = self.timeline.get_update(&item.get_id()) {
-    //         item.bounds.render_update(&update.props);
-    //         item.fill_color.render_update(&update.props);
-    //     }
-    // }
 
 }
 

@@ -49,11 +49,14 @@ pub struct Tween {
     pub start_time: Instant,
     pub duration: Duration,
     pub state: AnimState,
+    pub repeat_count: i32, // -1 = forever
+    pub repeat_delay: f64,
     start_props: Vec<Prop>,
     end_props: Vec<Prop>,
+    pub live_props: Vec<Prop>,
     animators: HashMap<usize, Animator>,
     easing: Easing,
-    callbacks: Vec<Box<Fn(TweenEvent, &str) + 'static>>,
+    callbacks: Vec<Box<FnMut(TweenEvent, &str) + 'static>>,
 }
 
 impl Tween {
@@ -66,8 +69,11 @@ impl Tween {
             start_time: Instant::now(),
             duration: Duration::from_secs(0),
             state: AnimState::Idle,
+            repeat_count: 0,
+            repeat_delay: 0.0,
             start_props: Vec::new(),
             end_props: Vec::new(),
+            live_props: Vec::new(),
             animators: HashMap::new(),
             easing: Easing::Linear,
             callbacks: Vec::new(),
@@ -129,6 +135,12 @@ impl Tween {
         self
     }
 
+    pub fn repeat(mut self, count: i32, delay: f64) -> Self {
+        self.repeat_count = count;
+        self.repeat_delay = delay;
+        self
+    }
+
     pub fn ease(mut self, easing: Easing) -> Self {
         self.easing = easing;
         self
@@ -151,7 +163,7 @@ impl Tween {
         results
     }
 
-    pub fn add_callback<C>(&mut self, cb: C) where C: Fn(TweenEvent, &str) + 'static {
+    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TweenEvent, &str) + 'static {
         self.callbacks.push(Box::new(cb));
     }
 }
@@ -177,8 +189,8 @@ impl Playable for Tween {
     fn tick(&mut self) {
         if self.state == AnimState::Running && self.start_time.elapsed() > self.duration {
             self.state = AnimState::Completed;
-            for cb in self.callbacks.iter() {
-                (&*cb)(TweenEvent::Completed(self.tween_id), &self.global_id);
+            for cb in self.callbacks.iter_mut() {
+                (&mut *cb)(TweenEvent::Completed(self.tween_id), &self.global_id);
             }
         }
     }
@@ -195,8 +207,8 @@ impl Playable for Tween {
         self.animators.insert(self.tween_id, animator);
         self.state = AnimState::Running;
 
-        for cb in self.callbacks.iter() {
-            (&*cb)(TweenEvent::Play(self.tween_id), &self.global_id);
+        for cb in self.callbacks.iter_mut() {
+            (&mut *cb)(TweenEvent::Play(self.tween_id), &self.global_id);
         }
     }
 
@@ -216,6 +228,7 @@ impl Playable for Tween {
         if self.state == AnimState::Running {
             if let Some(animator) = self.animators.get(id) {
                 let ui_state = animator.update(self.start_time, self.duration);
+                // self.live_props = ui_state.props;
                 return Some(ui_state);
             }
         }

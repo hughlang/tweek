@@ -14,8 +14,9 @@ use super::tween::*;
 
 pub struct TweenRange {
     tween: Rc<RefCell<Tween>>,
-    start: f64, // The start time in float seconds
-    end: f64,   // The end time in float seconds
+    pub start: f64, // The start time in float seconds
+    pub end: f64,   // The end time in float seconds
+	pub state: AnimState,
 }
 
 impl TweenRange {
@@ -25,6 +26,7 @@ impl TweenRange {
 			tween: Rc::new(RefCell::new(tween)),
 			start: start,
 			end: end,
+			state: AnimState::Pending,
 		}
 	}
 }
@@ -38,6 +40,8 @@ impl TweenRange {
 pub struct Timeline {
     children: HashMap<usize, TweenRange>,
     tl_start: Instant,
+    pub repeat_count: i32, // -1 = forever
+    pub repeat_delay: f64,
 }
 
 impl Timeline {
@@ -45,42 +49,54 @@ impl Timeline {
 		Timeline {
 			children: HashMap::new(),
 			tl_start: Instant::now(),
+            repeat_count: 0,
+            repeat_delay: 0.0,
 		}
 	}
+
+	// pub fn init(tweek: Tweek) -> Self {
+
+	// }
 
 	pub fn create(tweens: Vec<Tween>, align: TweenAlign, tweek: &mut Tweek) -> Self {
 		let mut timeline = Timeline::new();
+		let mut start = 0.0 as f64;
 
-		match align {
-			TweenAlign::Normal => {
-				for mut t in tweens {
-					let id = t.tween_id;
-					tweek.add_tween(&mut t);
-					let range = TweenRange::new(t, 0.0);
-					timeline.children.insert(id, range);
+		for mut t in tweens {
+			let id = t.tween_id;
+			let dur = t.duration.as_float_secs();
+			t.add_callback(move |e, g| {
+				println!("OG callback: event={:?} id={}", e, g);
+				match e {
+					TweenEvent::Completed(id) => {
+						// &*timeline.play();
+					},
+					_ => (),
 				}
-			},
-			TweenAlign::Sequence => {
-				let mut pos = 0.0 as f64;
-				for mut t in tweens {
-					let id = t.tween_id;
-					let dur = t.duration.as_float_secs();
-					tweek.add_tween(&mut t);
-					let range = TweenRange::new(t, pos);
-					pos += dur;
-					timeline.children.insert(id, range);
-				}
-			},
-			_ => (),
+
+			});
+			// tweek.add_tween(&mut t);
+			let range = TweenRange::new(t, start);
+			match align {
+				TweenAlign::Sequence => {
+					start += dur;
+				},
+				_ => (),
+			}
+			timeline.children.insert(id, range);
 		}
+
 		timeline.setup(tweek)
 	}
 
-	pub fn setup(mut self, tweek: &mut Tweek) -> Self {
+	fn setup(self, tweek: &mut Tweek) -> Self {
 		tweek.add_subscriber( |e, g| {
             println!("Tweek subscriber: event={:?} id={}", e, g);
 			match e {
 				TweenEvent::Completed(id) => {
+					// if let Some(tween) = self.children.get(&id) {
+
+					// }
 					// &self.play();
 					// for (i, range) in &self.children {
 					// 	println!("play – {}", i);
@@ -98,6 +114,18 @@ impl Timeline {
 		self
 	}
 
+    pub fn repeat(mut self, count: i32, delay: f64) -> Self {
+        self.repeat_count = count;
+        self.repeat_delay = delay;
+        self
+    }
+
+	pub fn notify(&mut self, event:&TweenEvent) {
+		println!("notify event={:?}", event);
+
+
+	}
+
 }
 
 impl Playable for Timeline {
@@ -105,12 +133,12 @@ impl Playable for Timeline {
 	/// The Timeline play method should only play the tweens where the start time
 	/// is not greater than the current elapsed time.
 	fn play(&mut self) {
-		for (i, range) in &self.children {
-			println!("play – {}", i);
+		for (_, range) in &self.children {
 			let elapsed = self.tl_start.elapsed().as_float_secs();
 			if range.start < elapsed && range.end > elapsed {
 				let mut tween = range.tween.borrow_mut();
 				(&mut *tween).play();
+				// range.state = AnimState::Running;
 			}
 		}
 	}
@@ -136,6 +164,9 @@ impl Playable for Timeline {
 						(&mut *tween).tick();
 					}
 				}
+			} else {
+				let mut tween = range.tween.borrow_mut();
+				(&mut *tween).tick();
 			}
 		}
 	}
@@ -146,7 +177,6 @@ impl Playable for Timeline {
 			let mut tween = range.tween.borrow_mut();
 			(&mut *tween).reset();
 		}
-
 	}
 
     fn get_update(&mut self, id: &usize) -> Option<UIState> {
