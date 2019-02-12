@@ -66,9 +66,9 @@ impl Timeline {
 			let id = t.tween_id;
 			let dur = t.duration.as_float_secs();
 			t.add_callback(move |e, g| {
-				println!("OG callback: event={:?} id={}", e, g);
+				println!("OG callback: event={:?}", e);
 				match e {
-					TweenEvent::Completed(id) => {
+					TKEvent::Completed(id) => {
 						// &*timeline.play();
 					},
 					_ => (),
@@ -91,9 +91,9 @@ impl Timeline {
 
 	fn setup(self, tweek: &mut Tweek) -> Self {
 		tweek.add_subscriber( |e, g| {
-            println!("Tweek subscriber: event={:?} id={}", e, g);
+            println!("Tweek subscriber: event={:?}", e);
 			match e {
-				TweenEvent::Completed(id) => {
+				TKEvent::Completed(id) => {
 					// if let Some(tween) = self.children.get(&id) {
 
 					// }
@@ -120,7 +120,7 @@ impl Timeline {
         self
     }
 
-	pub fn notify(&mut self, event:&TweenEvent) {
+	pub fn notify(&mut self, event:&TKEvent) {
 		println!("notify event={:?}", event);
 
 

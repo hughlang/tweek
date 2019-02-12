@@ -34,7 +34,7 @@ pub trait Playable {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum TweenEvent {
+pub enum TKEvent {
     Completed(usize),
     Pause(usize),
     Play(usize),
@@ -66,7 +66,7 @@ impl TKContext {
 /// The tween_db is an attempt to centralize ownership of Tweens in one place
 /// when using a Timeline. TBD
 pub struct Tweek {
-    subscribers: Vec<Rc<Fn(TweenEvent, &str) + 'static>>,
+    subscribers: Vec<Rc<Fn(TKEvent, &mut TKContext) + 'static>>,
     timelines: Vec<Rc<RefCell<Timeline>>>,
 }
 
@@ -85,7 +85,7 @@ impl Tweek {
     /// See: https://www.ralfj.de/projects/rust-101/part12.html
     /// This method should be called by a Timeline that wants to receive callbacks from
     /// Tweek.
-    pub fn add_subscriber<C>(&mut self, cb: C) where C: Fn(TweenEvent, &str) + 'static {
+    pub fn add_subscriber<C>(&mut self, cb: C) where C: Fn(TKEvent, &mut TKContext) + 'static {
         println!("Adding subscriber");
         self.subscribers.push(Rc::new(cb));
     }
@@ -98,7 +98,7 @@ impl Tweek {
         let subscribers = self.subscribers.clone();
         // let timelines = self.timelines.
         tween.add_callback(move |e, g| {
-            println!("Tween callback: event={:?} id={}", e, g);
+            println!("Tween callback: event={:?}", e);
             for cb in subscribers.iter() {
                 (&*cb)(e, g);
             }
@@ -112,7 +112,7 @@ impl Tweek {
         println!("add_tween for id={}", &tween.tween_id);
         let subscribers = self.subscribers.clone();
         tween.add_callback(move |e, g| {
-            println!("Tween callback: event={:?} id={}", e, g);
+            println!("Tween callback: event={:?}", e);
             for cb in subscribers.iter() {
                 (&*cb)(e, g);
             }

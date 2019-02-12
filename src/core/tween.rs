@@ -56,7 +56,7 @@ pub struct Tween {
     pub live_props: Vec<Prop>,
     animators: HashMap<usize, Animator>,
     easing: Easing,
-    callbacks: Vec<Box<FnMut(TweenEvent, &str) + 'static>>,
+    callbacks: Vec<Box<FnMut(TKEvent, &mut TKContext) + 'static>>,
 }
 
 impl Tween {
@@ -163,7 +163,7 @@ impl Tween {
         results
     }
 
-    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TweenEvent, &str) + 'static {
+    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKContext) + 'static {
         self.callbacks.push(Box::new(cb));
     }
 }
@@ -190,7 +190,7 @@ impl Playable for Tween {
         if self.state == AnimState::Running && self.start_time.elapsed() > self.duration {
             self.state = AnimState::Completed;
             for cb in self.callbacks.iter_mut() {
-                (&mut *cb)(TweenEvent::Completed(self.tween_id), &self.global_id);
+                (&mut *cb)(TKEvent::Completed(self.tween_id), ctx);
             }
         }
     }
@@ -207,9 +207,9 @@ impl Playable for Tween {
         self.animators.insert(self.tween_id, animator);
         self.state = AnimState::Running;
 
-        for cb in self.callbacks.iter_mut() {
-            (&mut *cb)(TweenEvent::Play(self.tween_id), &self.global_id);
-        }
+        // for cb in self.callbacks.iter_mut() {
+        //     (&mut *cb)(TKEvent::Play(self.tween_id), &self.global_id);
+        // }
     }
 
     fn stop(&mut self) {
