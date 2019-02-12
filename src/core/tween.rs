@@ -186,7 +186,7 @@ impl Playable for Tween {
 
     /// Probably use this to check the play status of each tween, based on the
     /// timeline, time elapsed, and duration, etc.
-    fn tick(&mut self) {
+    fn tick(&mut self, ctx: &mut TKContext) {
         if self.state == AnimState::Running && self.start_time.elapsed() > self.duration {
             self.state = AnimState::Completed;
             for cb in self.callbacks.iter_mut() {

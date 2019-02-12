@@ -26,7 +26,7 @@ pub trait Playable {
     fn play(&mut self);
     fn stop(&mut self);
     fn pause(&mut self);
-    fn tick(&mut self);
+    fn tick(&mut self, ctx: &mut TKContext);
     fn reset(&mut self);
     fn get_update(&mut self, id: &usize) -> Option<UIState>;
     // fn resume(&mut self);
@@ -38,13 +38,26 @@ pub enum TweenEvent {
     Completed(usize),
     Pause(usize),
     Play(usize),
-}
-
 	// case pending
 	// case running
 	// case idle
 	// case cancelled
 	// case completed
+}
+
+pub struct TKContext {
+    tween_updates: Vec<usize>,
+}
+
+impl TKContext {
+    pub fn new() -> Self {
+        TKContext {
+            tween_updates: Vec::new(),
+        }
+    }
+}
+
+
 
 //-- Main -----------------------------------------------------------------------
 
@@ -53,7 +66,6 @@ pub enum TweenEvent {
 /// The tween_db is an attempt to centralize ownership of Tweens in one place
 /// when using a Timeline. TBD
 pub struct Tweek {
-    tween_db: HashMap<String, Rc<RefCell<Tween>>>,
     subscribers: Vec<Rc<Fn(TweenEvent, &str) + 'static>>,
     timelines: Vec<Rc<RefCell<Timeline>>>,
 }
@@ -61,7 +73,6 @@ pub struct Tweek {
 impl Tweek {
     pub fn new() -> Self {
         Tweek {
-            tween_db: HashMap::new(),
             subscribers: Vec::new(),
             timelines: Vec::new(),
         }
@@ -108,10 +119,6 @@ impl Tweek {
         });
     }
 
-    pub fn player_event_handler(&self, event: TweenEvent) {
-
-    }
-
 
 }
 
@@ -137,10 +144,10 @@ impl Playable for Tweek {
         }
 	}
 
-    fn tick(&mut self) {
+    fn tick(&mut self, ctx: &mut TKContext) {
         for tl in &self.timelines {
             let mut timeline = tl.borrow_mut();
-            (&mut *timeline).tick();
+            (&mut *timeline).tick(ctx);
         }
 	}
 

@@ -20,6 +20,7 @@ const ROUND_ITEM_ID: usize = 101;
 
 struct MainState {
     tweek: Tweek,
+    context: TKContext,
     square_item: ItemState,
     round_item: ItemState,
 }
@@ -51,6 +52,7 @@ impl MainState {
 
         let s = MainState {
             tweek: tweek,
+            context: TKContext::new(),
             square_item: item1,
             round_item: item2,
         };
@@ -63,7 +65,7 @@ impl MainState {
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
 
-        self.tweek.tick(); // This is called to check on completion status of each tween
+        self.tweek.tick(&mut self.context); // This is called to check on completion status of each tween
 
         let item = &mut self.square_item;
         if let Some(update) = self.tweek.get_update(&item.get_id()) {

@@ -151,7 +151,7 @@ impl Playable for Timeline {
 
 	}
 
-    fn tick(&mut self) {
+    fn tick(&mut self, ctx: &mut TKContext) {
 		for (_, range) in &self.children {
 			let elapsed = self.tl_start.elapsed().as_float_secs();
 			if range.start < elapsed && range.end > elapsed {
@@ -161,12 +161,12 @@ impl Playable for Timeline {
 						(&mut *tween).play();
 					},
 					_ => {
-						(&mut *tween).tick();
+						(&mut *tween).tick(ctx);
 					}
 				}
 			} else {
 				let mut tween = range.tween.borrow_mut();
-				(&mut *tween).tick();
+				(&mut *tween).tick(ctx);
 			}
 		}
 	}
