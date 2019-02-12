@@ -24,9 +24,9 @@ pub trait Events {
 
 pub trait Playable {
     fn play(&mut self);
+    fn tick(&mut self, ctx: &mut TKContext);
     fn stop(&mut self);
     fn pause(&mut self);
-    fn tick(&mut self, ctx: &mut TKContext);
     fn reset(&mut self);
     fn get_update(&mut self, id: &usize) -> Option<UIState>;
     // fn resume(&mut self);
@@ -46,13 +46,15 @@ pub enum TKEvent {
 }
 
 pub struct TKContext {
-    tween_updates: Vec<usize>,
+    pub time_scale: f64,
+    pub events: Vec<TKEvent>,
 }
 
 impl TKContext {
     pub fn new() -> Self {
         TKContext {
-            tween_updates: Vec::new(),
+            time_scale: 1.0,
+            events: Vec::new(),
         }
     }
 }
@@ -130,6 +132,14 @@ impl Playable for Tweek {
         }
 	}
 
+    fn tick(&mut self, ctx: &mut TKContext) {
+        ctx.events.clear(); // remove all previous events
+        for tl in &self.timelines {
+            let mut timeline = tl.borrow_mut();
+            (&mut *timeline).tick(ctx);
+        }
+	}
+
     fn stop(&mut self) {
         for tl in &self.timelines {
             let mut timeline = tl.borrow_mut();
@@ -141,13 +151,6 @@ impl Playable for Tweek {
         for tl in &self.timelines {
             let mut timeline = tl.borrow_mut();
             (&mut *timeline).pause();
-        }
-	}
-
-    fn tick(&mut self, ctx: &mut TKContext) {
-        for tl in &self.timelines {
-            let mut timeline = tl.borrow_mut();
-            (&mut *timeline).tick(ctx);
         }
 	}
 

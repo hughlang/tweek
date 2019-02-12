@@ -46,13 +46,14 @@ impl MainState {
             .duration(3.0);
 
         let mut tweek = Tweek::new();
-        let timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Normal, &mut tweek);
+        let context = TKContext::new();
+        let timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Normal);
         tweek.add_timeline(timeline);
         &tweek.play();
 
         let s = MainState {
             tweek: tweek,
-            context: TKContext::new(),
+            context: context,
             square_item: item1,
             round_item: item2,
         };

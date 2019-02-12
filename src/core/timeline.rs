@@ -40,6 +40,7 @@ impl TweenRange {
 pub struct Timeline {
     children: HashMap<usize, TweenRange>,
     tl_start: Instant,
+	play_count: u32,
     pub repeat_count: i32, // -1 = forever
     pub repeat_delay: f64,
 }
@@ -49,6 +50,7 @@ impl Timeline {
 		Timeline {
 			children: HashMap::new(),
 			tl_start: Instant::now(),
+			play_count: 0,
             repeat_count: 0,
             repeat_delay: 0.0,
 		}
@@ -58,18 +60,19 @@ impl Timeline {
 
 	// }
 
-	pub fn create(tweens: Vec<Tween>, align: TweenAlign, tweek: &mut Tweek) -> Self {
+	pub fn create(tweens: Vec<Tween>, align: TweenAlign) -> Self {
 		let mut timeline = Timeline::new();
 		let mut start = 0.0 as f64;
 
 		for mut t in tweens {
 			let id = t.tween_id;
 			let dur = t.duration.as_float_secs();
-			t.add_callback(move |e, g| {
+			t.add_callback(move |e, ctx| {
 				println!("OG callback: event={:?}", e);
 				match e {
 					TKEvent::Completed(id) => {
-						// &*timeline.play();
+						// Inform ctx that playback has completed
+						ctx.events.push(e);
 					},
 					_ => (),
 				}
@@ -86,33 +89,33 @@ impl Timeline {
 			timeline.children.insert(id, range);
 		}
 
-		timeline.setup(tweek)
+		timeline
 	}
 
-	fn setup(self, tweek: &mut Tweek) -> Self {
-		tweek.add_subscriber( |e, g| {
-            println!("Tweek subscriber: event={:?}", e);
-			match e {
-				TKEvent::Completed(id) => {
-					// if let Some(tween) = self.children.get(&id) {
+	// fn setup(self, ctx: &mut TKContext) -> Self {
+	// 	tweek.add_subscriber( |e, g| {
+    //         println!("Tweek subscriber: event={:?}", e);
+	// 		match e {
+	// 			TKEvent::Completed(id) => {
+	// 				// if let Some(tween) = self.children.get(&id) {
 
-					// }
-					// &self.play();
-					// for (i, range) in &self.children {
-					// 	println!("play – {}", i);
-						// let elapsed = &self.tl_start.elapsed().as_float_secs();
-					// 	if range.start < elapsed && range.end > elapsed {
-					// 		let mut tween = range.tween.borrow_mut();
-					// 		(&mut *tween).play();
-					// 	}
-					// }
+	// 				// }
+	// 				// &self.play();
+	// 				// for (i, range) in &self.children {
+	// 				// 	println!("play – {}", i);
+	// 					// let elapsed = &self.tl_start.elapsed().as_float_secs();
+	// 				// 	if range.start < elapsed && range.end > elapsed {
+	// 				// 		let mut tween = range.tween.borrow_mut();
+	// 				// 		(&mut *tween).play();
+	// 				// 	}
+	// 				// }
 
-				},
-				_ => (),
-			}
-        });
-		self
-	}
+	// 			},
+	// 			_ => (),
+	// 		}
+    //     });
+	// 	self
+	// }
 
     pub fn repeat(mut self, count: i32, delay: f64) -> Self {
         self.repeat_count = count;
@@ -143,14 +146,6 @@ impl Playable for Timeline {
 		}
 	}
 
-    fn stop(&mut self) {
-
-	}
-
-    fn pause(&mut self) {
-
-	}
-
     fn tick(&mut self, ctx: &mut TKContext) {
 		for (_, range) in &self.children {
 			let elapsed = self.tl_start.elapsed().as_float_secs();
@@ -169,6 +164,31 @@ impl Playable for Timeline {
 				(&mut *tween).tick(ctx);
 			}
 		}
+
+		// Now read the context for events
+		for event in &ctx.events {
+			match event {
+				TKEvent::Completed(id) => {
+					// Decide: repeat?
+					if let Some(range) = &self.children.get(id) {
+
+						self.reset();
+						// let mut tween = range.tween.borrow_mut();
+					// return (&mut *tween).get_update(id);
+					}
+
+				}
+				_ => (),
+			}
+		}
+	}
+
+    fn stop(&mut self) {
+
+	}
+
+    fn pause(&mut self) {
+
 	}
 
 	fn reset(&mut self) {

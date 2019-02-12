@@ -184,17 +184,6 @@ impl Eq for Tween {}
 
 impl Playable for Tween {
 
-    /// Probably use this to check the play status of each tween, based on the
-    /// timeline, time elapsed, and duration, etc.
-    fn tick(&mut self, ctx: &mut TKContext) {
-        if self.state == AnimState::Running && self.start_time.elapsed() > self.duration {
-            self.state = AnimState::Completed;
-            for cb in self.callbacks.iter_mut() {
-                (&mut *cb)(TKEvent::Completed(self.tween_id), ctx);
-            }
-        }
-    }
-
     fn play(&mut self) {
         self.start_time = Instant::now();
         if self.tween_id == 0 {
@@ -212,6 +201,20 @@ impl Playable for Tween {
         // }
     }
 
+    /// Probably use this to check the play status of each tween, based on the
+    /// timeline, time elapsed, and duration, etc.
+    fn tick(&mut self, ctx: &mut TKContext) {
+        if self.state == AnimState::Running && self.start_time.elapsed() > self.duration {
+            self.state = AnimState::Completed;
+            ctx.events.push(TKEvent::Completed(self.tween_id));
+            // maybe not needed?
+            // for cb in self.callbacks.iter_mut() {
+            //     (&mut *cb)(TKEvent::Completed(self.tween_id), ctx);
+            // }
+        }
+    }
+
+
     fn stop(&mut self) {
 
     }
@@ -221,6 +224,7 @@ impl Playable for Tween {
     }
 
     fn reset(&mut self) {
+        self.state = AnimState::Pending;
         self.start_time = Instant::now();
     }
 
