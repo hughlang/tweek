@@ -129,6 +129,16 @@ impl Timeline {
 
 	}
 
+	// pub fn get_total_duration(&self) -> f64 {
+	// 	// let mut max = 0 as f64;
+	// 	// for range in self.children {
+
+	// 	// }
+	// 	let x = self.children.values().max_by_key(|v| v.end );
+
+
+	// }
+
 }
 
 impl Playable for Timeline {

@@ -4,8 +4,14 @@
 /// * Buttons for play/pause/restart
 ///
 ///
+extern crate ggez;
 
 struct GGezHelper {
 
 }
 
+struct GGButton {
+    rect: ggez::graphics::Rect,
+    label: ggez::graphics::Text,
+
+}

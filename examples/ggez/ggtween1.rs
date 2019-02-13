@@ -5,7 +5,8 @@ extern crate tween;
 
 use ggez::conf;
 use ggez::event;
-use ggez::graphics::{self};
+use ggez::graphics;
+use ggez::graphics::{Color, DrawMode, DrawParam};
 use ggez::timer;
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::mint;
@@ -16,10 +17,12 @@ use tween::*;
 
 const SQUARE_ITEM_ID: usize = 100;
 const ROUND_ITEM_ID: usize = 101;
+const IMAGE_ITEM_ID: usize = 102;
 
 enum Shape {
     Circle(mint::Point2<f32>, f32),
     Rectangle(graphics::Rect),
+    Image(graphics::Rect),
 }
 
 struct ItemState {
@@ -28,6 +31,7 @@ struct ItemState {
     bounds: graphics::Rect,
     fill_color: graphics::Color,
     tween: Option<Tween>,
+    image: Option<graphics::Image>,
 }
 
 impl ItemState {
@@ -37,6 +41,7 @@ impl ItemState {
             Shape::Circle(pt, r) => {
                 graphics::Rect::new(pt.x - r, pt.y - r, r * 2.0, r * 2.0)
             },
+            Shape::Image(rect) => rect,
         };
 
         Ok(ItemState {
@@ -45,6 +50,7 @@ impl ItemState {
             bounds: rect,
             fill_color: graphics::BLACK,
             tween: None,
+            image: None,
         })
     }
 
@@ -58,7 +64,7 @@ impl ItemState {
         Ok(())
     }
 
-    pub fn render(&self, ctx: &mut Context) -> GameResult {
+    pub fn render(&mut self, ctx: &mut Context) -> GameResult {
         match self.shape {
             Shape::Rectangle(_) => {
                 let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.bounds, self.fill_color)?;
@@ -71,6 +77,16 @@ impl ItemState {
                 let drawparams = graphics::DrawParam::new();
                 let _result = graphics::draw(ctx, &mesh, drawparams);
             },
+            Shape::Image(_) => {
+                match &self.image {
+                    Some(img) => {
+                        let pt = mint::Point2{x: self.bounds.x, y: self.bounds.y};
+                        let _result = graphics::draw(ctx, img, (pt,));
+                    },
+                    None => (),
+                }
+
+            }
         }
         Ok(())
     }
@@ -79,6 +95,7 @@ impl ItemState {
 struct MainState {
     square_item: ItemState,
     round_item: ItemState,
+    image_item: ItemState,
 }
 
 impl MainState {
@@ -107,9 +124,22 @@ impl MainState {
         &tween2.play();
         item2.tween = Some(tween2);
 
+        let tile = graphics::Image::new(ctx, "/tile.png")?;
+        let rect = graphics::Rect::new(200.0, 50.0, 80.0, 80.0);
+        let mut item3 = ItemState::new(IMAGE_ITEM_ID, Shape::Image(rect))?;
+        item3.image = Some(tile);
+
+        let mut tween3 = Tween::with(&vec![&item2.bounds, &item2.fill_color]).with_id(IMAGE_ITEM_ID)
+            .to(vec![position(400.0, 400.0), alpha(0.2)])
+            .duration(3.0).ease(Easing::SineIn);
+        &tween3.play();
+        item3.tween = Some(tween3);
+
+        // let mut item3 = ItemState
         let s = MainState {
             square_item: item1,
             round_item: item2,
+            image_item: item3,
         };
         Ok(s)
     }
@@ -121,6 +151,7 @@ impl event::EventHandler for MainState {
 
         self.square_item.update()?;
         self.round_item.update()?;
+        self.image_item.update()?;
 
         Ok(())
     }
@@ -130,6 +161,7 @@ impl event::EventHandler for MainState {
 
         self.square_item.render(ctx)?;
         self.round_item.render(ctx)?;
+        self.image_item.render(ctx)?;
 
         graphics::present(ctx)?;
 

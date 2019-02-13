@@ -23,6 +23,7 @@ struct MainState {
     context: TKContext,
     square_item: ItemState,
     round_item: ItemState,
+    // image_item: ItemState,
 }
 
 impl MainState {
@@ -105,8 +106,10 @@ pub fn main() -> GameResult {
         path::PathBuf::from("./resources")
     };
 
+    let setup = conf::WindowSetup::default().title("Tween Runner test");
+
     let cb = ContextBuilder::new("tween0", "tweenkit")
-        .window_setup(conf::WindowSetup::default().title("Tween Runner test"))
+        .window_setup(setup)
         .window_mode(conf::WindowMode::default().dimensions(800.0, 600.0))
         .add_resource_path(resource_dir);
 
