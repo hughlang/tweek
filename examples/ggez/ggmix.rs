@@ -155,8 +155,8 @@ impl MainState {
         item3.image = Some(tile);
 
         let mut tween3 = Tween::with(IMAGE_ITEM_ID, &vec![&item3.frame, &item3.fill_color])
-            .to(vec![position(400.0, 400.0), alpha(0.2)])
-            .duration(3.0);
+            .to(vec![position(400.0, 200.0), alpha(0.2)])
+            .duration(3.0).speed(0.5);
         &tween3.play();
         item3.tween = Some(tween3);
 

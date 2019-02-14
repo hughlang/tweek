@@ -10,7 +10,6 @@ use uuid::Uuid;
 use super::property::*;
 use super::animator::*;
 use super::easing::*;
-use super::timeline::*;
 use super::tweek::*;
 
 //-- Base -----------------------------------------------------------------------
@@ -72,7 +71,7 @@ impl Tween {
             state: TweenState::Idle,
             repeat_count: 0,
             repeat_delay: Duration::from_secs(0),
-            time_scale: 0.0,
+            time_scale: 1.0,
             start_props: Vec::new(),
             end_props: Vec::new(),
             animators: HashMap::new(),
@@ -144,21 +143,17 @@ impl Tween {
         self
     }
 
-    /// UNUSED
-    pub fn get_updates(&self) -> Vec<UIState> {
-        let mut results: Vec<UIState> = Vec::new();
-        match self.state {
-            TweenState::Running => {
-                for animator in self.animators.values() {
-                    let ui_state = animator.update(self.start_time, self.duration);
-                    if ui_state.props.len() > 0 {
-                        results.push(ui_state);
-                    }
-                }
-            },
-            _ => ()
-        }
-        results
+    /// Set time_scale which modifies the speed of the animation,
+    /// where 1.0 is considered normal time
+    pub fn speed(mut self, scale: f64) -> Self {
+        // prevent negative number for now
+        self.time_scale = scale.abs();
+        self
+    }
+
+    pub fn yoyo(&mut self) {
+        self.repeat_count = -1;
+
     }
 
     pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKContext) + 'static {
@@ -184,15 +179,15 @@ impl Playable for Tween {
     /// Probably use this to check the play status of each tween, based on the
     /// timeline, time elapsed, and duration, etc.
     fn tick(&mut self) {
+        self.events.clear();
         match self.state {
             TweenState::Running => {
                 if self.start_time.elapsed() > self.duration {
                     if self.repeat_count == 0 {
                         // If repeat_count is zero, tween is Completed.
                         self.state = TweenState::Completed;
-                        // for cb in self.callbacks.iter_mut() {
-                        //     (&mut *cb)(TKEvent::Completed(self.tween_id), &self.global_id);
-                        // }
+                        self.events.push(TKEvent::Completed(self.tween_id));
+
                     } else {
                         // If it positive or negative, continue repeating
                         self.state = TweenState::Idle;
@@ -214,17 +209,7 @@ impl Playable for Tween {
             },
             _ => (),
         }
-        // if self.state == TweenState::Running && self.start_time.elapsed() > self.duration {
-        //     ctx.events.push(TKEvent::Completed(self.tween_id));
-        //     // maybe not needed?
-        //     // for cb in self.callbacks.iter_mut() {
-        //     //     (&mut *cb)(TKEvent::Completed(self.tween_id), ctx);
-        //     // }
-        // } else if self.state == TweenState::Pending {
-
-        // }
     }
-
 
     fn stop(&mut self) {
 
@@ -235,6 +220,7 @@ impl Playable for Tween {
     }
 
     fn reset(&mut self) {
+
         self.state = TweenState::Running;
         self.start_time = Instant::now();
     }
@@ -242,8 +228,7 @@ impl Playable for Tween {
     fn get_update(&mut self, id: &usize) -> Option<UIState> {
         if self.state == TweenState::Running {
             if let Some(animator) = self.animators.get(id) {
-                let ui_state = animator.update(self.start_time, self.duration);
-                // self.live_props = ui_state.props;
+                let ui_state = animator.update(self.start_time, self.duration, self.time_scale);
                 return Some(ui_state);
             }
         }

@@ -40,9 +40,8 @@ impl TweenRange {
 pub struct Timeline {
     children: HashMap<usize, TweenRange>,
     tl_start: Instant,
-	play_count: u32,
     pub repeat_count: i32, // -1 = forever
-    pub repeat_delay: f64,
+    pub repeat_delay: Duration,
 }
 
 impl Timeline {
@@ -50,15 +49,10 @@ impl Timeline {
 		Timeline {
 			children: HashMap::new(),
 			tl_start: Instant::now(),
-			play_count: 0,
             repeat_count: 0,
-            repeat_delay: 0.0,
+            repeat_delay: Duration::from_secs(0),
 		}
 	}
-
-	// pub fn init(tweek: Tweek) -> Self {
-
-	// }
 
 	pub fn create(tweens: Vec<Tween>, align: TweenAlign) -> Self {
 		let mut timeline = Timeline::new();
@@ -119,7 +113,7 @@ impl Timeline {
 
     pub fn repeat(mut self, count: i32, delay: f64) -> Self {
         self.repeat_count = count;
-        self.repeat_delay = delay;
+        self.repeat_delay = Duration::from_float_secs(delay);
         self
     }
 

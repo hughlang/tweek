@@ -30,14 +30,19 @@ impl Animator {
         }
     }
 
-    pub fn update(&self, start_time: Instant, duration: Duration) -> UIState {
+    pub fn update(&self, start_time: Instant, duration: Duration, time_scale: f64) -> UIState {
         let mut props: Vec<Prop> = Vec::new();
         let elapsed = start_time.elapsed();
-        let mut progress = elapsed.as_float_secs() / duration.as_float_secs();
-        if self.easing != Easing::Linear {
-            let curve = self.easing.curve();
-            let solver = BezierSolver::from(curve.clone());
-            progress = solver.solve(progress);
+        let mut progress = 0.0 as f64;
+        // if self.easing != Easing::Linear {
+        //     let curve = self.easing.curve();
+        //     let solver = BezierSolver::from(curve.clone());
+        //     progress = solver.solve(progress);
+        // }
+        if time_scale > 0.0 {
+            progress = elapsed.as_float_secs() / duration.as_float_secs() * time_scale;
+        } else {
+            progress =  1.0 - elapsed.as_float_secs() / duration.as_float_secs() * time_scale.abs();
         }
         if progress > 0.0 && progress <= 1.0 {
             for (i, prop) in self.start.props.iter().enumerate() {
