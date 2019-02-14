@@ -11,8 +11,10 @@ use super::easing::*;
 /// An Animator represents state change from one UIState to another UIState state
 pub struct Animator {
     pub id: usize,
-    pub start: UIState,
-    pub end: UIState,
+    pub start_state: UIState,
+    pub end_state: UIState,
+    pub start_time: f64,
+    pub end_time: f64,
     pub easing: Easing,
     pub debug: bool,
 }
@@ -23,11 +25,19 @@ impl Animator {
         let end_state = UIState::create(id, props2.clone());
         Animator {
             id: id,
-            start: start_state,
-            end: end_state,
+            start_state: start_state,
+            end_state: end_state,
+            start_time: 0.0,
+            end_time: 0.0,
             easing: ease.clone(),
             debug: false,
         }
+    }
+
+    pub fn schedule(mut self, start: f64, end: f64) -> Self {
+        self.start_time = start;
+        self.end_time = end;
+        self
     }
 
     pub fn update(&self, start_time: Instant, duration: Duration, time_scale: f64) -> UIState {
@@ -37,16 +47,16 @@ impl Animator {
         // if self.easing != Easing::Linear {
         //     let curve = self.easing.curve();
         //     let solver = BezierSolver::from(curve.clone());
-        //     progress = solver.solve(progress);
-        // }
+        //     progress = solver.sstart_stateprogress);
+        // }end_state
         if time_scale > 0.0 {
             progress = elapsed.as_float_secs() / duration.as_float_secs() * time_scale;
         } else {
             progress =  1.0 - elapsed.as_float_secs() / duration.as_float_secs() * time_scale.abs();
         }
         if progress > 0.0 && progress <= 1.0 {
-            for (i, prop) in self.start.props.iter().enumerate() {
-                let current = Animator::interpolate(prop, &self.end.props[i], progress);
+            for (i, prop) in self.start_state.props.iter().enumerate() {
+                let current = Animator::interpolate(prop, &self.end_state.props[i], progress);
 
                 // println!("----------------------------------------------");
                 // println!("elapsed={} progress={}", elapsed.as_float_secs(), progress);

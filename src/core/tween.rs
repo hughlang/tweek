@@ -127,6 +127,16 @@ impl Tween {
         }
         self.end_props = props;
         self.start_props = match_props;
+
+        if self.tween_id == 0 {
+            self.tween_id = self.animators.len();
+        }
+        println!("start={:?} \nend={:?}", &self.start_props, &self.end_props);
+        let mut animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.easing);
+        animator.debug = true;
+
+        self.animators.insert(self.tween_id, animator);
+
         self
     }
 
@@ -174,14 +184,6 @@ impl Playable for Tween {
 
     fn play(&mut self) {
         self.start_time = Instant::now();
-        if self.tween_id == 0 {
-            self.tween_id = self.animators.len();
-        }
-        println!("start={:?} \nend={:?}", &self.start_props, &self.end_props);
-        let mut animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.easing);
-        animator.debug = true;
-
-        self.animators.insert(self.tween_id, animator);
         self.state = TweenState::Running;
 
     }

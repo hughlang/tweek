@@ -16,6 +16,10 @@ path = "examples/ggez/ggrunner.rs"
 name = "ggmix"
 path = "examples/ggez/ggmix.rs"
 
+[[bin]]
+name = "ggsequence"
+path = "examples/ggez/ggsequence.rs"
+
 [features]
 default = []
 wasm = []
