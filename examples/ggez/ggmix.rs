@@ -134,7 +134,7 @@ impl MainState {
 
         let mut tween1 = Tween::with(SQUARE_ITEM_ID, &vec![&item1.frame, &item1.fill_color])
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(2.0).repeat(4, 0.5);
+            .duration(1.0).repeat(4, 0.5).yoyo();
         &tween1.play();
         item1.tween = Some(tween1);
 

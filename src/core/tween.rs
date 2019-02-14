@@ -36,6 +36,12 @@ pub enum TweenState {
     Completed,
 }
 
+#[derive(PartialEq)]
+pub enum AnimType {
+    Normal,
+    Yoyo,
+}
+
 //-- Main -----------------------------------------------------------------------
 
 /// A Tween represents a group of animation Props that will be applied to the set of animators.
@@ -51,6 +57,7 @@ pub struct Tween {
     pub repeat_count: i32, // -1 = forever. If > 0, decrement after each play until 0
     pub repeat_delay: Duration,
     pub time_scale: f64,
+    pub anim_type: AnimType,
     start_props: Vec<Prop>,
     end_props: Vec<Prop>,
     animators: HashMap<usize, Animator>,
@@ -72,6 +79,7 @@ impl Tween {
             repeat_count: 0,
             repeat_delay: Duration::from_secs(0),
             time_scale: 1.0,
+            anim_type: AnimType::Normal,
             start_props: Vec::new(),
             end_props: Vec::new(),
             animators: HashMap::new(),
@@ -151,9 +159,11 @@ impl Tween {
         self
     }
 
-    pub fn yoyo(&mut self) {
-        self.repeat_count = -1;
-
+    /// Run the animation to the end and reverse direction
+    pub fn yoyo(mut self) -> Self {
+        self.anim_type = AnimType::Yoyo;
+        if self.repeat_count < 1 { self.repeat_count = 1 }
+        self
     }
 
     pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKContext) + 'static {
@@ -220,7 +230,13 @@ impl Playable for Tween {
     }
 
     fn reset(&mut self) {
-
+        if self.anim_type == AnimType::Yoyo {
+            if self.time_scale > 0.0 {
+                self.time_scale *= -1.0;
+            } else {
+                self.time_scale = self.time_scale.abs();
+            }
+        }
         self.state = TweenState::Running;
         self.start_time = Instant::now();
     }
