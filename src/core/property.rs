@@ -45,7 +45,7 @@ impl Prop {
 // impl
 // TODO: implement Scale, Translation, and Rotation
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct UIState {
     pub id: usize,
     pub props: Vec<Prop>,

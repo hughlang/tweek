@@ -18,15 +18,10 @@ use tween::*;
 
 const SQUARE_ITEM_ID: usize = 100;
 const ROUND_ITEM_ID: usize = 101;
-const IMAGE_ITEM_ID: usize = 102;
-const TEXT_ITEM_ID: usize = 103;
-const LINE_ITEM_ID: usize = 104;
 
 struct MainState {
     square_item: ItemState,
     round_item: ItemState,
-    image_item: ItemState,
-    text_item: ItemState,
 }
 
 impl MainState {
@@ -55,34 +50,11 @@ impl MainState {
         &tween2.play();
         item2.tween = Some(tween2);
 
-        let tile = graphics::Image::new(ctx, "/tile.png")?;
-        let rect = graphics::Rect::new(200.0, 50.0, 80.0, 80.0);
-        let mut item3 = ItemState::new(IMAGE_ITEM_ID, Shape::Image(rect))?;
-        item3.image = Some(tile);
-
-        let mut tween3 = Tween::with(IMAGE_ITEM_ID, &vec![&item3.frame, &item3.fill_color])
-            .to(vec![position(400.0, 200.0), alpha(0.2)])
-            .duration(3.0).speed(0.5);
-        &tween3.play();
-        item3.tween = Some(tween3);
-
-        let text = graphics::Text::new(("Tweek everything", graphics::Font::default(), 48.0));
-        let rect = graphics::Rect::new(20.0, 20.0, 200.0, 40.0);
-        let mut item4 = ItemState::new(TEXT_ITEM_ID, Shape::Text(rect))?;
-        item4.text = Some(text);
-
-        let mut tween4 = Tween::with(TEXT_ITEM_ID, &vec![&item4.frame, &item4.fill_color])
-            .to(vec![position(400.0, 20.0), alpha(0.2)])
-            .duration(3.0);
-        &tween4.play();
-        item4.tween = Some(tween4);
 
         // let mut item3 = ItemState
         let s = MainState {
             square_item: item1,
             round_item: item2,
-            image_item: item3,
-            text_item: item4,
         };
         Ok(s)
     }
@@ -93,8 +65,6 @@ impl event::EventHandler for MainState {
 
         self.square_item.update()?;
         self.round_item.update()?;
-        self.image_item.update()?;
-        self.text_item.update()?;
 
         Ok(())
     }
@@ -104,8 +74,6 @@ impl event::EventHandler for MainState {
 
         self.square_item.render(ctx)?;
         self.round_item.render(ctx)?;
-        self.image_item.render(ctx)?;
-        self.text_item.render(ctx)?;
 
         graphics::present(ctx)?;
 

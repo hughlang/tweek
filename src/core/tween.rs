@@ -59,8 +59,7 @@ pub struct Tween {
     pub time_scale: f64,
     pub anim_type: AnimType,
     start_props: Vec<Prop>,
-    end_props: Vec<Prop>,
-    animators: HashMap<usize, Animator>,
+    animators: HashMap<usize, Vec<Animator>>,
     easing: Easing,
     events: Vec<TKEvent>,
     callbacks: Vec<Box<FnMut(TKEvent, &mut TKContext) + 'static>>,
@@ -81,7 +80,6 @@ impl Tween {
             time_scale: 1.0,
             anim_type: AnimType::Normal,
             start_props: Vec::new(),
-            end_props: Vec::new(),
             animators: HashMap::new(),
             easing: Easing::Linear,
             events: Vec::new(),
@@ -116,7 +114,7 @@ impl Tween {
     pub fn to(mut self, props:Vec<Prop>) -> Self {
         // let prop_ids: Vec<u32> = props.iter().map(|x| x.prop_id()).collect();
         let mut temp_map: HashMap<u32, Prop> = HashMap::new();
-        for prop in self.start_props {
+        for prop in &self.start_props {
             temp_map.insert(prop.prop_id(), prop.clone());
         }
         let mut match_props: Vec<Prop> = Vec::new();
@@ -125,18 +123,23 @@ impl Tween {
                 match_props.push(start_prop.clone());
             }
         }
-        self.end_props = props;
-        self.start_props = match_props;
 
-        if self.tween_id == 0 {
-            self.tween_id = self.animators.len();
-        }
-        println!("start={:?} \nend={:?}", &self.start_props, &self.end_props);
-        let mut animator = Animator::create(self.tween_id, &self.start_props, &self.end_props, &self.easing);
+        // if self.tween_id == 0 {
+        //     self.tween_id = self.animators.len();
+        // }
+        println!("start={:?} \nend={:?}", &match_props, &props);
+
+        let mut animator = Animator::create(&self.tween_id, &match_props, &props, &self.easing);
         animator.debug = true;
-
-        self.animators.insert(self.tween_id, animator);
-
+        let exists = &self.animators.contains_key(&self.tween_id);
+        if *exists {
+            &self.animators.get_mut(&self.tween_id).unwrap().push(animator);
+            // if let Some(list) = &self.animators.get_mut(&self.tween_id) {
+            //     list.push(animator);
+            // }
+        } else {
+            &self.animators.insert(self.tween_id.clone(), vec![animator]);
+        }
         self
     }
 
@@ -185,6 +188,8 @@ impl Playable for Tween {
     fn play(&mut self) {
         self.start_time = Instant::now();
         self.state = TweenState::Running;
+
+
 
     }
 
@@ -245,9 +250,10 @@ impl Playable for Tween {
 
     fn get_update(&mut self, id: &usize) -> Option<UIState> {
         if self.state == TweenState::Running {
-            if let Some(animator) = self.animators.get(id) {
-                let ui_state = animator.update(self.start_time, self.duration, self.time_scale);
-                return Some(ui_state);
+            if let Some(values) = self.animators.get(id) {
+
+                // let ui_state = animator.update(self.start_time, self.duration, self.time_scale);
+                // return Some(ui_state);
             }
         }
         None

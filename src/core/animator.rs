@@ -20,11 +20,12 @@ pub struct Animator {
 }
 
 impl Animator {
-    pub fn create(id: usize, props1: &Vec<Prop>, props2: &Vec<Prop>, ease: &Easing) -> Self {
-        let start_state = UIState::create(id, props1.clone());
-        let end_state = UIState::create(id, props2.clone());
+    pub fn create(id: &usize, props1: &Vec<Prop>, props2: &Vec<Prop>, ease: &Easing) -> Self {
+        let tween_id = id.clone();
+        let start_state = UIState::create(tween_id, props1.clone());
+        let end_state = UIState::create(tween_id, props2.clone());
         Animator {
-            id: id,
+            id: tween_id,
             start_state: start_state,
             end_state: end_state,
             start_time: 0.0,
