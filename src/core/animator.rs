@@ -45,7 +45,7 @@ impl Animator {
 
     pub fn update(&self, start_time: Instant, duration: Duration, time_scale: f64) -> UIState {
         let mut props: Vec<Prop> = Vec::new();
-        let elapsed = start_time.elapsed();
+        let elapsed = start_time.elapsed() - Duration::from_float_secs(self.start_time);
         let mut progress = 0.0 as f64;
         // if self.easing != Easing::Linear {
         //     let curve = self.easing.curve();
@@ -53,9 +53,9 @@ impl Animator {
         //     progress = solver.sstart_stateprogress);
         // }end_state
         if time_scale > 0.0 {
-            progress = elapsed.as_float_secs() / duration.as_float_secs() * time_scale;
+            progress = elapsed.as_float_secs() / self.seconds * time_scale;
         } else {
-            progress =  1.0 - elapsed.as_float_secs() / duration.as_float_secs() * time_scale.abs();
+            progress =  1.0 - elapsed.as_float_secs() / self.seconds * time_scale.abs();
         }
         if progress > 0.0 && progress <= 1.0 {
             for (i, prop) in self.start_state.props.iter().enumerate() {

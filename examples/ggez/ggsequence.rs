@@ -34,18 +34,20 @@ impl MainState {
 
         let mut tween1 = Tween::with(SQUARE_ITEM_ID, &vec![&item1.frame, &item1.fill_color])
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(1.0).repeat(7, 0.25).yoyo();
+            .duration(1.0).repeat(4, 0.25).yoyo();
 
         &tween1.play();
-        item1.tween = Some(tween1);
+        // item1.tween = Some(tween1);
 
         // Add a circle
         let mut item2 = ItemState::new(ROUND_ITEM_ID, Shape::Circle(mint::Point2{x: 500.0, y: 200.0}, 40.0))?;
         item2.fill_color = graphics::Color::from_rgb_u32(0xCD09AA);
 
         let mut tween2 = Tween::with(ROUND_ITEM_ID, &vec![&item2.frame, &item2.fill_color])
-            .to(vec![position(40.0, 400.0), alpha(0.2)])
-            .duration(2.0);
+            .to(vec![position(40.0, 400.0), alpha(0.2)]).duration(2.0)
+            .to(vec![position(40.0, 40.0), alpha(1.0)]).duration(2.0)
+            .to(vec![position(300.0, 40.0), alpha(1.0)]).duration(1.0)
+            .to(vec![size(100.0, 100.0)]).duration(1.0);
 
         &tween2.play();
         item2.tween = Some(tween2);

@@ -114,26 +114,73 @@ impl Tween {
     pub fn to(mut self, props:Vec<Prop>) -> Self {
         // let prop_ids: Vec<u32> = props.iter().map(|x| x.prop_id()).collect();
 
-        if self.animators.len() == 0 {
+        let mut start_map: HashMap<u32, Prop> = HashMap::new();
+        for prop in &self.start_props {
+            start_map.insert(prop.prop_id(), prop.clone());
+        }
+        let mut last_props: Vec<Prop> = Vec::new();
+        let mut end_props: Vec<Prop> = Vec::new();
 
-            let mut temp_map: HashMap<u32, Prop> = HashMap::new();
-            for prop in &self.start_props {
-                temp_map.insert(prop.prop_id(), prop.clone());
-            }
-            let mut match_props: Vec<Prop> = Vec::new();
+        if self.animators.len() == 0 {
+            // let mut match_props: Vec<Prop> = Vec::new();
             for prop in &props {
-                if let Some(start_prop) = temp_map.get(&prop.prop_id()) {
-                    match_props.push(start_prop.clone());
+                // technically, it would be a bug if the corresponding prop was not found in start_props.
+                if let Some(start_prop) = start_map.get(&prop.prop_id()) {
+                    last_props.push(start_prop.clone());
                 }
             }
 
-            println!("start={:?} \nend={:?}", &match_props, &props);
+            println!("start={:?} \nend={:?}", &last_props, &props);
 
-            let animator = Animator::create(&self.tween_id, &match_props, &props, &self.easing);
+            let animator = Animator::create(&self.tween_id, &last_props, &props, &self.easing);
             self.animators.push(animator);
         } else {
             if let Some(previous) = self.animators.last() {
-                let animator = Animator::create(&self.tween_id, &previous.end_state.props, &props, &self.easing);
+
+                let mut all_props: HashMap<u32, Prop> = HashMap::new();
+
+                // Fill hashmap with last props and overwrite matching ones
+
+                for prop in &previous.end_state.props {
+                    all_props.insert(prop.prop_id(), prop.clone());
+                }
+                for prop in &props {
+                    all_props.insert(prop.prop_id(), prop.clone());
+                }
+
+                for (id, prop) in all_props {
+                    let last_prop = previous.end_state.get_prop_value(id);
+                    if last_prop != Prop::None {
+                        last_props.push(last_prop);
+                        end_props.push(prop.clone());
+                    } else {
+                        if let Some(start_prop) = start_map.get(&id) {
+                            last_props.push(start_prop.clone());
+                            end_props.push(prop.clone());
+                        } else {
+                            // Ignore
+                        }
+                    }
+                }
+                // // Fill both props vectors with matching props in same order
+                // for prop in &props {
+                //     let last_prop = previous.end_state.get_prop_value(prop.prop_id());
+                //     if last_prop != Prop::None {
+                //         last_props.push(last_prop);
+                //         end_props.push(prop.clone());
+                //     } else {
+                //         // if let Some(default) = last_map.get()
+                //         if let Some(start_prop) = start_map.get(&prop.prop_id()) {
+                //             last_props.push(start_prop.clone());
+                //             end_props.push(prop.clone());
+                //         } else {
+                //             //
+                //         }
+                //     }
+                // }
+                println!("start={:?} \nend={:?}", &last_props, &end_props);
+
+                let animator = Animator::create(&self.tween_id, &last_props, &end_props, &self.easing);
                 self.animators.push(animator);
             }
         }
@@ -141,6 +188,7 @@ impl Tween {
     }
 
     pub fn duration(mut self, secs: f64) -> Self {
+        // this gets recalculated on play() so the logic isn't too important
         self.duration = self.duration + Duration::from_float_secs(secs);
         if self.animators.len() > 0 {
             if let Some(animator) = self.animators.last_mut() {
@@ -227,8 +275,6 @@ impl Playable for Tween {
                         self.reset();
                     } else if self.repeat_count < 0 {
                         self.reset();
-                    } else {
-                        // self.state = TweenState::Completed;
                     }
                 }
             },
@@ -238,9 +284,10 @@ impl Playable for Tween {
 
     fn get_update(&mut self, _id: &usize) -> Option<UIState> {
         if self.state == TweenState::Running {
+            // For now, this assumes that animators do not overlap and are purely sequential
             for animator in &mut self.animators {
                 let elapsed = self.started_at.elapsed().as_float_secs();
-                if animator.start_time < elapsed && animator.end_time > elapsed {
+                if animator.start_time < elapsed && animator.end_time >= elapsed {
                     let ui_state = animator.update(self.started_at, self.duration, self.time_scale);
                     return Some(ui_state);
                 }
