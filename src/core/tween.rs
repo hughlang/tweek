@@ -130,17 +130,16 @@ impl Tween {
                 }
             }
 
-            println!("start={:?} \nend={:?}", &last_props, &props);
-
             let animator = Animator::create(&self.tween_id, &last_props, &props, &self.easing);
             self.animators.push(animator);
+
         } else {
             if let Some(previous) = self.animators.last() {
 
                 let mut all_props: HashMap<u32, Prop> = HashMap::new();
+                let mut new_props: Vec<Prop> = Vec::new();
 
                 // Fill hashmap with last props and overwrite matching ones
-
                 for prop in &previous.end_state.props {
                     all_props.insert(prop.prop_id(), prop.clone());
                 }
@@ -157,29 +156,21 @@ impl Tween {
                         if let Some(start_prop) = start_map.get(&id) {
                             last_props.push(start_prop.clone());
                             end_props.push(prop.clone());
+
+                            // A new prop was added. Need to write this value back to all previous animators
+                            new_props.push(start_prop.clone());
                         } else {
                             // Ignore
                         }
                     }
                 }
-                // // Fill both props vectors with matching props in same order
-                // for prop in &props {
-                //     let last_prop = previous.end_state.get_prop_value(prop.prop_id());
-                //     if last_prop != Prop::None {
-                //         last_props.push(last_prop);
-                //         end_props.push(prop.clone());
-                //     } else {
-                //         // if let Some(default) = last_map.get()
-                //         if let Some(start_prop) = start_map.get(&prop.prop_id()) {
-                //             last_props.push(start_prop.clone());
-                //             end_props.push(prop.clone());
-                //         } else {
-                //             //
-                //         }
-                //     }
-                // }
-                println!("start={:?} \nend={:?}", &last_props, &end_props);
 
+                for animator in &mut self.animators {
+                    for new_prop in &new_props {
+                        animator.start_state.props.push(new_prop.clone());
+                        animator.end_state.props.push(new_prop.clone());
+                    }
+                }
                 let animator = Animator::create(&self.tween_id, &last_props, &end_props, &self.easing);
                 self.animators.push(animator);
             }
@@ -243,6 +234,8 @@ impl Playable for Tween {
             animator.start_time = time;
             animator.end_time = animator.start_time + animator.seconds;
             time += animator.seconds;
+            println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
+
         }
         self.duration = Duration::from_float_secs(time);
         self.started_at = Instant::now();
@@ -288,7 +281,7 @@ impl Playable for Tween {
             for animator in &mut self.animators {
                 let elapsed = self.started_at.elapsed().as_float_secs();
                 if animator.start_time < elapsed && animator.end_time >= elapsed {
-                    let ui_state = animator.update(self.started_at, self.duration, self.time_scale);
+                    let ui_state = animator.update(self.started_at, self.time_scale);
                     return Some(ui_state);
                 }
             }

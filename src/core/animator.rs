@@ -43,9 +43,9 @@ impl Animator {
         self
     }
 
-    pub fn update(&self, start_time: Instant, duration: Duration, time_scale: f64) -> UIState {
+    pub fn update(&self, started_at: Instant, time_scale: f64) -> UIState {
         let mut props: Vec<Prop> = Vec::new();
-        let elapsed = start_time.elapsed() - Duration::from_float_secs(self.start_time);
+        let elapsed = started_at.elapsed() - Duration::from_float_secs(self.start_time);
         let mut progress = 0.0 as f64;
         // if self.easing != Easing::Linear {
         //     let curve = self.easing.curve();

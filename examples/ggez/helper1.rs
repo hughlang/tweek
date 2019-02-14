@@ -1,4 +1,8 @@
-//! The simplest possible example that does something.
+/// This helper module is a convenience when writing and testing examples.
+///
+/// mod helper1;
+/// use helper1::*;
+///
 
 extern crate ggez;
 extern crate tween;
@@ -25,6 +29,8 @@ pub struct ItemState {
     pub tween: Option<Tween>,
     pub image: Option<graphics::Image>,
     pub text: Option<graphics::Text>,
+    pub should_update: bool,
+    pub should_render: bool,
 }
 
 impl ItemState {
@@ -50,6 +56,8 @@ impl ItemState {
             tween: None,
             image: None,
             text: None,
+            should_update: true,
+            should_render: true,
         })
     }
 
@@ -71,9 +79,10 @@ impl ItemState {
                 let drawparams = graphics::DrawParam::new();
                 let _result = graphics::draw(ctx, &mesh, drawparams);
             },
-            Shape::Circle(_, r) => {
+            Shape::Circle(_, _) => {
+                let r = self.frame.w / 2.0;
                 let pt = mint::Point2{x: self.frame.x + r, y: self.frame.y + r};
-                let mesh = graphics::Mesh::new_circle(ctx, graphics::DrawMode::fill(), pt, r, 1.0, self.fill_color)?;
+                let mesh = graphics::Mesh::new_circle(ctx, graphics::DrawMode::fill(), pt, r, 0.2, self.fill_color)?;
                 let drawparams = graphics::DrawParam::new();
                 let _result = graphics::draw(ctx, &mesh, drawparams);
             },

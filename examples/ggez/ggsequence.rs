@@ -44,10 +44,11 @@ impl MainState {
         item2.fill_color = graphics::Color::from_rgb_u32(0xCD09AA);
 
         let mut tween2 = Tween::with(ROUND_ITEM_ID, &vec![&item2.frame, &item2.fill_color])
-            .to(vec![position(40.0, 400.0), alpha(0.2)]).duration(2.0)
-            .to(vec![position(40.0, 40.0), alpha(1.0)]).duration(2.0)
-            .to(vec![position(300.0, 40.0), alpha(1.0)]).duration(1.0)
-            .to(vec![size(100.0, 100.0)]).duration(1.0);
+            .to(vec![position(40.0, 400.0), alpha(0.2)]).duration(1.0)
+            .to(vec![position(40.0, 40.0), alpha(1.0)]).duration(0.5)
+            .to(vec![position(300.0, 40.0), alpha(1.0)]).duration(0.5)
+            .to(vec![size(200.0, 200.0)]).duration(1.0)
+            .repeat(4, 0.25).yoyo();
 
         &tween2.play();
         item2.tween = Some(tween2);

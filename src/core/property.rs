@@ -40,10 +40,43 @@ impl Prop {
         results.push(Prop::Size(Frame2D::zero()));
         results
     }
+
+    // pub fn get_value(&self) -> Vector4<f64> {
+    //     let value: Vector4 = match self {
+    //         Prop::None => Vector4<f64>::zero(),
+    //         Prop::Alpha(v1) => {
+
+    //         },
+    //         Prop::Color(v4) => v4,
+    //         Prop::Position(v2) => v2,
+    //         Prop::Size(v2) => v2,
+    //     }
+    //     value
+    // }
 }
 
-// impl
-// TODO: implement Scale, Translation, and Rotation
+// impl PartialEq for Prop {
+//     fn eq(&self, other: &Prop) -> bool {
+//         if self.prop_id() != other.prop_id() {
+//             return false;
+//         }
+//         let is_same = match self {
+//             Prop::None => true,
+//             Prop::Alpha(v1) => {
+//                 v1 == other
+//             },
+//             Prop::Color(v4) => 2,
+//             Prop::Position(v2) => 3,
+//             Prop::Size(v2) => 4,
+
+//             _ => false,
+//         }
+//         is_same
+//     }
+// }
+
+// impl Eq for Prop {}
+
 
 #[derive(Default, Debug, Clone)]
 pub struct UIState {
