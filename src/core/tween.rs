@@ -51,7 +51,7 @@ pub struct Tween {
     pub tween_id: usize,
     pub global_id: String,
     pub delay_s: Duration,
-    pub start_time: Instant,
+    pub started_at: Instant,
     pub duration: Duration,
     pub state: TweenState,
     pub repeat_count: i32, // -1 = forever. If > 0, decrement after each play until 0
@@ -59,7 +59,7 @@ pub struct Tween {
     pub time_scale: f64,
     pub anim_type: AnimType,
     start_props: Vec<Prop>,
-    animators: HashMap<usize, Vec<Animator>>,
+    animators: Vec<Animator>,
     easing: Easing,
     events: Vec<TKEvent>,
     callbacks: Vec<Box<FnMut(TKEvent, &mut TKContext) + 'static>>,
@@ -72,7 +72,7 @@ impl Tween {
             tween_id: 0,
             global_id: uuid.to_string(),
             delay_s: Duration::from_secs(0),
-            start_time: Instant::now(),
+            started_at: Instant::now(),
             duration: Duration::from_secs(0),
             state: TweenState::Idle,
             repeat_count: 0,
@@ -80,7 +80,7 @@ impl Tween {
             time_scale: 1.0,
             anim_type: AnimType::Normal,
             start_props: Vec::new(),
-            animators: HashMap::new(),
+            animators: Vec::new(),
             easing: Easing::Linear,
             events: Vec::new(),
             callbacks: Vec::new(),
@@ -113,38 +113,40 @@ impl Tween {
     /// end_props have matching Prop types in the same order.
     pub fn to(mut self, props:Vec<Prop>) -> Self {
         // let prop_ids: Vec<u32> = props.iter().map(|x| x.prop_id()).collect();
-        let mut temp_map: HashMap<u32, Prop> = HashMap::new();
-        for prop in &self.start_props {
-            temp_map.insert(prop.prop_id(), prop.clone());
-        }
-        let mut match_props: Vec<Prop> = Vec::new();
-        for prop in &props {
-            if let Some(start_prop) = temp_map.get(&prop.prop_id()) {
-                match_props.push(start_prop.clone());
+
+        if self.animators.len() == 0 {
+
+            let mut temp_map: HashMap<u32, Prop> = HashMap::new();
+            for prop in &self.start_props {
+                temp_map.insert(prop.prop_id(), prop.clone());
             }
-        }
+            let mut match_props: Vec<Prop> = Vec::new();
+            for prop in &props {
+                if let Some(start_prop) = temp_map.get(&prop.prop_id()) {
+                    match_props.push(start_prop.clone());
+                }
+            }
 
-        // if self.tween_id == 0 {
-        //     self.tween_id = self.animators.len();
-        // }
-        println!("start={:?} \nend={:?}", &match_props, &props);
+            println!("start={:?} \nend={:?}", &match_props, &props);
 
-        let mut animator = Animator::create(&self.tween_id, &match_props, &props, &self.easing);
-        animator.debug = true;
-        let exists = &self.animators.contains_key(&self.tween_id);
-        if *exists {
-            &self.animators.get_mut(&self.tween_id).unwrap().push(animator);
-            // if let Some(list) = &self.animators.get_mut(&self.tween_id) {
-            //     list.push(animator);
-            // }
+            let animator = Animator::create(&self.tween_id, &match_props, &props, &self.easing);
+            self.animators.push(animator);
         } else {
-            &self.animators.insert(self.tween_id.clone(), vec![animator]);
+            if let Some(previous) = self.animators.last() {
+                let animator = Animator::create(&self.tween_id, &previous.end_state.props, &props, &self.easing);
+                self.animators.push(animator);
+            }
         }
         self
     }
 
     pub fn duration(mut self, secs: f64) -> Self {
-        self.duration = Duration::from_float_secs(secs);
+        self.duration = self.duration + Duration::from_float_secs(secs);
+        if self.animators.len() > 0 {
+            if let Some(animator) = self.animators.last_mut() {
+                animator.seconds = secs;
+            }
+        }
         self
     }
 
@@ -186,11 +188,17 @@ impl Tween {
 impl Playable for Tween {
 
     fn play(&mut self) {
-        self.start_time = Instant::now();
+        let mut time = 0.0 as f64;
+        // If there are sequenced animators, set the start and end times
+        // so the time ranges can be evaluated when getting updates
+        for animator in &mut self.animators {
+            animator.start_time = time;
+            animator.end_time = animator.start_time + animator.seconds;
+            time += animator.seconds;
+        }
+        self.duration = Duration::from_float_secs(time);
+        self.started_at = Instant::now();
         self.state = TweenState::Running;
-
-
-
     }
 
     /// Probably use this to check the play status of each tween, based on the
@@ -199,7 +207,7 @@ impl Playable for Tween {
         self.events.clear();
         match self.state {
             TweenState::Running => {
-                if self.start_time.elapsed() > self.duration {
+                if self.started_at.elapsed() > self.duration {
                     if self.repeat_count == 0 {
                         // If repeat_count is zero, tween is Completed.
                         self.state = TweenState::Completed;
@@ -212,7 +220,7 @@ impl Playable for Tween {
                 }
             },
             TweenState::Idle => {
-                if self.start_time.elapsed() > self.duration + self.repeat_delay
+                if self.started_at.elapsed() > self.duration + self.repeat_delay
                 {
                     if self.repeat_count > 0 {
                         self.repeat_count -= 1;
@@ -226,6 +234,19 @@ impl Playable for Tween {
             },
             _ => (),
         }
+    }
+
+    fn get_update(&mut self, _id: &usize) -> Option<UIState> {
+        if self.state == TweenState::Running {
+            for animator in &mut self.animators {
+                let elapsed = self.started_at.elapsed().as_float_secs();
+                if animator.start_time < elapsed && animator.end_time > elapsed {
+                    let ui_state = animator.update(self.started_at, self.duration, self.time_scale);
+                    return Some(ui_state);
+                }
+            }
+        }
+        None
     }
 
     fn stop(&mut self) {
@@ -245,19 +266,9 @@ impl Playable for Tween {
             }
         }
         self.state = TweenState::Running;
-        self.start_time = Instant::now();
+        self.started_at = Instant::now();
     }
 
-    fn get_update(&mut self, id: &usize) -> Option<UIState> {
-        if self.state == TweenState::Running {
-            if let Some(values) = self.animators.get(id) {
-
-                // let ui_state = animator.update(self.start_time, self.duration, self.time_scale);
-                // return Some(ui_state);
-            }
-        }
-        None
-    }
 
 }
 

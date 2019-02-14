@@ -15,6 +15,7 @@ pub struct Animator {
     pub end_state: UIState,
     pub start_time: f64,
     pub end_time: f64,
+    pub seconds: f64,
     pub easing: Easing,
     pub debug: bool,
 }
@@ -30,6 +31,7 @@ impl Animator {
             end_state: end_state,
             start_time: 0.0,
             end_time: 0.0,
+            seconds: 1.0,
             easing: ease.clone(),
             debug: false,
         }
