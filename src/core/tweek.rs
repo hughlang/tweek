@@ -24,10 +24,11 @@ pub trait Events {
 
 pub trait Playable {
     fn play(&mut self);
-    fn tick(&mut self, ctx: &mut TKContext);
+    fn tick(&mut self);
     fn stop(&mut self);
     fn pause(&mut self);
     fn reset(&mut self);
+    // fn sync(&mut self, ctx: &mut TKContext);
     fn get_update(&mut self, id: &usize) -> Option<UIState>;
     // fn resume(&mut self);
     // fn seek(&mut self, pos: f64);
@@ -132,11 +133,10 @@ impl Playable for Tweek {
         }
 	}
 
-    fn tick(&mut self, ctx: &mut TKContext) {
-        ctx.events.clear(); // remove all previous events
+    fn tick(&mut self) {
         for tl in &self.timelines {
             let mut timeline = tl.borrow_mut();
-            (&mut *timeline).tick(ctx);
+            (&mut *timeline).tick();
         }
 	}
 

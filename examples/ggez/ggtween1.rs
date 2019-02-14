@@ -65,9 +65,9 @@ impl ItemState {
         })
     }
 
-    pub fn update(&mut self, ctx:&mut TKContext) -> GameResult {
+    pub fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.tween {
-            tween.tick(ctx);
+            tween.tick();
             if let Some(update) = tween.get_update(&self.id) {
                 self.frame.render_update(&update.props);
                 self.fill_color.render_update(&update.props);
@@ -118,7 +118,6 @@ impl ItemState {
 }
 
 struct MainState {
-    context: TKContext,
     square_item: ItemState,
     round_item: ItemState,
     image_item: ItemState,
@@ -135,8 +134,8 @@ impl MainState {
         item1.fill_color = graphics::Color::from_rgb_u32(0x333333);
 
         let mut tween1 = Tween::with(&vec![&item1.frame, &item1.fill_color]).with_id(SQUARE_ITEM_ID)
-            .to(vec![position(400.0, 300.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(2.0).repeat(4, 0.0);
+            .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
+            .duration(2.0).repeat(4, 0.5);
         &tween1.play();
         item1.tween = Some(tween1);
 
@@ -175,7 +174,6 @@ impl MainState {
 
         // let mut item3 = ItemState
         let s = MainState {
-            context: TKContext::new(),
             square_item: item1,
             round_item: item2,
             image_item: item3,
@@ -183,16 +181,15 @@ impl MainState {
         };
         Ok(s)
     }
-
 }
 
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
 
-        self.square_item.update(&mut self.context)?;
-        self.round_item.update(&mut self.context)?;
-        self.image_item.update(&mut self.context)?;
-        self.text_item.update(&mut self.context)?;
+        self.square_item.update()?;
+        self.round_item.update()?;
+        self.image_item.update()?;
+        self.text_item.update()?;
 
         Ok(())
     }

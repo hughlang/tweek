@@ -15,16 +15,6 @@ use super::tweek::*;
 
 //-- Base -----------------------------------------------------------------------
 
-pub trait Tweenable {
-    fn get_prop(&self, prop: &Prop) -> Prop;
-    fn apply(&mut self, prop: &Prop);
-    fn render_update(&mut self, props: &Vec<Prop>) {
-        for prop in props {
-            self.apply(prop);
-        }
-    }
-}
-
 pub fn position(x: f64, y: f64) -> Prop {
     Prop::Position(Point2D::new(x, y))
 }
@@ -45,12 +35,12 @@ pub fn size(w: f64, h: f64) -> Prop {
 pub struct Tween {
     pub tween_id: usize,
     pub global_id: String,
-    pub delay_s: f64,
+    pub delay_s: Duration,
     pub start_time: Instant,
     pub duration: Duration,
     pub state: AnimState,
     pub repeat_count: i32, // -1 = forever. If > 0, decrement after each play until 0
-    pub repeat_delay: f64,
+    pub repeat_delay: Duration,
     start_props: Vec<Prop>,
     end_props: Vec<Prop>,
     animators: HashMap<usize, Animator>,
@@ -64,12 +54,12 @@ impl Tween {
         Tween {
             tween_id: 0,
             global_id: uuid.to_string(),
-            delay_s: 0.0,
+            delay_s: Duration::from_secs(0),
             start_time: Instant::now(),
             duration: Duration::from_secs(0),
             state: AnimState::Idle,
             repeat_count: 0,
-            repeat_delay: 0.0,
+            repeat_delay: Duration::from_secs(0),
             start_props: Vec::new(),
             end_props: Vec::new(),
             animators: HashMap::new(),
@@ -129,13 +119,13 @@ impl Tween {
     }
 
     pub fn delay(mut self, _seconds: f64) -> Self {
-        self.delay_s = _seconds;
+        self.delay_s = Duration::from_float_secs(_seconds);
         self
     }
 
     pub fn repeat(mut self, count: i32, delay: f64) -> Self {
         self.repeat_count = count;
-        self.repeat_delay = delay;
+        self.repeat_delay = Duration::from_float_secs(delay);
         self
     }
 
@@ -165,21 +155,6 @@ impl Tween {
         self.callbacks.push(Box::new(cb));
     }
 }
-
-impl Hash for Tween {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.global_id.hash(state);
-    }
-}
-
-impl PartialEq for Tween {
-    fn eq(&self, other: &Tween) -> bool {
-        self.global_id == other.global_id
-    }
-}
-
-impl Eq for Tween {}
-
 impl Playable for Tween {
 
     fn play(&mut self) {
@@ -201,24 +176,43 @@ impl Playable for Tween {
 
     /// Probably use this to check the play status of each tween, based on the
     /// timeline, time elapsed, and duration, etc.
-    fn tick(&mut self, ctx: &mut TKContext) {
-        if self.state == AnimState::Running && self.start_time.elapsed() > self.duration {
-
-            if self.repeat_count > 0 {
-                println!("repeat={}", self.repeat_count);
-                self.repeat_count -= 1;
-                self.reset();
-            } else if self.repeat_count < 0 {
-                self.reset();
-            } else {
-                self.state = AnimState::Completed;
-            }
-            ctx.events.push(TKEvent::Completed(self.tween_id));
-            // maybe not needed?
-            // for cb in self.callbacks.iter_mut() {
-            //     (&mut *cb)(TKEvent::Completed(self.tween_id), ctx);
-            // }
+    fn tick(&mut self) {
+        match self.state {
+            AnimState::Running => {
+                if self.start_time.elapsed() > self.duration {
+                    if self.repeat_count == 0 {
+                        // If repeat_count is zero, tween is Completed.
+                        self.state = AnimState::Completed;
+                    } else {
+                        // If it positive or negative, continue repeating
+                        self.state = AnimState::Idle;
+                    }
+                }
+            },
+            AnimState::Idle => {
+                if self.start_time.elapsed() > self.duration + self.repeat_delay
+                {
+                    if self.repeat_count > 0 {
+                        self.repeat_count -= 1;
+                        self.reset();
+                    } else if self.repeat_count < 0 {
+                        self.reset();
+                    } else {
+                        // self.state = AnimState::Completed;
+                    }
+                }
+            },
+            _ => (),
         }
+        // if self.state == AnimState::Running && self.start_time.elapsed() > self.duration {
+        //     ctx.events.push(TKEvent::Completed(self.tween_id));
+        //     // maybe not needed?
+        //     // for cb in self.callbacks.iter_mut() {
+        //     //     (&mut *cb)(TKEvent::Completed(self.tween_id), ctx);
+        //     // }
+        // } else if self.state == AnimState::Pending {
+
+        // }
     }
 
 
@@ -247,6 +241,32 @@ impl Playable for Tween {
     }
 
 }
+
+//-- Support -----------------------------------------------------------------------
+
+pub trait Tweenable {
+    fn get_prop(&self, prop: &Prop) -> Prop;
+    fn apply(&mut self, prop: &Prop);
+    fn render_update(&mut self, props: &Vec<Prop>) {
+        for prop in props {
+            self.apply(prop);
+        }
+    }
+}
+
+impl Hash for Tween {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.global_id.hash(state);
+    }
+}
+
+impl PartialEq for Tween {
+    fn eq(&self, other: &Tween) -> bool {
+        self.global_id == other.global_id
+    }
+}
+
+impl Eq for Tween {}
 
 //-- TODO: Move to separate file -----------------------------------------------------------------------
 // The plan is to have ggez support as a feature and would have its own module in this lib

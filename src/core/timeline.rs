@@ -156,7 +156,7 @@ impl Playable for Timeline {
 		}
 	}
 
-    fn tick(&mut self, ctx: &mut TKContext) {
+    fn tick(&mut self) {
 		for (_, range) in &self.children {
 			let elapsed = self.tl_start.elapsed().as_float_secs();
 			if range.start < elapsed && range.end > elapsed {
@@ -166,31 +166,31 @@ impl Playable for Timeline {
 						(&mut *tween).play();
 					},
 					_ => {
-						(&mut *tween).tick(ctx);
+						(&mut *tween).tick();
 					}
 				}
 			} else {
 				let mut tween = range.tween.borrow_mut();
-				(&mut *tween).tick(ctx);
+				(&mut *tween).tick();
 			}
 		}
 
 		// Now read the context for events
-		for event in &ctx.events {
-			match event {
-				TKEvent::Completed(id) => {
-					// Decide: repeat?
-					if let Some(range) = &self.children.get(id) {
+		// for event in &ctx.events {
+		// 	match event {
+		// 		TKEvent::Completed(id) => {
+		// 			// Decide: repeat?
+		// 			if let Some(range) = &self.children.get(id) {
 
-						// self.reset();
-						// let mut tween = range.tween.borrow_mut();
-						// (&mut *tween).reset();
-					}
+		// 				// self.reset();
+		// 				// let mut tween = range.tween.borrow_mut();
+		// 				// (&mut *tween).reset();
+		// 			}
 
-				}
-				_ => (),
-			}
-		}
+		// 		}
+		// 		_ => (),
+		// 	}
+		// }
 	}
 
     fn stop(&mut self) {
@@ -233,9 +233,10 @@ pub enum TweenAlign {
     Start,
 }
 
+/// The AnimState represents the animation state machine.
 #[derive(PartialEq)]
 pub enum AnimState {
-    Pending,
+    Pending, // A tween that is ready to play
     Running,
     Idle,
     Cancelled,
