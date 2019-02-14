@@ -11,17 +11,6 @@ use super::tween::*;
 
 //-- Base -----------------------------------------------------------------------
 
-/// An attempt to create event callbacks using this example:
-/// https://mattgathu.github.io/simple-events-hook-rust/
-/// Not sure if it's useful
-#[allow(unused_variables)]
-pub trait Events {
-    fn on_play(&mut self, caller: &Playable) {}
-    fn on_start(&self, tween_id: usize) {}
-    fn on_error(&self, tween_id: usize, err: &str) {}
-    fn on_complete(&self, tween_id: usize) {}
-}
-
 pub trait Playable {
     fn play(&mut self);
     fn tick(&mut self);

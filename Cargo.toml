@@ -13,8 +13,8 @@ name = "ggrunner"
 path = "examples/ggez/ggrunner.rs"
 
 [[bin]]
-name = "ggtween1"
-path = "examples/ggez/ggtween1.rs"
+name = "ggmix"
+path = "examples/ggez/ggmix.rs"
 
 [features]
 default = []

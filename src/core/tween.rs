@@ -27,6 +27,16 @@ pub fn size(w: f64, h: f64) -> Prop {
     Prop::Size(Frame2D::new(w, h))
 }
 
+/// The TweenState represents the animation state machine.
+#[derive(PartialEq)]
+pub enum TweenState {
+    Pending,
+    Running,
+    Idle,
+    Cancelled,
+    Completed,
+}
+
 //-- Main -----------------------------------------------------------------------
 
 /// A Tween represents a group of animation Props that will be applied to the set of animators.
@@ -38,13 +48,15 @@ pub struct Tween {
     pub delay_s: Duration,
     pub start_time: Instant,
     pub duration: Duration,
-    pub state: AnimState,
+    pub state: TweenState,
     pub repeat_count: i32, // -1 = forever. If > 0, decrement after each play until 0
     pub repeat_delay: Duration,
+    pub time_scale: f64,
     start_props: Vec<Prop>,
     end_props: Vec<Prop>,
     animators: HashMap<usize, Animator>,
     easing: Easing,
+    events: Vec<TKEvent>,
     callbacks: Vec<Box<FnMut(TKEvent, &mut TKContext) + 'static>>,
 }
 
@@ -57,27 +69,24 @@ impl Tween {
             delay_s: Duration::from_secs(0),
             start_time: Instant::now(),
             duration: Duration::from_secs(0),
-            state: AnimState::Idle,
+            state: TweenState::Idle,
             repeat_count: 0,
             repeat_delay: Duration::from_secs(0),
+            time_scale: 0.0,
             start_props: Vec::new(),
             end_props: Vec::new(),
             animators: HashMap::new(),
             easing: Easing::Linear,
+            events: Vec::new(),
             callbacks: Vec::new(),
         }
     }
 
-    // /// Optional function to manually set the tween_id for a single object
-    pub fn with_id(mut self, id: usize) -> Self {
-        self.tween_id = id;
-        self
-    }
-
     /// Function to initialize a Tween with the vector of Tweenables
     /// The starting state of all Props are stored
-    pub fn with(objects: &Vec<&Tweenable>) -> Self {
+    pub fn with(id: usize, objects: &Vec<&Tweenable>) -> Self {
         let mut tween = Tween::new();
+        tween.tween_id = id;
         let prop_list = Prop::get_prop_list();
 
         for prop in prop_list {
@@ -94,8 +103,9 @@ impl Tween {
         tween
     }
 
-    /// Function which reads the list of props and finds the matching ones
-    /// already saved in self.start_props.
+    /// Function which reads the list of "to" props and finds the matching ones
+    /// already saved in self.start_props to make sure that start_props and
+    /// end_props have matching Prop types in the same order.
     pub fn to(mut self, props:Vec<Prop>) -> Self {
         // let prop_ids: Vec<u32> = props.iter().map(|x| x.prop_id()).collect();
         let mut temp_map: HashMap<u32, Prop> = HashMap::new();
@@ -138,7 +148,7 @@ impl Tween {
     pub fn get_updates(&self) -> Vec<UIState> {
         let mut results: Vec<UIState> = Vec::new();
         match self.state {
-            AnimState::Running => {
+            TweenState::Running => {
                 for animator in self.animators.values() {
                     let ui_state = animator.update(self.start_time, self.duration);
                     if ui_state.props.len() > 0 {
@@ -167,29 +177,29 @@ impl Playable for Tween {
         animator.debug = true;
 
         self.animators.insert(self.tween_id, animator);
-        self.state = AnimState::Running;
+        self.state = TweenState::Running;
 
-        // for cb in self.callbacks.iter_mut() {
-        //     (&mut *cb)(TKEvent::Play(self.tween_id), &self.global_id);
-        // }
     }
 
     /// Probably use this to check the play status of each tween, based on the
     /// timeline, time elapsed, and duration, etc.
     fn tick(&mut self) {
         match self.state {
-            AnimState::Running => {
+            TweenState::Running => {
                 if self.start_time.elapsed() > self.duration {
                     if self.repeat_count == 0 {
                         // If repeat_count is zero, tween is Completed.
-                        self.state = AnimState::Completed;
+                        self.state = TweenState::Completed;
+                        // for cb in self.callbacks.iter_mut() {
+                        //     (&mut *cb)(TKEvent::Completed(self.tween_id), &self.global_id);
+                        // }
                     } else {
                         // If it positive or negative, continue repeating
-                        self.state = AnimState::Idle;
+                        self.state = TweenState::Idle;
                     }
                 }
             },
-            AnimState::Idle => {
+            TweenState::Idle => {
                 if self.start_time.elapsed() > self.duration + self.repeat_delay
                 {
                     if self.repeat_count > 0 {
@@ -198,19 +208,19 @@ impl Playable for Tween {
                     } else if self.repeat_count < 0 {
                         self.reset();
                     } else {
-                        // self.state = AnimState::Completed;
+                        // self.state = TweenState::Completed;
                     }
                 }
             },
             _ => (),
         }
-        // if self.state == AnimState::Running && self.start_time.elapsed() > self.duration {
+        // if self.state == TweenState::Running && self.start_time.elapsed() > self.duration {
         //     ctx.events.push(TKEvent::Completed(self.tween_id));
         //     // maybe not needed?
         //     // for cb in self.callbacks.iter_mut() {
         //     //     (&mut *cb)(TKEvent::Completed(self.tween_id), ctx);
         //     // }
-        // } else if self.state == AnimState::Pending {
+        // } else if self.state == TweenState::Pending {
 
         // }
     }
@@ -225,12 +235,12 @@ impl Playable for Tween {
     }
 
     fn reset(&mut self) {
-        self.state = AnimState::Running;
+        self.state = TweenState::Running;
         self.start_time = Instant::now();
     }
 
     fn get_update(&mut self, id: &usize) -> Option<UIState> {
-        if self.state == AnimState::Running {
+        if self.state == TweenState::Running {
             if let Some(animator) = self.animators.get(id) {
                 let ui_state = animator.update(self.start_time, self.duration);
                 // self.live_props = ui_state.props;

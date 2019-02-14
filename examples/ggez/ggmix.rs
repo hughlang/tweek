@@ -6,7 +6,6 @@ extern crate tween;
 use ggez::conf;
 use ggez::event;
 use ggez::graphics;
-use ggez::graphics::{Color, DrawMode, DrawParam};
 use ggez::timer;
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::mint;
@@ -133,7 +132,7 @@ impl MainState {
         let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
         item1.fill_color = graphics::Color::from_rgb_u32(0x333333);
 
-        let mut tween1 = Tween::with(&vec![&item1.frame, &item1.fill_color]).with_id(SQUARE_ITEM_ID)
+        let mut tween1 = Tween::with(SQUARE_ITEM_ID, &vec![&item1.frame, &item1.fill_color])
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
             .duration(2.0).repeat(4, 0.5);
         &tween1.play();
@@ -143,7 +142,7 @@ impl MainState {
         let mut item2 = ItemState::new(ROUND_ITEM_ID, Shape::Circle(mint::Point2{x: 500.0, y: 200.0}, 40.0))?;
         item2.fill_color = graphics::Color::from_rgb_u32(0xCD09AA);
 
-        let mut tween2 = Tween::with(&vec![&item2.frame, &item2.fill_color]).with_id(ROUND_ITEM_ID)
+        let mut tween2 = Tween::with(ROUND_ITEM_ID, &vec![&item2.frame, &item2.fill_color])
             .to(vec![position(40.0, 400.0), alpha(0.2)])
             .duration(2.0);
 
@@ -155,7 +154,7 @@ impl MainState {
         let mut item3 = ItemState::new(IMAGE_ITEM_ID, Shape::Image(rect))?;
         item3.image = Some(tile);
 
-        let mut tween3 = Tween::with(&vec![&item3.frame, &item3.fill_color]).with_id(IMAGE_ITEM_ID)
+        let mut tween3 = Tween::with(IMAGE_ITEM_ID, &vec![&item3.frame, &item3.fill_color])
             .to(vec![position(400.0, 400.0), alpha(0.2)])
             .duration(3.0);
         &tween3.play();
@@ -166,7 +165,7 @@ impl MainState {
         let mut item4 = ItemState::new(TEXT_ITEM_ID, Shape::Text(rect))?;
         item4.text = Some(text);
 
-        let mut tween4 = Tween::with(&vec![&item4.frame, &item4.fill_color]).with_id(TEXT_ITEM_ID)
+        let mut tween4 = Tween::with(TEXT_ITEM_ID, &vec![&item4.frame, &item4.fill_color])
             .to(vec![position(400.0, 20.0), alpha(0.2)])
             .duration(3.0);
         &tween4.play();

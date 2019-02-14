@@ -49,6 +49,7 @@ impl Prop {
 pub struct UIState {
     pub id: usize,
     pub props: Vec<Prop>,
+    pub progress: f64,
 }
 
 impl UIState {
@@ -56,6 +57,7 @@ impl UIState {
         UIState {
             id: _id,
             props: _props,
+            progress: 0.0,
         }
     }
 

@@ -34,7 +34,7 @@ impl MainState {
         let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
         item1.fill_color = graphics::Color::from_rgb_u32(0x333333);
 
-        let tween1 = Tween::with(&vec![&item1.bounds, &item1.fill_color]).with_id(SQUARE_ITEM_ID)
+        let tween1 = Tween::with(SQUARE_ITEM_ID, &vec![&item1.bounds, &item1.fill_color])
             .to(vec![position(400.0, 300.0), size(100.0, 100.0), alpha(0.2)])
             .duration(2.0);
 
@@ -42,7 +42,7 @@ impl MainState {
         let mut item2 = ItemState::new(ROUND_ITEM_ID, Shape::Circle(mint::Point2{x: 500.0, y: 200.0}, 40.0))?;
         item2.fill_color = graphics::Color::from_rgb_u32(0xCD09AA);
 
-        let tween2 = Tween::with(&vec![&item2.bounds, &item2.fill_color]).with_id(ROUND_ITEM_ID)
+        let tween2 = Tween::with(ROUND_ITEM_ID, &vec![&item2.bounds, &item2.fill_color])
             .to(vec![position(40.0, 200.0), alpha(0.2)])
             .duration(3.0);
 
@@ -67,7 +67,7 @@ impl MainState {
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
 
-        self.tweek.tick(&mut self.context); // This is called to check on completion status of each tween
+        self.tweek.tick(); // This is called to check on completion status of each tween
 
         let item = &mut self.square_item;
         if let Some(update) = self.tweek.get_update(&item.get_id()) {

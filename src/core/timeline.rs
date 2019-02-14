@@ -16,7 +16,7 @@ pub struct TweenRange {
     tween: Rc<RefCell<Tween>>,
     pub start: f64, // The start time in float seconds
     pub end: f64,   // The end time in float seconds
-	pub state: AnimState,
+	pub state: TweenState,
 }
 
 impl TweenRange {
@@ -26,7 +26,7 @@ impl TweenRange {
 			tween: Rc::new(RefCell::new(tween)),
 			start: start,
 			end: end,
-			state: AnimState::Pending,
+			state: TweenState::Pending,
 		}
 	}
 }
@@ -151,7 +151,7 @@ impl Playable for Timeline {
 			if range.start < elapsed && range.end > elapsed {
 				let mut tween = range.tween.borrow_mut();
 				(&mut *tween).play();
-				// range.state = AnimState::Running;
+				// range.state = TweenState::Running;
 			}
 		}
 	}
@@ -162,7 +162,7 @@ impl Playable for Timeline {
 			if range.start < elapsed && range.end > elapsed {
 				let mut tween = range.tween.borrow_mut();
 				match tween.state {
-					AnimState::Idle | AnimState::Pending => {
+					TweenState::Idle | TweenState::Pending => {
 						(&mut *tween).play();
 					},
 					_ => {
@@ -233,13 +233,4 @@ pub enum TweenAlign {
     Start,
 }
 
-/// The AnimState represents the animation state machine.
-#[derive(PartialEq)]
-pub enum AnimState {
-    Pending, // A tween that is ready to play
-    Running,
-    Idle,
-    Cancelled,
-    Completed,
-}
 
