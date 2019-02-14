@@ -49,11 +49,10 @@ pub struct Tween {
     pub start_time: Instant,
     pub duration: Duration,
     pub state: AnimState,
-    pub repeat_count: i32, // -1 = forever
+    pub repeat_count: i32, // -1 = forever. If > 0, decrement after each play until 0
     pub repeat_delay: f64,
     start_props: Vec<Prop>,
     end_props: Vec<Prop>,
-    pub live_props: Vec<Prop>,
     animators: HashMap<usize, Animator>,
     easing: Easing,
     callbacks: Vec<Box<FnMut(TKEvent, &mut TKContext) + 'static>>,
@@ -73,7 +72,6 @@ impl Tween {
             repeat_delay: 0.0,
             start_props: Vec::new(),
             end_props: Vec::new(),
-            live_props: Vec::new(),
             animators: HashMap::new(),
             easing: Easing::Linear,
             callbacks: Vec::new(),
@@ -205,7 +203,16 @@ impl Playable for Tween {
     /// timeline, time elapsed, and duration, etc.
     fn tick(&mut self, ctx: &mut TKContext) {
         if self.state == AnimState::Running && self.start_time.elapsed() > self.duration {
-            self.state = AnimState::Completed;
+
+            if self.repeat_count > 0 {
+                println!("repeat={}", self.repeat_count);
+                self.repeat_count -= 1;
+                self.reset();
+            } else if self.repeat_count < 0 {
+                self.reset();
+            } else {
+                self.state = AnimState::Completed;
+            }
             ctx.events.push(TKEvent::Completed(self.tween_id));
             // maybe not needed?
             // for cb in self.callbacks.iter_mut() {
@@ -224,7 +231,7 @@ impl Playable for Tween {
     }
 
     fn reset(&mut self) {
-        self.state = AnimState::Pending;
+        self.state = AnimState::Running;
         self.start_time = Instant::now();
     }
 

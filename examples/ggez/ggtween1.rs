@@ -19,13 +19,14 @@ const SQUARE_ITEM_ID: usize = 100;
 const ROUND_ITEM_ID: usize = 101;
 const IMAGE_ITEM_ID: usize = 102;
 const TEXT_ITEM_ID: usize = 103;
+const LINE_ITEM_ID: usize = 104;
 
 enum Shape {
     Circle(mint::Point2<f32>, f32),
     Rectangle(graphics::Rect),
     Image(graphics::Rect),
     Text(graphics::Rect),
-
+    Line(mint::Point2<f32>, mint::Point2<f32>),
 }
 
 struct ItemState {
@@ -47,6 +48,9 @@ impl ItemState {
             },
             Shape::Image(rect) => rect,
             Shape::Text(rect) => rect,
+            Shape::Line(pt1, pt2) => {
+                graphics::Rect::new(pt1.x, pt1.y, pt2.x, pt2.y)
+            },
         };
 
 
@@ -61,8 +65,9 @@ impl ItemState {
         })
     }
 
-    pub fn update(&mut self) -> GameResult {
+    pub fn update(&mut self, ctx:&mut TKContext) -> GameResult {
         if let Some(tween) = &mut self.tween {
+            tween.tick(ctx);
             if let Some(update) = tween.get_update(&self.id) {
                 self.frame.render_update(&update.props);
                 self.fill_color.render_update(&update.props);
@@ -104,12 +109,16 @@ impl ItemState {
                     None => (),
                 }
             },
+            Shape::Line(_, _) => {
+
+            }
         }
         Ok(())
     }
 }
 
 struct MainState {
+    context: TKContext,
     square_item: ItemState,
     round_item: ItemState,
     image_item: ItemState,
@@ -127,7 +136,7 @@ impl MainState {
 
         let mut tween1 = Tween::with(&vec![&item1.frame, &item1.fill_color]).with_id(SQUARE_ITEM_ID)
             .to(vec![position(400.0, 300.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(2.0);
+            .duration(2.0).repeat(4, 0.0);
         &tween1.play();
         item1.tween = Some(tween1);
 
@@ -147,7 +156,7 @@ impl MainState {
         let mut item3 = ItemState::new(IMAGE_ITEM_ID, Shape::Image(rect))?;
         item3.image = Some(tile);
 
-        let mut tween3 = Tween::with(&vec![&item2.frame, &item2.fill_color]).with_id(IMAGE_ITEM_ID)
+        let mut tween3 = Tween::with(&vec![&item3.frame, &item3.fill_color]).with_id(IMAGE_ITEM_ID)
             .to(vec![position(400.0, 400.0), alpha(0.2)])
             .duration(3.0);
         &tween3.play();
@@ -158,8 +167,15 @@ impl MainState {
         let mut item4 = ItemState::new(TEXT_ITEM_ID, Shape::Text(rect))?;
         item4.text = Some(text);
 
+        let mut tween4 = Tween::with(&vec![&item4.frame, &item4.fill_color]).with_id(TEXT_ITEM_ID)
+            .to(vec![position(400.0, 20.0), alpha(0.2)])
+            .duration(3.0);
+        &tween4.play();
+        item4.tween = Some(tween4);
+
         // let mut item3 = ItemState
         let s = MainState {
+            context: TKContext::new(),
             square_item: item1,
             round_item: item2,
             image_item: item3,
@@ -173,10 +189,10 @@ impl MainState {
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
 
-        self.square_item.update()?;
-        self.round_item.update()?;
-        self.image_item.update()?;
-        self.text_item.update()?;
+        self.square_item.update(&mut self.context)?;
+        self.round_item.update(&mut self.context)?;
+        self.image_item.update(&mut self.context)?;
+        self.text_item.update(&mut self.context)?;
 
         Ok(())
     }

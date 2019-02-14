@@ -182,9 +182,9 @@ impl Playable for Timeline {
 					// Decide: repeat?
 					if let Some(range) = &self.children.get(id) {
 
-						self.reset();
+						// self.reset();
 						// let mut tween = range.tween.borrow_mut();
-					// return (&mut *tween).get_update(id);
+						// (&mut *tween).reset();
 					}
 
 				}
