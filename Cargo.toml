@@ -24,6 +24,10 @@ path = "examples/ggez/ggsequence.rs"
 name = "ggtransform"
 path = "examples/ggez/ggtransform.rs"
 
+[[bin]]
+name = "ggbuttons"
+path = "examples/ggez/ggbuttons.rs"
+
 [features]
 default = []
 wasm = []
