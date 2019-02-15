@@ -11,9 +11,10 @@ use super::tween::*;
 
 //-- Base -----------------------------------------------------------------------
 
+type TweenRef = Rc<RefCell<Tween>>;
 
 pub struct TweenRange {
-    tween: Rc<RefCell<Tween>>,
+    tween: TweenRef,
     pub start: f64, // The start time in float seconds
     pub end: f64,   // The end time in float seconds
 	pub state: TweenState,
@@ -72,8 +73,9 @@ impl Timeline {
 				}
 
 			});
-			// tweek.add_tween(&mut t);
+
 			let range = TweenRange::new(t, start);
+
 			match align {
 				TweenAlign::Sequence => {
 					start += dur;
@@ -119,8 +121,6 @@ impl Timeline {
 
 	pub fn notify(&mut self, event:&TKEvent) {
 		println!("notify event={:?}", event);
-
-
 	}
 
 	// pub fn get_total_duration(&self) -> f64 {
@@ -150,7 +150,8 @@ impl Playable for Timeline {
 		}
 	}
 
-    fn tick(&mut self) {
+    fn tick(&mut self) -> Vec<TKEvent> {
+        let mut events: Vec<TKEvent> = Vec::new();
 		for (_, range) in &self.children {
 			let elapsed = self.tl_start.elapsed().as_float_secs();
 			if range.start < elapsed && range.end > elapsed {
@@ -160,31 +161,34 @@ impl Playable for Timeline {
 						(&mut *tween).play();
 					},
 					_ => {
-						(&mut *tween).tick();
+						let mut ticks = (&mut *tween).tick();
+			            events.append(&mut ticks);
 					}
 				}
 			} else {
 				let mut tween = range.tween.borrow_mut();
-				(&mut *tween).tick();
+				let mut ticks = (&mut *tween).tick();
+				events.append(&mut ticks);
 			}
 		}
 
 		// Now read the context for events
-		// for event in &ctx.events {
-		// 	match event {
-		// 		TKEvent::Completed(id) => {
-		// 			// Decide: repeat?
-		// 			if let Some(range) = &self.children.get(id) {
+		for event in &events {
+			match event {
+				TKEvent::Completed(id) => {
+					// Decide: repeat?
+					if let Some(range) = &self.children.get(id) {
 
-		// 				// self.reset();
-		// 				// let mut tween = range.tween.borrow_mut();
-		// 				// (&mut *tween).reset();
-		// 			}
+						// self.reset();
+						// let mut tween = range.tween.borrow_mut();
+						// (&mut *tween).reset();
+					}
 
-		// 		}
-		// 		_ => (),
-		// 	}
-		// }
+				}
+				_ => (),
+			}
+		}
+		events
 	}
 
     fn sync(&mut self, ctx: &mut TKContext) {

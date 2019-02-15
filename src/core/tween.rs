@@ -65,7 +65,6 @@ pub struct Tween {
     start_props: Vec<Prop>,
     animators: Vec<Animator>,
     easing: Easing,
-    events: Vec<TKEvent>,
     callbacks: Vec<Box<FnMut(TKEvent, &mut TKContext) + 'static>>,
 }
 
@@ -86,7 +85,6 @@ impl Tween {
             start_props: Vec::new(),
             animators: Vec::new(),
             easing: Easing::Linear,
-            events: Vec::new(),
             callbacks: Vec::new(),
         }
     }
@@ -226,6 +224,12 @@ impl Tween {
     pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKContext) + 'static {
         self.callbacks.push(Box::new(cb));
     }
+
+    pub fn total_duration(&self) -> f64 {
+        let total = (self.duration + self.repeat_delay).as_float_secs() * (self.repeat_count + 1) as f64;
+
+        total
+    }
 }
 impl Playable for Tween {
 
@@ -247,15 +251,15 @@ impl Playable for Tween {
 
     /// Probably use this to check the play status of each tween, based on the
     /// timeline, time elapsed, and duration, etc.
-    fn tick(&mut self) {
-        self.events.clear();
+    fn tick(&mut self) -> Vec<TKEvent> {
+        let mut events: Vec<TKEvent> = Vec::new();
         match self.state {
             TweenState::Running => {
                 if self.started_at.elapsed() > self.duration {
                     if self.repeat_count == 0 {
                         // If repeat_count is zero, tween is Completed.
                         self.state = TweenState::Completed;
-                        self.events.push(TKEvent::Completed(self.tween_id));
+                        events.push(TKEvent::Completed(self.tween_id));
 
                     } else {
                         // If it positive or negative, continue repeating
@@ -276,6 +280,7 @@ impl Playable for Tween {
             },
             _ => (),
         }
+        events
     }
 
     fn get_update(&mut self, _id: &usize) -> Option<UIState> {
@@ -293,7 +298,7 @@ impl Playable for Tween {
     }
 
     fn sync(&mut self, ctx: &mut TKContext) {
-        ctx.events.append(&mut self.events);
+
     }
 
     fn stop(&mut self) {

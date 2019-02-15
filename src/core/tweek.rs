@@ -13,18 +13,19 @@ use super::tween::*;
 
 pub trait Playable {
     fn play(&mut self);
-    fn tick(&mut self);
+    fn tick(&mut self) -> Vec<TKEvent>;
+    fn get_update(&mut self, id: &usize) -> Option<UIState>;
     fn stop(&mut self);
     fn pause(&mut self);
     fn reset(&mut self);
     fn sync(&mut self, ctx: &mut TKContext);
-    fn get_update(&mut self, id: &usize) -> Option<UIState>;
     // fn resume(&mut self);
     // fn seek(&mut self, pos: f64);
 }
 
 #[derive(Copy, Clone, Debug)]
 pub enum TKEvent {
+    None,
     Completed(usize),
     Pause(usize),
     Play(usize),
@@ -122,11 +123,14 @@ impl Playable for Tweek {
         }
 	}
 
-    fn tick(&mut self) {
+    fn tick(&mut self) -> Vec<TKEvent> {
+        let mut events: Vec<TKEvent> = Vec::new();
         for tl in &self.timelines {
             let mut timeline = tl.borrow_mut();
-            (&mut *timeline).tick();
+            let mut ticks = (&mut *timeline).tick();
+            events.append(&mut ticks);
         }
+        events
 	}
 
     fn stop(&mut self) {

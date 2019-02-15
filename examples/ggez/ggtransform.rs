@@ -76,7 +76,7 @@ impl MainState {
 
         let mut items: Vec<ItemState> = Vec::new();
         items.push(item1);
-        // items.push(item2);
+        items.push(item2);
         items.push(item3);
         // items.push(item4);
 
