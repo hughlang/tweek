@@ -17,7 +17,7 @@ pub trait Playable {
     fn stop(&mut self);
     fn pause(&mut self);
     fn reset(&mut self);
-    // fn sync(&mut self, ctx: &mut TKContext);
+    fn sync(&mut self, ctx: &mut TKContext);
     fn get_update(&mut self, id: &usize) -> Option<UIState>;
     // fn resume(&mut self);
     // fn seek(&mut self, pos: f64);
@@ -158,6 +158,13 @@ impl Playable for Tweek {
             }
         }
         None
+    }
+
+    fn sync(&mut self, ctx: &mut TKContext) {
+        for tl in &self.timelines {
+            let mut timeline = tl.borrow_mut();
+			(&mut *timeline).sync(ctx);
+        }
     }
 
 }

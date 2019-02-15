@@ -187,6 +187,13 @@ impl Playable for Timeline {
 		// }
 	}
 
+    fn sync(&mut self, ctx: &mut TKContext) {
+		for (_, range) in &self.children {
+			let mut tween = range.tween.borrow_mut();
+			(&mut *tween).sync(ctx);
+		}
+    }
+
     fn stop(&mut self) {
 
 	}

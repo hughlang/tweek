@@ -1,4 +1,5 @@
-//! The simplest possible example that does something.
+/// Experiments with transforms
+///
 mod helper1;
 use helper1::*;
 
@@ -20,13 +21,9 @@ const SQUARE_ITEM_ID: usize = 100;
 const ROUND_ITEM_ID: usize = 101;
 const IMAGE_ITEM_ID: usize = 102;
 const TEXT_ITEM_ID: usize = 103;
-// const LINE_ITEM_ID: usize = 104;
 
 struct MainState {
-    square_item: ItemState,
-    round_item: ItemState,
-    image_item: ItemState,
-    text_item: ItemState,
+    items: Vec<ItemState>,
 }
 
 impl MainState {
@@ -35,9 +32,9 @@ impl MainState {
         // Add a rectangle
         let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
         let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
-        item1.fill_color = graphics::Color::from_rgb_u32(0x333333);
+        item1.graphics.color = graphics::Color::from_rgb_u32(0x333333);
 
-        let mut tween1 = Tween::with(SQUARE_ITEM_ID, &vec![&item1.frame, &item1.fill_color])
+        let mut tween1 = Tween::with(SQUARE_ITEM_ID, &vec![&item1.frame, &item1.graphics])
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
             .duration(1.0).repeat(7, 0.25).yoyo();
 
@@ -46,9 +43,9 @@ impl MainState {
 
         // Add a circle
         let mut item2 = ItemState::new(ROUND_ITEM_ID, Shape::Circle(mint::Point2{x: 500.0, y: 200.0}, 40.0))?;
-        item2.fill_color = graphics::Color::from_rgb_u32(0xCD09AA);
+        item2.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
 
-        let mut tween2 = Tween::with(ROUND_ITEM_ID, &vec![&item2.frame, &item2.fill_color])
+        let mut tween2 = Tween::with(ROUND_ITEM_ID, &vec![&item2.frame, &item2.graphics])
             .to(vec![position(40.0, 400.0), alpha(0.2)])
             .duration(2.0);
 
@@ -56,13 +53,13 @@ impl MainState {
         item2.tween = Some(tween2);
 
         let tile = graphics::Image::new(ctx, "/tile.png")?;
-        let rect = graphics::Rect::new(200.0, 50.0, 80.0, 80.0);
+        let rect = graphics::Rect::new(10.0, 300.0, 80.0, 80.0);
         let mut item3 = ItemState::new(IMAGE_ITEM_ID, Shape::Image(rect))?;
         item3.image = Some(tile);
 
-        let mut tween3 = Tween::with(IMAGE_ITEM_ID, &vec![&item3.frame, &item3.fill_color])
-            .to(vec![position(400.0, 200.0), alpha(0.2)])
-            .duration(3.0).speed(0.5);
+        let mut tween3 = Tween::with(IMAGE_ITEM_ID, &vec![&item3.frame, &item3.graphics])
+            .to(vec![position(400.0, 300.0), alpha(0.2)]).duration(1.0)
+            .to(vec![rotate(45.0)]);
         &tween3.play();
         item3.tween = Some(tween3);
 
@@ -71,18 +68,20 @@ impl MainState {
         let mut item4 = ItemState::new(TEXT_ITEM_ID, Shape::Text(rect))?;
         item4.text = Some(text);
 
-        let mut tween4 = Tween::with(TEXT_ITEM_ID, &vec![&item4.frame, &item4.fill_color])
+        let mut tween4 = Tween::with(TEXT_ITEM_ID, &vec![&item4.frame, &item4.graphics])
             .to(vec![position(400.0, 20.0), alpha(0.2)])
             .duration(3.0);
         &tween4.play();
         item4.tween = Some(tween4);
 
-        // let mut item3 = ItemState
+        let mut items: Vec<ItemState> = Vec::new();
+        items.push(item1);
+        // items.push(item2);
+        items.push(item3);
+        // items.push(item4);
+
         let s = MainState {
-            square_item: item1,
-            round_item: item2,
-            image_item: item3,
-            text_item: item4,
+            items: items,
         };
         Ok(s)
     }
@@ -90,11 +89,9 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-
-        self.square_item.update()?;
-        self.round_item.update()?;
-        self.image_item.update()?;
-        self.text_item.update()?;
+        for item in &mut self.items {
+            item.update()?;
+        }
 
         Ok(())
     }
@@ -102,10 +99,9 @@ impl event::EventHandler for MainState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, graphics::BLACK);
 
-        self.square_item.render(ctx)?;
-        self.round_item.render(ctx)?;
-        self.image_item.render(ctx)?;
-        self.text_item.render(ctx)?;
+        for item in &mut self.items {
+            item.render(ctx)?;
+        }
 
         graphics::present(ctx)?;
 

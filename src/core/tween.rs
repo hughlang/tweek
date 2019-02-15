@@ -26,6 +26,10 @@ pub fn size(w: f64, h: f64) -> Prop {
     Prop::Size(Frame2D::new(w, h))
 }
 
+pub fn rotate(degrees: f64) -> Prop {
+    Prop::Rotate(FloatProp::new(degrees.to_radians()))
+}
+
 /// The TweenState represents the animation state machine.
 #[derive(PartialEq)]
 pub enum TweenState {
@@ -122,7 +126,6 @@ impl Tween {
         let mut end_props: Vec<Prop> = Vec::new();
 
         if self.animators.len() == 0 {
-            // let mut match_props: Vec<Prop> = Vec::new();
             for prop in &props {
                 // technically, it would be a bug if the corresponding prop was not found in start_props.
                 if let Some(start_prop) = start_map.get(&prop.prop_id()) {
@@ -289,6 +292,10 @@ impl Playable for Tween {
         None
     }
 
+    fn sync(&mut self, ctx: &mut TKContext) {
+        ctx.events.append(&mut self.events);
+    }
+
     fn stop(&mut self) {
 
     }
@@ -375,3 +382,20 @@ impl Tweenable for ggez::graphics::Color {
     }
 }
 
+impl Tweenable for ggez::graphics::DrawParam {
+    fn apply(&mut self, prop: &Prop) {
+        match prop {
+            Prop::Alpha(val) => { self.color.a = val[0] as f32 },
+            Prop::Rotate(val) => { self.rotation = val[0] as f32 },
+            _ => ()
+        }
+    }
+    fn get_prop(&self, prop: &Prop) -> Prop {
+        match prop {
+            Prop::Alpha(_) => { Prop::Alpha(FloatProp::new(self.color.a as f64)) },
+            Prop::Rotate(_) => { Prop::Rotate(FloatProp::new(self.rotation as f64)) },
+            _ => Prop::None,
+        }
+    }
+
+}

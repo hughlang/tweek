@@ -73,14 +73,6 @@ impl Animator {
     fn interpolate(initial: &Prop, target: &Prop, scale: f64) -> Prop {
 
         let result = match initial {
-            // Prop::Alpha(_) => { Prop::Alpha(1.0) },
-            // Prop::Color(_) => {
-            //     if let Some(color) = self.background {
-            //         return Prop::Color(ColorRGBA::new(color.r_f(), color.g_f(), color.b_f(), color.a_f()));
-            //     } else {
-            //         return Prop::Color(ColorRGBA::new(0.0, 0.0, 0.0, 0.0));
-            //     }
-            // },
             Prop::Alpha(v1) => {
                 let v2 = unwrap_to!(target => Prop::Alpha);
                 let out = v1.lerp(*v2, scale);
@@ -94,6 +86,13 @@ impl Animator {
                 let out = m1.lerp(*m2, scale);
                 // println!("Interpolated to: x={} y={}", out[0], out[1]);
                 Prop::Position(out)
+            },
+            Prop::Rotate(v1) => {
+                let v2 = unwrap_to!(target => Prop::Rotate);
+                let out = v1.lerp(*v2, scale);
+                // println!("Interpolated to: {}", out[0]);
+                Prop::Rotate(out)
+
             },
             Prop::Size(v1) => {
                 let v2 = unwrap_to!(target => Prop::Size);

@@ -25,6 +25,7 @@ pub struct ItemState {
     pub id: usize,
     pub shape: Shape,
     pub frame: graphics::Rect,
+    pub graphics: graphics::DrawParam,
     pub fill_color: graphics::Color,
     pub tween: Option<Tween>,
     pub image: Option<graphics::Image>,
@@ -52,6 +53,7 @@ impl ItemState {
             id: id,
             shape: shape,
             frame: rect,
+            graphics: graphics::DrawParam::default(),
             fill_color: graphics::BLACK,
             tween: None,
             image: None,
@@ -66,7 +68,7 @@ impl ItemState {
             tween.tick();
             if let Some(update) = tween.get_update(&self.id) {
                 self.frame.render_update(&update.props);
-                self.fill_color.render_update(&update.props);
+                self.graphics.render_update(&update.props);
             }
         }
         Ok(())
@@ -75,22 +77,32 @@ impl ItemState {
     pub fn render(&mut self, ctx: &mut Context) -> GameResult {
         match self.shape {
             Shape::Rectangle(_) => {
-                let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.frame, self.fill_color)?;
-                let drawparams = graphics::DrawParam::new();
+                let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.frame, self.graphics.color)?;
+                let pt = mint::Point2{x: self.frame.x, y: self.frame.y};
+                let drawparams = graphics::DrawParam::new()
+                    .dest(pt)
+                    .rotation(self.graphics.rotation as f32)
+                    .offset(mint::Point2{x: 0.5, y: 0.5});
                 let _result = graphics::draw(ctx, &mesh, drawparams);
             },
             Shape::Circle(_, _) => {
                 let r = self.frame.w / 2.0;
                 let pt = mint::Point2{x: self.frame.x + r, y: self.frame.y + r};
-                let mesh = graphics::Mesh::new_circle(ctx, graphics::DrawMode::fill(), pt, r, 0.2, self.fill_color)?;
-                let drawparams = graphics::DrawParam::new();
+                let mesh = graphics::Mesh::new_circle(ctx, graphics::DrawMode::fill(), pt, r, 0.2, self.graphics.color)?;
+                let drawparams = graphics::DrawParam::new()
+                    .offset(mint::Point2{x: 0.5, y: 0.5});
                 let _result = graphics::draw(ctx, &mesh, drawparams);
             },
             Shape::Image(_) => {
                 match &self.image {
                     Some(img) => {
                         let pt = mint::Point2{x: self.frame.x, y: self.frame.y};
-                        let _result = graphics::draw(ctx, img, (pt,));
+                        let drawparams = graphics::DrawParam::new()
+                            .dest(pt)
+                            .rotation(self.graphics.rotation as f32)
+                            .offset(mint::Point2{x: 0.5, y: 0.5})
+                            .color(self.graphics.color);
+                        let _result = graphics::draw(ctx, img, drawparams);
                     },
                     None => (),
                 }

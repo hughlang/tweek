@@ -25,7 +25,7 @@ struct MainState {
 }
 
 impl MainState {
-    fn new(ctx: &mut Context) -> GameResult<MainState> {
+    fn new(_: &mut Context) -> GameResult<MainState> {
 
         // Add a rectangle
         let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
@@ -34,10 +34,10 @@ impl MainState {
 
         let mut tween1 = Tween::with(SQUARE_ITEM_ID, &vec![&item1.frame, &item1.fill_color])
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(1.0).repeat(4, 0.25).yoyo();
+            .duration(1.0).repeat(-1, 0.25).yoyo();
 
         &tween1.play();
-        // item1.tween = Some(tween1);
+        item1.tween = Some(tween1);
 
         // Add a circle
         let mut item2 = ItemState::new(ROUND_ITEM_ID, Shape::Circle(mint::Point2{x: 500.0, y: 200.0}, 40.0))?;
@@ -48,7 +48,7 @@ impl MainState {
             .to(vec![position(40.0, 40.0), alpha(1.0)]).duration(0.5)
             .to(vec![position(300.0, 40.0), alpha(1.0)]).duration(0.5)
             .to(vec![size(200.0, 200.0)]).duration(1.0)
-            .repeat(4, 0.25).yoyo();
+            .repeat(-1, 0.25);
 
         &tween2.play();
         item2.tween = Some(tween2);

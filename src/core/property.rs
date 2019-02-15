@@ -16,6 +16,7 @@ pub enum Prop {
     Alpha(FloatProp),
     Color(ColorRGBA),
     Position(Point2D),
+    Rotate(FloatProp),
     Size(Frame2D),
 }
 
@@ -29,7 +30,8 @@ impl Prop {
             Prop::Alpha(_) => 1,
             Prop::Color(_) => 2,
             Prop::Position(_) => 3,
-            Prop::Size(_) => 4,
+            Prop::Rotate(_) => 4,
+            Prop::Size(_) => 5,
         }
     }
     pub fn get_prop_list() -> Vec<Prop> {
@@ -37,6 +39,7 @@ impl Prop {
         results.push(Prop::Alpha(FloatProp::zero()));
         results.push(Prop::Color(ColorRGBA::zero()));
         results.push(Prop::Position(Point2D::zero()));
+        results.push(Prop::Rotate(FloatProp::zero()));
         results.push(Prop::Size(Frame2D::zero()));
         results
     }

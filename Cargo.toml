@@ -20,6 +20,10 @@ path = "examples/ggez/ggmix.rs"
 name = "ggsequence"
 path = "examples/ggez/ggsequence.rs"
 
+[[bin]]
+name = "ggtransform"
+path = "examples/ggez/ggtransform.rs"
+
 [features]
 default = []
 wasm = []
