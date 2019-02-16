@@ -35,9 +35,9 @@ impl MainState {
         // Add a rectangle
         let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
         let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
-        item1.graphics.color = graphics::Color::from_rgb_u32(0x333333);
+        item1.layer.graphics.color = graphics::Color::from_rgb_u32(0x333333);
 
-        let mut tween1 = Tween::with(SQUARE_ITEM_ID, &vec![&item1.frame, &item1.graphics])
+        let mut tween1 = Tween::with(SQUARE_ITEM_ID, &vec![&item1.layer.frame, &item1.layer.graphics])
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
             .duration(1.0).repeat(7, 0.25).yoyo();
 
@@ -46,9 +46,9 @@ impl MainState {
 
         // Add a circle
         let mut item2 = ItemState::new(ROUND_ITEM_ID, Shape::Circle(mint::Point2{x: 500.0, y: 200.0}, 40.0))?;
-        item2.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
+        item2.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
 
-        let mut tween2 = Tween::with(ROUND_ITEM_ID, &vec![&item2.frame, &item2.graphics])
+        let mut tween2 = Tween::with(ROUND_ITEM_ID, &vec![&item2.layer.frame, &item2.layer.graphics])
             .to(vec![position(40.0, 400.0), alpha(0.2)])
             .duration(2.0);
 
@@ -60,7 +60,7 @@ impl MainState {
         let mut item3 = ItemState::new(IMAGE_ITEM_ID, Shape::Image(rect))?;
         item3.image = Some(tile);
 
-        let mut tween3 = Tween::with(IMAGE_ITEM_ID, &vec![&item3.frame, &item3.graphics])
+        let mut tween3 = Tween::with(IMAGE_ITEM_ID, &vec![&item3.layer.frame, &item3.layer.graphics])
             .to(vec![position(400.0, 200.0), alpha(0.2)])
             .duration(3.0).speed(0.5);
         &tween3.play();
@@ -71,7 +71,7 @@ impl MainState {
         let mut item4 = ItemState::new(TEXT_ITEM_ID, Shape::Text(rect))?;
         item4.text = Some(text);
 
-        let mut tween4 = Tween::with(TEXT_ITEM_ID, &vec![&item4.frame, &item4.graphics])
+        let mut tween4 = Tween::with(TEXT_ITEM_ID, &vec![&item4.layer.frame, &item4.layer.graphics])
             .to(vec![position(400.0, 20.0), alpha(0.2)])
             .duration(3.0);
         &tween4.play();

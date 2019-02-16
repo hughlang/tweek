@@ -30,9 +30,9 @@ impl MainState {
         // Add a rectangle
         let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
         let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
-        item1.graphics.color = graphics::Color::from_rgb_u32(0x333333);
+        item1.layer.graphics.color = graphics::Color::from_rgb_u32(0x333333);
 
-        let mut tween1 = Tween::with(SQUARE_ITEM_ID, &vec![&item1.frame, &item1.graphics])
+        let mut tween1 = Tween::with(SQUARE_ITEM_ID, &vec![&item1.layer.frame, &item1.layer.graphics])
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
             .duration(1.0).repeat(-1, 0.25).yoyo();
 
@@ -41,9 +41,9 @@ impl MainState {
 
         // Add a circle
         let mut item2 = ItemState::new(ROUND_ITEM_ID, Shape::Circle(mint::Point2{x: 500.0, y: 200.0}, 40.0))?;
-        item2.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
+        item2.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
 
-        let mut tween2 = Tween::with(ROUND_ITEM_ID, &vec![&item2.frame, &item2.graphics])
+        let mut tween2 = Tween::with(ROUND_ITEM_ID, &vec![&item2.layer.frame, &item2.layer.graphics])
             .to(vec![position(40.0, 400.0), alpha(0.2)]).duration(1.0)
             .to(vec![position(40.0, 40.0), alpha(1.0)]).duration(0.5)
             .to(vec![position(300.0, 40.0), alpha(1.0)]).duration(0.5)
