@@ -370,23 +370,6 @@ impl Tweenable for ggez::graphics::Rect {
     }
 }
 
-/// With ggez, the graphics objects do not contain their own color attributes, so
-/// we need to apply tween updates to the Color object separately.
-impl Tweenable for ggez::graphics::Color {
-    fn apply(&mut self, prop: &Prop) {
-        match prop {
-            Prop::Alpha(val) => { self.a = val[0] as f32 },
-            _ => ()
-        }
-    }
-    fn get_prop(&self, prop: &Prop) -> Prop {
-        match prop {
-            Prop::Alpha(_) => { Prop::Alpha(FloatProp::new(self.a as f64)) },
-            _ => Prop::None,
-        }
-    }
-}
-
 impl Tweenable for ggez::graphics::DrawParam {
     fn apply(&mut self, prop: &Prop) {
         match prop {
