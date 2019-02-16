@@ -91,19 +91,17 @@ impl Tween {
 
     /// Function to initialize a Tween with the vector of Tweenables
     /// The starting state of all Props are stored
-    pub fn with(id: usize, objects: &Vec<&Tweenable>) -> Self {
+    pub fn with(id: usize, tweenable: &Tweenable) -> Self {
         let mut tween = Tween::new();
         tween.tween_id = id;
         let prop_list = Prop::get_prop_list();
 
         for prop in prop_list {
-            for object in objects {
-                let start_prop = object.get_prop(&prop);
-                match start_prop {
-                    Prop::None => {},
-                    _ => {
-                        tween.start_props.push(start_prop);
-                    }
+            let start_prop = tweenable.get_prop(&prop);
+            match start_prop {
+                Prop::None => {},
+                _ => {
+                    tween.start_props.push(start_prop);
                 }
             }
         }

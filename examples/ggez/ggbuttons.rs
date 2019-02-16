@@ -37,7 +37,7 @@ impl MainState {
         let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
         item1.layer.graphics.color = graphics::Color::from_rgb_u32(0x333333);
 
-        let mut tween1 = Tween::with(SQUARE_ITEM_ID, &vec![&item1.layer.frame, &item1.layer.graphics])
+        let mut tween1 = Tween::with(SQUARE_ITEM_ID, &item1.layer)
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
             .duration(1.0).repeat(7, 0.25).yoyo();
 
