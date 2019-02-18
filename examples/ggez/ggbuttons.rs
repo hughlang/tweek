@@ -52,6 +52,7 @@ impl MainState {
             .with_props(&vec![alpha(1.0)]);
         button.set_font(&font, &24.0, &graphics::Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&graphics::Color::from_rgb_u32(0x999999));
+        button.set_on_hover(vec![color(0xFF8920)], 0.25);
 
         controls.push(button);
 
@@ -70,6 +71,10 @@ impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         for item in &mut self.items {
             item.update()?;
+        }
+
+        for control in &mut self.buttons {
+            control.update()?;
         }
 
         Ok(())

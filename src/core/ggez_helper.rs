@@ -10,7 +10,7 @@ use ggez::graphics::{self, DrawParam};
 use ggez::mint;
 use ggez::{Context, GameResult};
 use std::{collections::HashMap};
-use std::{time::{Duration,Instant}};
+// use std::{time::{Duration,Instant}};
 
 use super::property::*;
 use super::tween::*;
@@ -218,6 +218,11 @@ impl GGDisplayable for GGButton {
                     // if self.on_hover.len() > 0 {
                     self.mouse_state = MouseState::Hover;
                     println!("Mouse hover at: x={} y={}", x, y);
+                    let mut tween = Tween::with(0, &self.layer)
+                        .to(vec![color(0xFF8920)])
+                        .duration(0.2);
+                    &tween.play();
+                    self.layer.animation = Some(tween);
 
                     // }
                 },
@@ -225,7 +230,7 @@ impl GGDisplayable for GGButton {
             }
         } else {
             // Start reverse animation
-            println!("Mouse out at: x={} y={}", x, y);
+            self.layer.render_update(&self.get_defaults());
             self.mouse_state = MouseState::None;
             self.layer.animation = None;
         }
@@ -275,43 +280,3 @@ impl Tweenable for GGLayer {
         }
     }
 }
-
-// impl Tweenable for ggez::graphics::Rect {
-//     fn apply(&mut self, prop: &Prop) {
-//         match prop {
-//             Prop::Position(pos) => {
-//                 self.x = pos[0] as f32;
-//                 self.y = pos[1] as f32
-//             }
-//             Prop::Size(v) => {
-//                 self.w = v[0] as f32;
-//                 self.h = v[1] as f32
-//             }
-//             _ => (),
-//         }
-//     }
-//     fn get_prop(&self, prop: &Prop) -> Prop {
-//         match prop {
-//             Prop::Position(_) => Prop::Position(Point2D::new(self.x as f64, self.y as f64)),
-//             Prop::Size(_) => Prop::Size(Frame2D::new(self.w as f64, self.h as f64)),
-//             _ => Prop::None,
-//         }
-//     }
-// }
-
-// impl Tweenable for ggez::graphics::DrawParam {
-//     fn apply(&mut self, prop: &Prop) {
-//         match prop {
-//             Prop::Alpha(val) => self.color.a = val[0] as f32,
-//             Prop::Rotate(val) => self.rotation = val[0] as f32,
-//             _ => (),
-//         }
-//     }
-//     fn get_prop(&self, prop: &Prop) -> Prop {
-//         match prop {
-//             Prop::Alpha(_) => Prop::Alpha(FloatProp::new(self.color.a as f64)),
-//             Prop::Rotate(_) => Prop::Rotate(FloatProp::new(self.rotation as f64)),
-//             _ => Prop::None,
-//         }
-//     }
-// }

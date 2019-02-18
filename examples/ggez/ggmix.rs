@@ -50,7 +50,7 @@ impl MainState {
 
         let mut tween2 = Tween::with(ROUND_ITEM_ID, &item2.layer)
             .to(vec![position(40.0, 400.0), color(0xFF8920)])
-            .duration(2.0).repeat(7, 0.0).yoyo();
+            .duration(1.0).repeat(7, 0.0).yoyo();
 
         &tween2.play();
         item2.tween = Some(tween2);
