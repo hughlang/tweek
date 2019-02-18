@@ -9,7 +9,8 @@ extern crate ggez;
 use ggez::graphics::{self, DrawParam};
 use ggez::mint;
 use ggez::{Context, GameResult};
-// use glyph_brush::{rusttype::Scale, FontId, HorizontalAlign as Align};
+use std::{collections::HashMap};
+use std::{time::{Duration,Instant}};
 
 use super::property::*;
 use super::tween::*;
@@ -23,6 +24,9 @@ pub trait GGDisplayable {
     fn render_inside(&mut self, _rect: &graphics::Rect, _ctx: &mut Context) -> GameResult {
         Ok(())
     }
+    fn handle_mouse_at(&mut self, _x: f32, _y: f32) -> bool {
+        false
+    }
 }
 
 pub enum GGShape {
@@ -31,6 +35,13 @@ pub enum GGShape {
     Image(graphics::Rect),
     Text(graphics::Rect),
     Line(mint::Point2<f32>, mint::Point2<f32>),
+}
+
+pub enum MouseState {
+    None,
+    Hover,
+    Drag,
+    Click,
 }
 
 /// This also implements Tweenable
@@ -64,7 +75,7 @@ impl GGLabel {
     pub fn new(frame: &graphics::Rect, text: &str) -> Self {
         let layer = GGLayer::new(
             frame.clone(),
-            DrawParam::new().color(graphics::Color::from_rgb_u32(0x333333)),
+            DrawParam::new().color(graphics::WHITE),
         );
 
         GGLabel {
@@ -72,11 +83,6 @@ impl GGLabel {
             title: text.to_string(),
             text: graphics::Text::new(text.to_string()),
         }
-    }
-
-    pub fn with_font(mut self, font: graphics::Font, size: f32) -> Self {
-        self.text = graphics::Text::new((self.title.clone(), font, size));
-        self
     }
 
     pub fn set_font(&mut self, font: &graphics::Font, size: &f32) {
@@ -103,13 +109,13 @@ impl GGDisplayable for GGLabel {
     }
 
     fn render(&mut self, ctx: &mut Context) -> GameResult {
-        // let pt = mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y};
         let _result = graphics::draw(ctx, &self.text, self.layer.graphics);
         Ok(())
     }
 
     fn render_inside(&mut self, rect: &graphics::Rect, ctx: &mut Context) -> GameResult {
-        let pt = mint::Point2{x: rect.x + self.layer.frame.x , y: rect.y + self.layer.frame.y};
+        let (width, height) = self.text.dimensions(ctx);
+        let pt = mint::Point2{x: rect.x + (rect.w - width as f32)/2.0 , y: rect.y + (rect.h - height as f32)/2.0 };
         // println!("inside={:?} // dest={:?}", rect,  pt);
         let _result = graphics::draw(ctx, &self.text, self.layer.graphics.dest(pt));
         Ok(())
@@ -119,8 +125,9 @@ impl GGDisplayable for GGLabel {
 pub struct GGButton {
     pub layer: GGLayer,
     pub label: Option<GGLabel>,
-    pub props: Vec<Prop>,
-    pub on_hover: Vec<Prop>,
+    pub defaults: HashMap<u32, Prop>,
+    pub on_hover: Option<Transition>,
+    pub mouse_state: MouseState,
 }
 
 impl GGButton {
@@ -129,9 +136,17 @@ impl GGButton {
         GGButton {
             layer: layer,
             label: None,
-            props: Vec::new(),
-            on_hover: Vec::new(),
+            defaults: HashMap::new(),
+            on_hover: None,
+            mouse_state: MouseState::None,
         }
+    }
+
+    pub fn with_props(mut self, props: &Vec<Prop>) -> Self {
+        for prop in props {
+            self.defaults.insert(prop.prop_id(), prop.clone());
+        }
+        self
     }
 
     pub fn with_title(mut self, text: &str) -> Self {
@@ -150,6 +165,19 @@ impl GGButton {
 
     pub fn set_color(&mut self, color: &graphics::Color) {
         self.layer.graphics.color = color.clone();
+    }
+
+    pub fn get_defaults(&self) -> Vec<Prop> {
+        let mut props:Vec<Prop> = Vec::new();
+        for (_, v) in &self.defaults {
+            props.push(v.clone());
+        }
+        props
+    }
+
+    pub fn set_on_hover(&mut self, props: Vec<Prop>, seconds: f64) {
+        let transition = Transition::new(props, seconds);
+        self.on_hover = Some(transition);
     }
 
 }
@@ -181,6 +209,29 @@ impl GGDisplayable for GGButton {
 
         Ok(())
     }
+
+    fn handle_mouse_at(&mut self, x: f32, y: f32) -> bool {
+        if self.layer.frame.contains(mint::Point2{ x, y }) {
+            match self.mouse_state {
+                MouseState::None => {
+                    // change state to hover and start animations
+                    // if self.on_hover.len() > 0 {
+                    self.mouse_state = MouseState::Hover;
+                    println!("Mouse hover at: x={} y={}", x, y);
+
+                    // }
+                },
+                _ => (),
+            }
+        } else {
+            // Start reverse animation
+            println!("Mouse out at: x={} y={}", x, y);
+            self.mouse_state = MouseState::None;
+            self.layer.animation = None;
+        }
+        false
+    }
+
 }
 
 //-- Support -----------------------------------------------------------------------
@@ -191,6 +242,11 @@ impl Tweenable for GGLayer {
     fn apply(&mut self, prop: &Prop) {
         match prop {
             Prop::Alpha(val) => self.graphics.color.a = val[0] as f32,
+            Prop::Color(rgb) => {
+                self.graphics.color.r = rgb[0];
+                self.graphics.color.g = rgb[1];
+                self.graphics.color.b = rgb[2];
+            }
             Prop::Rotate(val) => self.graphics.rotation = val[0] as f32,
             Prop::Position(pos) => {
                 self.frame.x = pos[0] as f32;
@@ -206,6 +262,7 @@ impl Tweenable for GGLayer {
     fn get_prop(&self, prop: &Prop) -> Prop {
         match prop {
             Prop::Alpha(_) => Prop::Alpha(FloatProp::new(self.graphics.color.a as f64)),
+            Prop::Color(_) => Prop::Color(ColorRGB::new(self.graphics.color.r, self.graphics.color.g, self.graphics.color.b)),
             Prop::Rotate(_) => Prop::Rotate(FloatProp::new(self.graphics.rotation as f64)),
             Prop::Position(_) => {
                 Prop::Position(Point2D::new(self.frame.x as f64, self.frame.y as f64))

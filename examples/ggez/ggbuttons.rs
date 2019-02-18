@@ -44,11 +44,14 @@ impl MainState {
         &tween1.play();
         item1.tween = Some(tween1);
 
+        let font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
+
         let mut controls: Vec<GGButton> = Vec::new();
 
         let frame = graphics::Rect::new(50.0, 300.0, 120.0, 50.0);
-        let mut button = GGButton::new(frame).with_title("Play");
-        button.set_font(&graphics::Font::default(), &24.0, &graphics::Color::from_rgb_u32(0xCCCCCC) );
+        let mut button = GGButton::new(frame).with_title("Play")
+            .with_props(&vec![alpha(1.0)]);
+        button.set_font(&font, &24.0, &graphics::Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&graphics::Color::from_rgb_u32(0x999999));
 
         controls.push(button);
@@ -112,8 +115,11 @@ impl event::EventHandler for MainState {
 
     /// The mouse was moved; it provides both absolute x and y coordinates in the window,
     /// and relative x and y coordinates compared to its last position.
-    fn mouse_motion_event(&mut self, _ctx: &mut Context, _x: f32, _y: f32, _dx: f32, _dy: f32) {
-        for control in &mut self.buttons {
+    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, _dx: f32, _dy: f32) {
+        for button in &mut self.buttons {
+            if button.handle_mouse_at(x, y) {
+
+            }
             // control.render(ctx)?;
         }
 

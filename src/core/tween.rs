@@ -18,12 +18,19 @@ pub fn position(x: f64, y: f64) -> Prop {
     Prop::Position(Point2D::new(x, y))
 }
 
+pub fn size(w: f64, h: f64) -> Prop {
+    Prop::Size(Frame2D::new(w, h))
+}
+
 pub fn alpha(v: f64) -> Prop {
     Prop::Alpha(FloatProp::new(v))
 }
 
-pub fn size(w: f64, h: f64) -> Prop {
-    Prop::Size(Frame2D::new(w, h))
+pub fn color(c: u32) -> Prop {
+    let rp = ((c & 0x00FF_0000u32) >> 16) as f32;
+    let gp = ((c & 0x0000_FF00u32) >> 8) as f32;
+    let bp = (c & 0x0000_00FFu32) as f32;
+    Prop::Color(ColorRGB::new(rp, gp, bp))
 }
 
 pub fn rotate(degrees: f64) -> Prop {
@@ -104,6 +111,16 @@ impl Tween {
                     tween.start_props.push(start_prop);
                 }
             }
+        }
+        tween
+    }
+
+    pub fn init(id: usize, props: Vec<Prop>) -> Self {
+        let mut tween = Tween::new();
+        tween.tween_id = id;
+
+        for prop in props {
+            tween.start_props.push(prop);
         }
         tween
     }
@@ -328,8 +345,6 @@ impl Playable for Tween {
 
 //-- Support -----------------------------------------------------------------------
 
-use ggez::mint;
-
 pub trait Tweenable {
     fn get_prop(&self, prop: &Prop) -> Prop;
     fn apply(&mut self, prop: &Prop);
@@ -338,8 +353,8 @@ pub trait Tweenable {
             self.apply(prop);
         }
     }
-    fn hit_test(&self, _pt: mint::Point2<f64>) -> bool {
-        false
+    fn set_defaults(&mut self, _props: &Vec<Prop>) {
+        // Should override
     }
 }
 

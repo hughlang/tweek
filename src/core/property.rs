@@ -4,8 +4,8 @@
 use cgmath::*;
 
 pub type FloatProp = Vector1<f64>;
-pub type ColorRGB = Vector3<f64>;
-pub type ColorRGBA = Vector4<f64>;
+pub type ColorRGB = Vector3<f32>;
+pub type ColorRGBA = Vector4<f32>;
 pub type Point2D = Vector2<f64>;
 pub type Frame2D = Vector2<f64>;
 pub type Bezier = Vector4<f64>;
@@ -14,7 +14,7 @@ pub type Bezier = Vector4<f64>;
 pub enum Prop {
     None,
     Alpha(FloatProp),
-    Color(ColorRGBA),
+    Color(ColorRGB),
     Position(Point2D),
     Rotate(FloatProp),
     Size(Frame2D),
@@ -37,7 +37,7 @@ impl Prop {
     pub fn get_prop_list() -> Vec<Prop> {
         let mut results: Vec<Prop> = Vec::new();
         results.push(Prop::Alpha(FloatProp::zero()));
-        results.push(Prop::Color(ColorRGBA::zero()));
+        results.push(Prop::Color(ColorRGB::zero()));
         results.push(Prop::Position(Point2D::zero()));
         results.push(Prop::Rotate(FloatProp::zero()));
         results.push(Prop::Size(Frame2D::zero()));
@@ -80,6 +80,21 @@ impl UIState {
             return *item.clone();
         }
         Prop::None
+    }
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct Transition {
+    pub props: Vec<Prop>,
+    pub seconds: f64,
+}
+
+impl Transition {
+    pub fn new(props: Vec<Prop>, seconds: f64) -> Self {
+        Transition {
+            props,
+            seconds,
+        }
     }
 }
 
