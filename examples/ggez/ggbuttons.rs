@@ -47,7 +47,10 @@ impl MainState {
         let mut controls: Vec<GGButton> = Vec::new();
 
         let frame = graphics::Rect::new(50.0, 300.0, 120.0, 50.0);
-        let button = GGButton::new(frame).with_title("Play");
+        let mut button = GGButton::new(frame).with_title("Play");
+        button.set_font(&graphics::Font::default(), &24.0, &graphics::Color::from_rgb_u32(0xCCCCCC) );
+        button.set_color(&graphics::Color::from_rgb_u32(0x999999));
+
         controls.push(button);
 
         let mut items: Vec<ItemState> = Vec::new();

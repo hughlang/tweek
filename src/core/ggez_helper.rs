@@ -20,6 +20,9 @@ use super::tweek::*;
 pub trait GGDisplayable {
     fn update(&mut self) -> GameResult;
     fn render(&mut self, ctx: &mut Context) -> GameResult;
+    fn render_inside(&mut self, _rect: &graphics::Rect, _ctx: &mut Context) -> GameResult {
+        Ok(())
+    }
 }
 
 pub enum GGShape {
@@ -49,6 +52,8 @@ impl GGLayer {
     }
 }
 
+//-- Main -----------------------------------------------------------------------
+
 pub struct GGLabel {
     pub layer: GGLayer,
     pub title: String,
@@ -74,8 +79,12 @@ impl GGLabel {
         self
     }
 
-    pub fn set_font(&mut self, font: graphics::Font, size: f32) {
-        self.text = graphics::Text::new((self.title.clone(), font, size));
+    pub fn set_font(&mut self, font: &graphics::Font, size: &f32) {
+        self.text = graphics::Text::new((self.title.clone(), font.clone(), size.clone()));
+    }
+
+    pub fn set_color(&mut self, color: &graphics::Color) {
+        self.layer.graphics.color = color.clone();
     }
 }
 
@@ -96,6 +105,13 @@ impl GGDisplayable for GGLabel {
     fn render(&mut self, ctx: &mut Context) -> GameResult {
         // let pt = mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y};
         let _result = graphics::draw(ctx, &self.text, self.layer.graphics);
+        Ok(())
+    }
+
+    fn render_inside(&mut self, rect: &graphics::Rect, ctx: &mut Context) -> GameResult {
+        let pt = mint::Point2{x: rect.x + self.layer.frame.x , y: rect.y + self.layer.frame.y};
+        // println!("inside={:?} // dest={:?}", rect,  pt);
+        let _result = graphics::draw(ctx, &self.text, self.layer.graphics.dest(pt));
         Ok(())
     }
 }
@@ -119,11 +135,23 @@ impl GGButton {
     }
 
     pub fn with_title(mut self, text: &str) -> Self {
-        let frame = self.layer.frame.clone();
+        let frame = graphics::Rect::new(0.0, 0.0, self.layer.frame.w, self.layer.frame.h);
         let label = GGLabel::new(&frame, text);
         self.label = Some(label);
         self
     }
+
+    pub fn set_font(&mut self, font: &graphics::Font, size: &f32, color: &graphics::Color) {
+        if let Some(label) = &mut self.label {
+            label.set_font(font, size);
+            label.set_color(color);
+        }
+    }
+
+    pub fn set_color(&mut self, color: &graphics::Color) {
+        self.layer.graphics.color = color.clone();
+    }
+
 }
 
 impl GGDisplayable for GGButton {
@@ -146,11 +174,9 @@ impl GGDisplayable for GGButton {
             self.layer.frame,
             self.layer.graphics.color,
         )?;
-        let drawparams = DrawParam::new();
-        let _result = graphics::draw(ctx, &mesh, drawparams);
-
+        let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
         if let Some(label) = &mut self.label {
-            label.render(ctx)?;
+            label.render_inside(&self.layer.frame, ctx)?;
         }
 
         Ok(())
