@@ -13,8 +13,84 @@ use ggez::mint;
 use super::property::*;
 use super::tween::*;
 
+
 //-- Base -----------------------------------------------------------------------
-// The plan is to have ggez support as a feature and would have its own module in this lib
+
+/// This will implement Tweenable
+pub struct GGLayer {
+    pub frame: graphics::Rect,
+    pub graphics: DrawParam,
+    pub animation: Option<Tween>,
+}
+
+impl GGLayer {
+    pub fn new(frame: graphics::Rect, graphics: DrawParam )-> Self  {
+        GGLayer{ frame: frame, graphics: graphics, animation: None }
+    }
+}
+
+pub trait GGDisplayable {
+    fn update(&mut self) -> GameResult;
+    fn render(&mut self, ctx: &mut Context) -> GameResult;
+}
+
+pub trait TKResponder {
+    fn hit_test(&self, pt: mint::Point2<f64>) -> bool;
+
+}
+
+pub struct GGLabel {
+    pub layer: GGLayer,
+    pub text: String,
+}
+
+impl GGLabel {
+    pub fn new(frame: graphics::Rect, text: &str) -> Self {
+        let layer = GGLayer::new(frame, DrawParam::new()
+            .color(graphics::Color::from_rgb_u32(0x333333)));
+
+        GGLabel {
+            layer: layer,
+            text: text.to_string(),
+        }
+    }
+}
+
+pub struct GGButton {
+    pub layer: GGLayer,
+    pub label: Option<GGLabel>,
+    pub props: Vec<Prop>,
+    pub on_hover: Vec<Prop>,
+}
+
+impl GGButton {
+    pub fn new(frame: graphics::Rect) -> Self {
+        let layer = GGLayer::new(frame, DrawParam::new());
+        GGButton {
+            layer: layer,
+            label: None,
+            props: Vec::new(),
+            on_hover: Vec::new(),
+        }
+    }
+
+    pub fn with_title(mut self, text: &str) -> Self {
+        let frame = self.layer.frame.clone();
+        let label = GGLabel::new(frame, text);
+        self.label = Some(label);
+        self
+    }
+
+    pub fn render(&self, ctx: &mut Context) -> GameResult {
+        let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.layer.frame, self.layer.graphics.color)?;
+        let drawparams = DrawParam::new();
+        let _result = graphics::draw(ctx, &mesh, drawparams);
+
+        Ok(())
+    }
+}
+
+//-- Support -----------------------------------------------------------------------
 
 impl Tweenable for ggez::graphics::Rect {
     fn apply(&mut self, prop: &Prop) {
@@ -64,78 +140,11 @@ impl Tweenable for GGLayer {
     }
     fn get_prop(&self, prop: &Prop) -> Prop {
         match prop {
-            Prop::Alpha(_) => { Prop::Alpha(FloatProp::new(self.graphics.color.a as f64)) },
-            Prop::Rotate(_) => { Prop::Rotate(FloatProp::new(self.graphics.rotation as f64)) },
+            Prop::Alpha(_) => Prop::Alpha(FloatProp::new(self.graphics.color.a as f64)),
+            Prop::Rotate(_) => Prop::Rotate(FloatProp::new(self.graphics.rotation as f64)),
             Prop::Position(_) => Prop::Position(Point2D::new(self.frame.x as f64, self.frame.y as f64)),
             Prop::Size(_) => Prop::Size(Frame2D::new(self.frame.w as f64, self.frame.h as f64)),
             _ => Prop::None,
         }
-    }
-}
-
-/// This will implement Tweenable
-pub struct GGLayer {
-    pub frame: graphics::Rect,
-    pub graphics: DrawParam,
-}
-
-impl GGLayer {
-    pub fn new(frame: graphics::Rect, graphics: DrawParam )-> Self  {
-        GGLayer{ frame: frame, graphics: graphics }
-    }
-}
-
-
-
-pub trait TKResponder {
-    fn hit_test(&self, pt: mint::Point2<f64>) -> bool;
-
-}
-
-/// Expected struct properties:
-/// – position
-/// – frame
-///
-pub trait TKMovable {
-
-    fn set_frame(frame: mint::Vector4<f64>);
-
-
-}
-
-pub struct TKLabel {
-    pub layer: GGLayer,
-    pub text: String,
-}
-
-// impl TKLabel {
-//     pub fn new(text: String) -> Self {
-//         TKLabel {
-//             text: text,
-//             layer:
-//         }
-//     }
-// }
-
-pub struct TKButton {
-    pub layer: GGLayer,
-    pub graphics: DrawParam,
-}
-
-impl TKButton {
-    pub fn new(frame: graphics::Rect, label: graphics::Text) -> Self {
-        let layer = GGLayer{ frame: frame, graphics: DrawParam::default() };
-        TKButton {
-            layer: layer,
-            graphics: DrawParam::default(),
-        }
-    }
-
-    pub fn render(&self, ctx: &mut Context) -> GameResult {
-        let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.layer.frame, self.graphics.color)?;
-        let drawparams = DrawParam::new();
-        let _result = graphics::draw(ctx, &mesh, drawparams);
-
-        Ok(())
     }
 }

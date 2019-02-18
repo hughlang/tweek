@@ -25,7 +25,7 @@ const TEXT_ITEM_ID: usize = 103;
 
 struct MainState {
     items: Vec<ItemState>,
-    controls: Vec<TKButton>,
+    buttons: Vec<GGButton>,
 }
 
 impl MainState {
@@ -44,11 +44,10 @@ impl MainState {
         &tween1.play();
         item1.tween = Some(tween1);
 
-        let mut controls: Vec<TKButton> = Vec::new();
+        let mut controls: Vec<GGButton> = Vec::new();
 
         let frame = graphics::Rect::new(50.0, 300.0, 120.0, 50.0);
-        let label = graphics::Text::new("Play");
-        let button = TKButton::new(frame, label);
+        let button = GGButton::new(frame).with_title("Play");
         controls.push(button);
 
         let mut items: Vec<ItemState> = Vec::new();
@@ -56,7 +55,7 @@ impl MainState {
 
         let s = MainState {
             items: items,
-            controls: controls,
+            buttons: controls,
         };
         Ok(s)
     }
@@ -78,7 +77,7 @@ impl event::EventHandler for MainState {
             item.render(ctx)?;
         }
 
-        for control in &mut self.controls {
+        for control in &mut self.buttons {
             control.render(ctx)?;
         }
 
@@ -110,7 +109,12 @@ impl event::EventHandler for MainState {
 
     /// The mouse was moved; it provides both absolute x and y coordinates in the window,
     /// and relative x and y coordinates compared to its last position.
-    fn mouse_motion_event(&mut self, _ctx: &mut Context, _x: f32, _y: f32, _dx: f32, _dy: f32) {}
+    fn mouse_motion_event(&mut self, _ctx: &mut Context, _x: f32, _y: f32, _dx: f32, _dy: f32) {
+        for control in &mut self.buttons {
+            // control.render(ctx)?;
+        }
+
+    }
 }
 
 pub fn main() -> GameResult {
