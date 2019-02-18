@@ -100,8 +100,8 @@ impl GGDisplayable for GGLabel {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {
-                self.layer.frame.render_update(&update.props);
-                self.layer.graphics.render_update(&update.props);
+                self.layer.render_update(&update.props);
+                self.layer.render_update(&update.props);
                 self.layer.redraw = true;
             }
         }
@@ -187,8 +187,8 @@ impl GGDisplayable for GGButton {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {
-                self.layer.frame.render_update(&update.props);
-                self.layer.graphics.render_update(&update.props);
+                self.layer.render_update(&update.props);
+                self.layer.render_update(&update.props);
                 self.layer.redraw = true;
             }
         }
@@ -243,9 +243,9 @@ impl Tweenable for GGLayer {
         match prop {
             Prop::Alpha(val) => self.graphics.color.a = val[0] as f32,
             Prop::Color(rgb) => {
-                self.graphics.color.r = rgb[0];
-                self.graphics.color.g = rgb[1];
-                self.graphics.color.b = rgb[2];
+                self.graphics.color.r = rgb[0]/255.0;
+                self.graphics.color.g = rgb[1]/255.0;
+                self.graphics.color.b = rgb[2]/255.0;
             }
             Prop::Rotate(val) => self.graphics.rotation = val[0] as f32,
             Prop::Position(pos) => {
@@ -262,7 +262,10 @@ impl Tweenable for GGLayer {
     fn get_prop(&self, prop: &Prop) -> Prop {
         match prop {
             Prop::Alpha(_) => Prop::Alpha(FloatProp::new(self.graphics.color.a as f64)),
-            Prop::Color(_) => Prop::Color(ColorRGB::new(self.graphics.color.r, self.graphics.color.g, self.graphics.color.b)),
+            Prop::Color(_) => {
+                let (r, g, b) = self.graphics.color.to_rgb();
+                Prop::Color(ColorRGB::new(r as f32, g as f32, b as f32))
+            },
             Prop::Rotate(_) => Prop::Rotate(FloatProp::new(self.graphics.rotation as f64)),
             Prop::Position(_) => {
                 Prop::Position(Point2D::new(self.frame.x as f64, self.frame.y as f64))
@@ -273,42 +276,42 @@ impl Tweenable for GGLayer {
     }
 }
 
-impl Tweenable for ggez::graphics::Rect {
-    fn apply(&mut self, prop: &Prop) {
-        match prop {
-            Prop::Position(pos) => {
-                self.x = pos[0] as f32;
-                self.y = pos[1] as f32
-            }
-            Prop::Size(v) => {
-                self.w = v[0] as f32;
-                self.h = v[1] as f32
-            }
-            _ => (),
-        }
-    }
-    fn get_prop(&self, prop: &Prop) -> Prop {
-        match prop {
-            Prop::Position(_) => Prop::Position(Point2D::new(self.x as f64, self.y as f64)),
-            Prop::Size(_) => Prop::Size(Frame2D::new(self.w as f64, self.h as f64)),
-            _ => Prop::None,
-        }
-    }
-}
+// impl Tweenable for ggez::graphics::Rect {
+//     fn apply(&mut self, prop: &Prop) {
+//         match prop {
+//             Prop::Position(pos) => {
+//                 self.x = pos[0] as f32;
+//                 self.y = pos[1] as f32
+//             }
+//             Prop::Size(v) => {
+//                 self.w = v[0] as f32;
+//                 self.h = v[1] as f32
+//             }
+//             _ => (),
+//         }
+//     }
+//     fn get_prop(&self, prop: &Prop) -> Prop {
+//         match prop {
+//             Prop::Position(_) => Prop::Position(Point2D::new(self.x as f64, self.y as f64)),
+//             Prop::Size(_) => Prop::Size(Frame2D::new(self.w as f64, self.h as f64)),
+//             _ => Prop::None,
+//         }
+//     }
+// }
 
-impl Tweenable for ggez::graphics::DrawParam {
-    fn apply(&mut self, prop: &Prop) {
-        match prop {
-            Prop::Alpha(val) => self.color.a = val[0] as f32,
-            Prop::Rotate(val) => self.rotation = val[0] as f32,
-            _ => (),
-        }
-    }
-    fn get_prop(&self, prop: &Prop) -> Prop {
-        match prop {
-            Prop::Alpha(_) => Prop::Alpha(FloatProp::new(self.color.a as f64)),
-            Prop::Rotate(_) => Prop::Rotate(FloatProp::new(self.rotation as f64)),
-            _ => Prop::None,
-        }
-    }
-}
+// impl Tweenable for ggez::graphics::DrawParam {
+//     fn apply(&mut self, prop: &Prop) {
+//         match prop {
+//             Prop::Alpha(val) => self.color.a = val[0] as f32,
+//             Prop::Rotate(val) => self.rotation = val[0] as f32,
+//             _ => (),
+//         }
+//     }
+//     fn get_prop(&self, prop: &Prop) -> Prop {
+//         match prop {
+//             Prop::Alpha(_) => Prop::Alpha(FloatProp::new(self.color.a as f64)),
+//             Prop::Rotate(_) => Prop::Rotate(FloatProp::new(self.rotation as f64)),
+//             _ => Prop::None,
+//         }
+//     }
+// }

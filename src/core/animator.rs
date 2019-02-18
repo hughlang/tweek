@@ -90,7 +90,7 @@ impl Animator {
                 let m2 = unwrap_to!(target => Prop::Color);
                 // println!("m1={:?} m2={:?}", m1, m2);
                 let out = m1.lerp(*m2, scale as f32);
-                // println!("Interpolated to: x={} y={}", out[0], out[1]);
+                // println!("Interpolated to: r={} g={} b={}", out[0], out[1], out[2]);
                 Prop::Color(out)
             },
             Prop::Position(m1) => {

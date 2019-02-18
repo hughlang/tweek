@@ -10,7 +10,6 @@ extern crate tween;
 use ggez::conf;
 use ggez::event::{self, MouseButton};
 use ggez::graphics;
-use ggez::mint;
 use ggez::timer;
 use ggez::{Context, ContextBuilder, GameResult};
 

@@ -64,8 +64,8 @@ impl ItemState {
         if let Some(tween) = &mut self.tween {
             tween.tick();
             if let Some(update) = tween.get_update(&self.id) {
-                self.layer.frame.render_update(&update.props);
-                self.layer.graphics.render_update(&update.props);
+                self.layer.render_update(&update.props);
+                self.layer.render_update(&update.props);
             }
         }
         Ok(())
@@ -87,7 +87,9 @@ impl ItemState {
                 let pt = mint::Point2{x: self.layer.frame.x + r, y: self.layer.frame.y + r};
                 let mesh = graphics::Mesh::new_circle(ctx, graphics::DrawMode::fill(), pt, r, 0.2, self.layer.graphics.color)?;
                 let drawparams = graphics::DrawParam::new()
-                    .offset(mint::Point2{x: 0.5, y: 0.5});
+                    .offset(mint::Point2{x: 0.5, y: 0.5})
+                    .color(self.layer.graphics.color)
+                    ;
                 let _result = graphics::draw(ctx, &mesh, drawparams);
             },
             Shape::Image(_) => {

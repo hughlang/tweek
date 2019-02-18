@@ -49,8 +49,8 @@ impl MainState {
         item2.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
 
         let mut tween2 = Tween::with(ROUND_ITEM_ID, &item2.layer)
-            .to(vec![position(40.0, 400.0), alpha(0.2)])
-            .duration(2.0);
+            .to(vec![position(40.0, 400.0), color(0xFF8920)])
+            .duration(2.0).repeat(7, 0.0).yoyo();
 
         &tween2.play();
         item2.tween = Some(tween2);
