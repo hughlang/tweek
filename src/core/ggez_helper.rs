@@ -7,52 +7,96 @@
 extern crate ggez;
 
 use ggez::graphics::{self, DrawParam};
-use ggez::{Context, GameResult};
 use ggez::mint;
+use ggez::{Context, GameResult};
+// use glyph_brush::{rusttype::Scale, FontId, HorizontalAlign as Align};
 
 use super::property::*;
 use super::tween::*;
-
+use super::tweek::*;
 
 //-- Base -----------------------------------------------------------------------
-
-/// This will implement Tweenable
-pub struct GGLayer {
-    pub frame: graphics::Rect,
-    pub graphics: DrawParam,
-    pub animation: Option<Tween>,
-}
-
-impl GGLayer {
-    pub fn new(frame: graphics::Rect, graphics: DrawParam )-> Self  {
-        GGLayer{ frame: frame, graphics: graphics, animation: None }
-    }
-}
 
 pub trait GGDisplayable {
     fn update(&mut self) -> GameResult;
     fn render(&mut self, ctx: &mut Context) -> GameResult;
 }
 
-pub trait TKResponder {
-    fn hit_test(&self, pt: mint::Point2<f64>) -> bool;
+pub enum GGShape {
+    Circle(mint::Point2<f32>, f32),
+    Rectangle(graphics::Rect),
+    Image(graphics::Rect),
+    Text(graphics::Rect),
+    Line(mint::Point2<f32>, mint::Point2<f32>),
+}
 
+/// This also implements Tweenable
+pub struct GGLayer {
+    pub frame: graphics::Rect,
+    pub graphics: DrawParam,
+    pub animation: Option<Tween>,
+    pub redraw: bool,
+}
+
+impl GGLayer {
+    pub fn new(frame: graphics::Rect, graphics: DrawParam) -> Self {
+        GGLayer {
+            frame: frame,
+            graphics: graphics,
+            animation: None,
+            redraw: false,
+        }
+    }
 }
 
 pub struct GGLabel {
     pub layer: GGLayer,
-    pub text: String,
+    pub title: String,
+    pub text: graphics::Text,
 }
 
 impl GGLabel {
-    pub fn new(frame: graphics::Rect, text: &str) -> Self {
-        let layer = GGLayer::new(frame, DrawParam::new()
-            .color(graphics::Color::from_rgb_u32(0x333333)));
+    pub fn new(frame: &graphics::Rect, text: &str) -> Self {
+        let layer = GGLayer::new(
+            frame.clone(),
+            DrawParam::new().color(graphics::Color::from_rgb_u32(0x333333)),
+        );
 
         GGLabel {
             layer: layer,
-            text: text.to_string(),
+            title: text.to_string(),
+            text: graphics::Text::new(text.to_string()),
         }
+    }
+
+    pub fn with_font(mut self, font: graphics::Font, size: f32) -> Self {
+        self.text = graphics::Text::new((self.title.clone(), font, size));
+        self
+    }
+
+    pub fn set_font(&mut self, font: graphics::Font, size: f32) {
+        self.text = graphics::Text::new((self.title.clone(), font, size));
+    }
+}
+
+impl GGDisplayable for GGLabel {
+
+    fn update(&mut self) -> GameResult {
+        if let Some(tween) = &mut self.layer.animation {
+            tween.tick();
+            if let Some(update) = tween.update() {
+                self.layer.frame.render_update(&update.props);
+                self.layer.graphics.render_update(&update.props);
+                self.layer.redraw = true;
+            }
+        }
+        Ok(())
+    }
+
+    fn render(&mut self, ctx: &mut Context) -> GameResult {
+        // let pt = mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y};
+        let _result = graphics::draw(ctx, &self.text, self.layer.graphics);
+        Ok(())
     }
 }
 
@@ -76,15 +120,38 @@ impl GGButton {
 
     pub fn with_title(mut self, text: &str) -> Self {
         let frame = self.layer.frame.clone();
-        let label = GGLabel::new(frame, text);
+        let label = GGLabel::new(&frame, text);
         self.label = Some(label);
         self
     }
+}
 
-    pub fn render(&self, ctx: &mut Context) -> GameResult {
-        let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.layer.frame, self.layer.graphics.color)?;
+impl GGDisplayable for GGButton {
+    fn update(&mut self) -> GameResult {
+        if let Some(tween) = &mut self.layer.animation {
+            tween.tick();
+            if let Some(update) = tween.update() {
+                self.layer.frame.render_update(&update.props);
+                self.layer.graphics.render_update(&update.props);
+                self.layer.redraw = true;
+            }
+        }
+        Ok(())
+    }
+
+    fn render(&mut self, ctx: &mut Context) -> GameResult {
+        let mesh = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            self.layer.frame,
+            self.layer.graphics.color,
+        )?;
         let drawparams = DrawParam::new();
         let _result = graphics::draw(ctx, &mesh, drawparams);
+
+        if let Some(label) = &mut self.label {
+            label.render(ctx)?;
+        }
 
         Ok(())
     }
@@ -92,12 +159,49 @@ impl GGButton {
 
 //-- Support -----------------------------------------------------------------------
 
+/// This is a wrapper for the ggez properties that are tweenable. It is used as a convenient substitute
+/// for having to manage multiple tweenables per displayed asset.
+impl Tweenable for GGLayer {
+    fn apply(&mut self, prop: &Prop) {
+        match prop {
+            Prop::Alpha(val) => self.graphics.color.a = val[0] as f32,
+            Prop::Rotate(val) => self.graphics.rotation = val[0] as f32,
+            Prop::Position(pos) => {
+                self.frame.x = pos[0] as f32;
+                self.frame.y = pos[1] as f32
+            }
+            Prop::Size(v) => {
+                self.frame.w = v[0] as f32;
+                self.frame.h = v[1] as f32
+            }
+            _ => (),
+        }
+    }
+    fn get_prop(&self, prop: &Prop) -> Prop {
+        match prop {
+            Prop::Alpha(_) => Prop::Alpha(FloatProp::new(self.graphics.color.a as f64)),
+            Prop::Rotate(_) => Prop::Rotate(FloatProp::new(self.graphics.rotation as f64)),
+            Prop::Position(_) => {
+                Prop::Position(Point2D::new(self.frame.x as f64, self.frame.y as f64))
+            }
+            Prop::Size(_) => Prop::Size(Frame2D::new(self.frame.w as f64, self.frame.h as f64)),
+            _ => Prop::None,
+        }
+    }
+}
+
 impl Tweenable for ggez::graphics::Rect {
     fn apply(&mut self, prop: &Prop) {
         match prop {
-            Prop::Position(pos) => { self.x = pos[0] as f32; self.y = pos[1] as f32 },
-            Prop::Size(v) => { self.w = v[0] as f32; self.h = v[1] as f32 },
-            _ => ()
+            Prop::Position(pos) => {
+                self.x = pos[0] as f32;
+                self.y = pos[1] as f32
+            }
+            Prop::Size(v) => {
+                self.w = v[0] as f32;
+                self.h = v[1] as f32
+            }
+            _ => (),
         }
     }
     fn get_prop(&self, prop: &Prop) -> Prop {
@@ -112,38 +216,15 @@ impl Tweenable for ggez::graphics::Rect {
 impl Tweenable for ggez::graphics::DrawParam {
     fn apply(&mut self, prop: &Prop) {
         match prop {
-            Prop::Alpha(val) => { self.color.a = val[0] as f32 },
-            Prop::Rotate(val) => { self.rotation = val[0] as f32 },
-            _ => ()
+            Prop::Alpha(val) => self.color.a = val[0] as f32,
+            Prop::Rotate(val) => self.rotation = val[0] as f32,
+            _ => (),
         }
     }
     fn get_prop(&self, prop: &Prop) -> Prop {
         match prop {
-            Prop::Alpha(_) => { Prop::Alpha(FloatProp::new(self.color.a as f64)) },
-            Prop::Rotate(_) => { Prop::Rotate(FloatProp::new(self.rotation as f64)) },
-            _ => Prop::None,
-        }
-    }
-}
-
-/// This is a wrapper for the ggez properties that are tweenable. It is used as a convenient substitute
-/// for having to manage multiple tweenables per displayed asset.
-impl Tweenable for GGLayer {
-    fn apply(&mut self, prop: &Prop) {
-        match prop {
-            Prop::Alpha(val) => { self.graphics.color.a = val[0] as f32 },
-            Prop::Rotate(val) => { self.graphics.rotation = val[0] as f32 },
-            Prop::Position(pos) => { self.frame.x = pos[0] as f32; self.frame.y = pos[1] as f32 },
-            Prop::Size(v) => { self.frame.w = v[0] as f32; self.frame.h = v[1] as f32 },
-            _ => ()
-        }
-    }
-    fn get_prop(&self, prop: &Prop) -> Prop {
-        match prop {
-            Prop::Alpha(_) => Prop::Alpha(FloatProp::new(self.graphics.color.a as f64)),
-            Prop::Rotate(_) => Prop::Rotate(FloatProp::new(self.graphics.rotation as f64)),
-            Prop::Position(_) => Prop::Position(Point2D::new(self.frame.x as f64, self.frame.y as f64)),
-            Prop::Size(_) => Prop::Size(Frame2D::new(self.frame.w as f64, self.frame.h as f64)),
+            Prop::Alpha(_) => Prop::Alpha(FloatProp::new(self.color.a as f64)),
+            Prop::Rotate(_) => Prop::Rotate(FloatProp::new(self.rotation as f64)),
             _ => Prop::None,
         }
     }

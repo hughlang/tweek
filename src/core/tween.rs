@@ -228,6 +228,20 @@ impl Tween {
 
         total
     }
+
+    pub fn update(&mut self) -> Option<UIState> {
+        if self.state == TweenState::Running {
+            // For now, this assumes that animators do not overlap and are purely sequential
+            for animator in &mut self.animators {
+                let elapsed = self.started_at.elapsed().as_float_secs();
+                if animator.start_time < elapsed && animator.end_time >= elapsed {
+                    let ui_state = animator.update(self.started_at, self.time_scale);
+                    return Some(ui_state);
+                }
+            }
+        }
+        None
+    }
 }
 impl Playable for Tween {
 
@@ -282,17 +296,7 @@ impl Playable for Tween {
     }
 
     fn get_update(&mut self, _id: &usize) -> Option<UIState> {
-        if self.state == TweenState::Running {
-            // For now, this assumes that animators do not overlap and are purely sequential
-            for animator in &mut self.animators {
-                let elapsed = self.started_at.elapsed().as_float_secs();
-                if animator.start_time < elapsed && animator.end_time >= elapsed {
-                    let ui_state = animator.update(self.started_at, self.time_scale);
-                    return Some(ui_state);
-                }
-            }
-        }
-        None
+        return self.update();
     }
 
     fn sync(&mut self, ctx: &mut TKContext) {
@@ -324,6 +328,8 @@ impl Playable for Tween {
 
 //-- Support -----------------------------------------------------------------------
 
+use ggez::mint;
+
 pub trait Tweenable {
     fn get_prop(&self, prop: &Prop) -> Prop;
     fn apply(&mut self, prop: &Prop);
@@ -331,6 +337,9 @@ pub trait Tweenable {
         for prop in props {
             self.apply(prop);
         }
+    }
+    fn hit_test(&self, _pt: mint::Point2<f64>) -> bool {
+        false
     }
 }
 
