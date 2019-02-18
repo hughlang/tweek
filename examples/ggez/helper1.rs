@@ -24,7 +24,7 @@ pub enum Shape {
 pub struct ItemState {
     pub id: usize,
     pub shape: Shape,
-    pub layer: TKLayer,
+    pub layer: GGLayer,
     pub tween: Option<Tween>,
     pub image: Option<graphics::Image>,
     pub text: Option<graphics::Text>,
@@ -45,7 +45,7 @@ impl ItemState {
                 graphics::Rect::new(pt1.x, pt1.y, pt2.x, pt2.y)
             },
         };
-        let layer = TKLayer::new(rect, graphics::DrawParam::new());
+        let layer = GGLayer::new(rect, graphics::DrawParam::new());
 
         Ok(ItemState {
             id: id,
@@ -59,6 +59,7 @@ impl ItemState {
         })
     }
 
+    ///
     pub fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.tween {
             tween.tick();

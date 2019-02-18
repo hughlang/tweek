@@ -20,7 +20,7 @@ pub enum Prop {
     Size(Frame2D),
 }
 
-// pub const PROP_LIST: Vec<Prop> = vec![Prop::Alpha, Prop::Color, Prop::Position:: Prop::Size];
+impl Eq for Prop {}
 
 impl Prop {
     /// Stupid shit helper method because Rust enums cannot emit a discriminator Int id if there are custom fields
@@ -57,29 +57,6 @@ impl Prop {
     //     value
     // }
 }
-
-// impl PartialEq for Prop {
-//     fn eq(&self, other: &Prop) -> bool {
-//         if self.prop_id() != other.prop_id() {
-//             return false;
-//         }
-//         let is_same = match self {
-//             Prop::None => true,
-//             Prop::Alpha(v1) => {
-//                 v1 == other
-//             },
-//             Prop::Color(v4) => 2,
-//             Prop::Position(v2) => 3,
-//             Prop::Size(v2) => 4,
-
-//             _ => false,
-//         }
-//         is_same
-//     }
-// }
-
-// impl Eq for Prop {}
-
 
 #[derive(Default, Debug, Clone)]
 pub struct UIState {

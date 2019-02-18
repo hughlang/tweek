@@ -1,7 +1,6 @@
 /// Experiments with buttons
 ///
 ///
-
 mod helper1;
 use helper1::*;
 
@@ -9,11 +8,11 @@ extern crate ggez;
 extern crate tween;
 
 use ggez::conf;
-use ggez::event;
+use ggez::event::{self, MouseButton};
 use ggez::graphics;
+use ggez::mint;
 use ggez::timer;
 use ggez::{Context, ContextBuilder, GameResult};
-use ggez::mint;
 
 use std::env;
 use std::path;
@@ -31,7 +30,6 @@ struct MainState {
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
-
         // Add a rectangle
         let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
         let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
@@ -39,7 +37,9 @@ impl MainState {
 
         let mut tween1 = Tween::with(SQUARE_ITEM_ID, &item1.layer)
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(1.0).repeat(7, 0.25).yoyo();
+            .duration(1.0)
+            .repeat(7, 0.25)
+            .yoyo();
 
         &tween1.play();
         item1.tween = Some(tween1);
@@ -78,7 +78,7 @@ impl event::EventHandler for MainState {
             item.render(ctx)?;
         }
 
-        for control in &self.controls {
+        for control in &mut self.controls {
             control.render(ctx)?;
         }
 
@@ -87,6 +87,30 @@ impl event::EventHandler for MainState {
         timer::yield_now();
         Ok(())
     }
+
+    /// A mouse button was pressed
+    fn mouse_button_down_event(
+        &mut self,
+        _ctx: &mut Context,
+        _button: MouseButton,
+        _x: f32,
+        _y: f32,
+    ) {
+    }
+
+    /// A mouse button was released
+    fn mouse_button_up_event(
+        &mut self,
+        _ctx: &mut Context,
+        _button: MouseButton,
+        _x: f32,
+        _y: f32,
+    ) {
+    }
+
+    /// The mouse was moved; it provides both absolute x and y coordinates in the window,
+    /// and relative x and y coordinates compared to its last position.
+    fn mouse_motion_event(&mut self, _ctx: &mut Context, _x: f32, _y: f32, _dx: f32, _dy: f32) {}
 }
 
 pub fn main() -> GameResult {
@@ -100,9 +124,12 @@ pub fn main() -> GameResult {
 
     let cb = ContextBuilder::new("tween0", "tweenkit")
         .window_setup(conf::WindowSetup::default().title("Tween test"))
-        .window_mode(conf::WindowMode::default().dimensions(640.0, 480.0).hidpi(true))
+        .window_mode(
+            conf::WindowMode::default()
+                .dimensions(640.0, 480.0)
+                .hidpi(true),
+        )
         .add_resource_path(resource_dir);
-
 
     let (ctx, events_loop) = &mut cb.build()?;
 

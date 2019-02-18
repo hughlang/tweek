@@ -50,9 +50,9 @@ impl Tweenable for ggez::graphics::DrawParam {
     }
 }
 
-/// This is a wrapper for the ggez properties that are tweenable. It is used as a convenient substittue
+/// This is a wrapper for the ggez properties that are tweenable. It is used as a convenient substitute
 /// for having to manage multiple tweenables per displayed asset.
-impl Tweenable for TKLayer {
+impl Tweenable for GGLayer {
     fn apply(&mut self, prop: &Prop) {
         match prop {
             Prop::Alpha(val) => { self.graphics.color.a = val[0] as f32 },
@@ -74,20 +74,20 @@ impl Tweenable for TKLayer {
 }
 
 /// This will implement Tweenable
-pub struct TKLayer {
+pub struct GGLayer {
     pub frame: graphics::Rect,
     pub graphics: DrawParam,
 }
 
-impl TKLayer {
+impl GGLayer {
     pub fn new(frame: graphics::Rect, graphics: DrawParam )-> Self  {
-        TKLayer{ frame: frame, graphics: graphics }
+        GGLayer{ frame: frame, graphics: graphics }
     }
 }
 
 
 
-pub trait Responder {
+pub trait TKResponder {
     fn hit_test(&self, pt: mint::Point2<f64>) -> bool;
 
 }
@@ -104,8 +104,8 @@ pub trait TKMovable {
 }
 
 pub struct TKLabel {
+    pub layer: GGLayer,
     pub text: String,
-    pub layer: TKLayer,
 }
 
 // impl TKLabel {
@@ -118,13 +118,13 @@ pub struct TKLabel {
 // }
 
 pub struct TKButton {
-    pub layer: TKLayer,
+    pub layer: GGLayer,
     pub graphics: DrawParam,
 }
 
 impl TKButton {
     pub fn new(frame: graphics::Rect, label: graphics::Text) -> Self {
-        let layer = TKLayer{ frame: frame, graphics: DrawParam::default() };
+        let layer = GGLayer{ frame: frame, graphics: DrawParam::default() };
         TKButton {
             layer: layer,
             graphics: DrawParam::default(),

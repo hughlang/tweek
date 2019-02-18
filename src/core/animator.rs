@@ -59,7 +59,13 @@ impl Animator {
         }
         if progress > 0.0 && progress <= 1.0 {
             for (i, prop) in self.start_state.props.iter().enumerate() {
+                if prop ==  &self.end_state.props[i] {
+                    // println!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);
+                    props.push(prop.clone());
+                    continue;
+                }
                 let current = Animator::interpolate(prop, &self.end_state.props[i], progress);
+                // println!("Changing from={:?} to={:?} >>> interpolated={:?}", prop, &self.end_state.props[i], current);
 
                 // println!("----------------------------------------------");
                 // println!("elapsed={} progress={}", elapsed.as_float_secs(), progress);
