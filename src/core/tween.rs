@@ -139,6 +139,16 @@ impl Tween {
                 animator.seconds = secs;
             }
         }
+        let mut time = 0.0 as f64;
+        // If there are sequenced animators, set the start and end times
+        // so the time ranges can be evaluated when getting updates
+        for animator in &mut self.animators {
+            animator.start_time = time;
+            animator.end_time = animator.start_time + animator.seconds;
+            time += animator.seconds;
+        }
+        self.duration = Duration::from_float_secs(time);
+
         self
     }
 
@@ -181,18 +191,13 @@ impl Tween {
         self.callbacks.push(Box::new(cb));
     }
 
-    pub fn total_duration(&mut self) -> f64 {
+    pub fn total_duration(&self) -> f64 {
         let mut time = 0.0 as f64;
-        for animator in &mut self.animators {
-            animator.start_time = time;
-            animator.end_time = animator.start_time + animator.seconds;
+        for animator in &self.animators {
             time += animator.seconds;
-            println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
         }
-        self.duration = Duration::from_float_secs(time);
-
-        let total = self.duration.as_float_secs() +
-             (self.repeat_count as f64) * (self.duration + self.repeat_delay).as_float_secs();
+        let total = time + self.delay_s.as_float_secs() +
+             (self.repeat_count as f64) * (time + self.repeat_delay.as_float_secs());
 
         total
     }
@@ -233,7 +238,10 @@ impl Tween {
                 begin_props.push(last_prop.clone());
             }
         }
+
+        println!("[{}] -------------------------------------------------------------------------------", self.tween_id);
         for animator in &mut self.animators {
+            println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
             let mut end_props: Vec<Prop> = Vec::new();
 
             for prop in &begin_props {
@@ -254,17 +262,6 @@ impl Tween {
             begin_props = animator.end_state.props.clone();
         }
 
-        let mut time = 0.0 as f64;
-        // If there are sequenced animators, set the start and end times
-        // so the time ranges can be evaluated when getting updates
-        println!("------------------------------------------------------------");
-        for animator in &mut self.animators {
-            animator.start_time = time;
-            animator.end_time = animator.start_time + animator.seconds;
-            time += animator.seconds;
-            println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
-        }
-        self.duration = Duration::from_float_secs(time);
     }
 }
 

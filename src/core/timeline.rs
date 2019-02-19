@@ -22,7 +22,7 @@ pub struct TweenRange {
 
 impl TweenRange {
 	fn new(tween: Tween, start: f64) -> Self {
-		let end = start + tween.duration.as_float_secs();
+		let end = start + &tween.total_duration();
 		TweenRange {
 			tween: Rc::new(RefCell::new(tween)),
 			start: start,
@@ -57,39 +57,42 @@ impl Timeline {
 		}
 	}
 
-	pub fn create(tweens: Vec<Tween>, align: TweenAlign) -> Self {
+	pub fn create(tweens: Vec<Tween>) -> Self {
 		let mut timeline = Timeline::new();
-		let mut start = 0.0 as f64;
+		let start = 0.0 as f64;
 		let mut id_list: Vec<usize> = Vec::new();
 
-		for mut t in tweens {
+		for t in tweens {
 			let id = t.tween_id;
 			id_list.push(id);
-			let dur = t.total_duration();
-			// t.add_callback(move |e, ctx| {
-			// 	println!("OG callback: event={:?}", e);
-			// 	match e {
-			// 		TKEvent::Completed(id) => {
-			// 			// Inform ctx that playback has completed
-			// 			ctx.events.push(e);
-			// 		},
-			// 		_ => (),
-			// 	}
-
-			// });
-
 			let range = TweenRange::new(t, start);
-
-			match align {
-				TweenAlign::Sequence => {
-					start += dur;
-				},
-				_ => (),
-			}
 			timeline.children.insert(id.clone(), range);
 		}
 		timeline.tween_ids = id_list;
 		timeline
+	}
+
+	pub fn align(mut self, alignment: TweenAlign) -> Self {
+		let mut start = 0.0 as f64;
+		for id in &self.tween_ids {
+			if let Some(range) = self.children.get_mut(&id) {
+				let tween = range.tween.borrow();
+				let total_secs = (&*tween).total_duration();
+				match alignment {
+					TweenAlign::Normal => {
+
+					},
+					TweenAlign::Sequence => {
+						start += total_secs;
+					},
+					_ => (),
+				}
+
+				range.start = start;
+				range.end = range.start + total_secs;
+			}
+		}
+		self
 	}
 
 	pub fn stagger(mut self, offset: f64) -> Self {

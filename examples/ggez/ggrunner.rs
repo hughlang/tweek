@@ -16,7 +16,6 @@ use std::path;
 use tween::*;
 
 const SQUARE_ITEM_ID: usize = 100;
-const ROUND_ITEM_ID: usize = 101;
 
 struct MainState {
     tweek: Tweek,
@@ -29,20 +28,19 @@ impl MainState {
 
         // Add a rectangle
 
-        let mut item_id = 100 as usize;
         let mut ypos = 50.0 as f32;
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
         for i in 0..4 {
-            item_id = SQUARE_ITEM_ID + i as usize;
+            let item_id = SQUARE_ITEM_ID + i as usize;
             let rect = graphics::Rect::new(50.0, ypos, 50.0, 50.0);
             let mut item1 = ItemState::new(item_id, Shape::Rectangle(rect))?;
             item1.layer.graphics.color = graphics::Color::from_rgb_u32(0x333333);
 
             let tween1 = Tween::with(item_id, &item1.layer)
-                .to(vec![position(400.0, ypos as f64), size(100.0, 100.0), alpha(0.2)])
+                .to(vec![position(400.0, ypos as f64), size(100.0, 100.0)])
                 .duration(1.0).yoyo();
-            ypos += 100.0;
+            ypos += 120.0;
             items.push(item1);
             tweens.push(tween1)
         }
@@ -50,7 +48,10 @@ impl MainState {
         let mut tweek = Tweek::new();
         // let context = TKContext::new();
 
-        let timeline = Timeline::create(tweens, TweenAlign::Sequence).stagger(0.2);
+        let timeline = Timeline::create(tweens)
+            .stagger(0.2)
+            // .align(TweenAlign::Sequence)
+            ;
 
         tweek.add_timeline(timeline);
         &tweek.play();
