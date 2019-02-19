@@ -2,13 +2,13 @@
 ///
 ///
 
-use super::property::*;
 use std::f32::consts::PI;
 
 const PERIOD: f32 = 0.3;
 const AMPLITUDE: f32 = 1.0;
 const PI_2: f32 = PI * 2.0;
 
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Ease {
     Linear,
     SineIn,       // yes

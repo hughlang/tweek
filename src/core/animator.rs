@@ -5,7 +5,7 @@ use std::{time::{Duration,Instant}};
 use cgmath::*;
 
 use super::property::*;
-use super::easing::*;
+use super::ease::*;
 
 
 /// An Animator represents state change from one UIState to another UIState state
@@ -16,12 +16,12 @@ pub struct Animator {
     pub start_time: f64,
     pub end_time: f64,
     pub seconds: f64,
-    pub easing: Easing,
+    pub ease: Ease,
     pub debug: bool,
 }
 
 impl Animator {
-    pub fn create(id: &usize, props1: &Vec<Prop>, props2: &Vec<Prop>, ease: &Easing) -> Self {
+    pub fn create(id: &usize, props1: &Vec<Prop>, props2: &Vec<Prop>) -> Self {
         let tween_id = id.clone();
         let start_state = UIState::create(tween_id, props1.clone());
         let end_state = UIState::create(tween_id, props2.clone());
@@ -32,7 +32,7 @@ impl Animator {
             start_time: 0.0,
             end_time: 0.0,
             seconds: 1.0,
-            easing: ease.clone(),
+            ease: Ease::Linear,
             debug: false,
         }
     }
@@ -54,16 +54,13 @@ impl Animator {
         } else {
             progress =  1.0 - elapsed.as_float_secs() / self.seconds * time_scale.abs();
         }
-        // if self.easing != Easing::Linear {
-        //     let curve = self.easing.curve();
-        //     let solver = BezierSolver::from(curve.clone());
-        //     progress = solver.solve(progress);
-        // }
+        let ratio = self.ease.clone().get_ratio(progress as f32);
+        progress = ratio as f64;
 
-        if progress > 0.0 && progress <= 1.0 {
+        // if progress > 0.0 && progress <= 1.0 {
             for (i, prop) in self.start_state.props.iter().enumerate() {
                 if prop ==  &self.end_state.props[i] {
-                    // println!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);
+                    println!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);
                     props.push(prop.clone());
                     continue;
                 }
@@ -74,7 +71,7 @@ impl Animator {
                 // println!("elapsed={} progress={} >>> interpolated={:?}", elapsed.as_float_secs(), progress, current);
                 props.push(current);
             }
-        }
+        // }
         UIState::create(self.id, props)
     }
 

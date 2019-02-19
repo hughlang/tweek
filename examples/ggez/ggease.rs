@@ -54,8 +54,8 @@ impl MainState {
 
         let mut tween1 = Tween::with(SQUARE_ITEM_ID, &item1.layer)
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(0.5).repeat(7, 0.2).yoyo()
-            .ease(Easing::SineInOut)
+            .duration(1.0).ease(Ease::ElasticIn)
+            .repeat(7, 0.2)
             ;
 
         &tween1.play();
@@ -89,6 +89,7 @@ impl event::EventHandler for MainState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, graphics::WHITE);
         graphics::draw(ctx, &self.gridmesh, DrawParam::default())?;
+
         for item in &mut self.items {
             item.render(ctx)?;
         }
