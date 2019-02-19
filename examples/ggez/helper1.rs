@@ -60,7 +60,7 @@ impl ItemState {
         })
     }
 
-    ///
+    #[allow(dead_code)]
     pub fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.tween {
             tween.tick();
@@ -69,6 +69,14 @@ impl ItemState {
                 self.layer.render_update(&update.props);
                 self.layer.render_update(&update.props);
             }
+        }
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub fn try_update(&mut self, tweek: &mut Tweek) -> GameResult {
+        if let Some(update) = tweek.get_update(&self.id) {
+            self.layer.render_update(&update.props);
         }
         Ok(())
     }

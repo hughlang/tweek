@@ -11,7 +11,7 @@ use super::tween::*;
 
 //-- Base -----------------------------------------------------------------------
 
-type TweenRef = Rc<RefCell<Tween>>;
+pub type TweenRef = Rc<RefCell<Tween>>;
 
 pub struct TweenRange {
     tween: TweenRef,
@@ -61,18 +61,18 @@ impl Timeline {
 
 		for mut t in tweens {
 			let id = t.tween_id;
-			let dur = t.duration.as_float_secs();
-			t.add_callback(move |e, ctx| {
-				println!("OG callback: event={:?}", e);
-				match e {
-					TKEvent::Completed(id) => {
-						// Inform ctx that playback has completed
-						ctx.events.push(e);
-					},
-					_ => (),
-				}
+			let dur = t.total_duration();
+			// t.add_callback(move |e, ctx| {
+			// 	println!("OG callback: event={:?}", e);
+			// 	match e {
+			// 		TKEvent::Completed(id) => {
+			// 			// Inform ctx that playback has completed
+			// 			ctx.events.push(e);
+			// 		},
+			// 		_ => (),
+			// 	}
 
-			});
+			// });
 
 			let range = TweenRange::new(t, start);
 
@@ -142,7 +142,7 @@ impl Playable for Timeline {
 	fn play(&mut self) {
 		for (_, range) in &self.children {
 			let elapsed = self.tl_start.elapsed().as_float_secs();
-			if range.start < elapsed && range.end > elapsed {
+			if range.start <= elapsed && range.end > elapsed {
 				let mut tween = range.tween.borrow_mut();
 				(&mut *tween).play();
 				// range.state = TweenState::Running;
@@ -154,7 +154,7 @@ impl Playable for Timeline {
         let mut events: Vec<TKEvent> = Vec::new();
 		for (_, range) in &self.children {
 			let elapsed = self.tl_start.elapsed().as_float_secs();
-			if range.start < elapsed && range.end > elapsed {
+			if range.start <= elapsed && range.end > elapsed {
 				let mut tween = range.tween.borrow_mut();
 				match tween.state {
 					TweenState::Idle | TweenState::Pending => {
@@ -177,6 +177,7 @@ impl Playable for Timeline {
 			match event {
 				TKEvent::Completed(id) => {
 					// Decide: repeat?
+					println!("Completed={}", id);
 					if let Some(range) = &self.children.get(id) {
 
 						// self.reset();

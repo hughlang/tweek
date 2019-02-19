@@ -71,7 +71,6 @@ pub struct Tween {
     pub anim_type: AnimType,
     start_props: Vec<Prop>,
     animators: Vec<Animator>,
-    easing: Easing,
     callbacks: Vec<Box<FnMut(TKEvent, &mut TKContext) + 'static>>,
 }
 
@@ -91,7 +90,6 @@ impl Tween {
             anim_type: AnimType::Normal,
             start_props: Vec::new(),
             animators: Vec::new(),
-            easing: Easing::Linear,
             callbacks: Vec::new(),
         }
     }
@@ -125,6 +123,94 @@ impl Tween {
         tween
     }
 
+    /// Function which reads the list of "to" props and finds the matching ones
+    /// already saved in self.start_props to make sure that start_props and
+    /// end_props have matching Prop types in the same order.
+    pub fn to(mut self, props:Vec<Prop>) -> Self {
+        let animator = Animator::create(&self.tween_id, &self.start_props, &props, &Easing::Linear);
+        self.animators.push(animator);
+        self
+    }
+
+    pub fn duration(mut self, secs: f64) -> Self {
+        // this gets recalculated on play() so the logic isn't too important
+        if self.animators.len() > 0 {
+            if let Some(animator) = self.animators.last_mut() {
+                animator.seconds = secs;
+            }
+        }
+        self
+    }
+
+    pub fn delay(mut self, _seconds: f64) -> Self {
+        self.delay_s = Duration::from_float_secs(_seconds);
+        self
+    }
+
+    pub fn repeat(mut self, count: i32, delay: f64) -> Self {
+        self.repeat_count = count;
+        self.repeat_delay = Duration::from_float_secs(delay);
+        self
+    }
+
+    pub fn ease(mut self, easing: Easing) -> Self {
+        if self.animators.len() > 0 {
+            if let Some(animator) = self.animators.last_mut() {
+                animator.easing = easing;
+            }
+        }
+        self
+    }
+
+    /// Set time_scale which modifies the speed of the animation,
+    /// where 1.0 is considered normal time
+    pub fn speed(mut self, scale: f64) -> Self {
+        // prevent negative number for now
+        self.time_scale = scale.abs();
+        self
+    }
+
+    /// Run the animation to the end and reverse direction
+    pub fn yoyo(mut self) -> Self {
+        self.anim_type = AnimType::Yoyo;
+        if self.repeat_count < 1 { self.repeat_count = 1 }
+        self
+    }
+
+    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKContext) + 'static {
+        self.callbacks.push(Box::new(cb));
+    }
+
+    pub fn total_duration(&mut self) -> f64 {
+        let mut time = 0.0 as f64;
+        for animator in &mut self.animators {
+            animator.start_time = time;
+            animator.end_time = animator.start_time + animator.seconds;
+            time += animator.seconds;
+            println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
+        }
+        self.duration = Duration::from_float_secs(time);
+
+        let total = self.duration.as_float_secs() +
+             (self.repeat_count as f64) * (self.duration + self.repeat_delay).as_float_secs();
+
+        total
+    }
+
+    pub fn update(&mut self) -> Option<UIState> {
+        if self.state == TweenState::Running {
+            // For now, this assumes that animators do not overlap and are purely sequential
+            for animator in &mut self.animators {
+                let elapsed = self.started_at.elapsed().as_float_secs();
+                if animator.start_time < elapsed && animator.end_time >= elapsed {
+                    let ui_state = animator.update(self.started_at, self.time_scale);
+                    return Some(ui_state);
+                }
+            }
+        }
+        None
+    }
+
     fn fix_animators(&mut self) {
         let mut prop_map: HashMap<u32, Prop> = HashMap::new();
 
@@ -149,10 +235,8 @@ impl Tween {
         }
         for animator in &mut self.animators {
             let mut end_props: Vec<Prop> = Vec::new();
-            // begin_props should already have the clean array of props
-            animator.start_state.props = begin_props.clone();
 
-            for prop in begin_props {
+            for prop in &begin_props {
                 let end_prop = animator.end_state.get_prop_value(prop.prop_id());
                 if end_prop != Prop::None {
                     end_props.push(end_prop);
@@ -162,6 +246,10 @@ impl Tween {
                     }
                 }
             }
+
+            // begin_props starts with the filtered set of props from self.start_props
+            // and gets updated with the end_state.props at the end of each loop
+            animator.start_state.props = begin_props.clone();
             animator.end_state.props = end_props.clone();
             begin_props = animator.end_state.props.clone();
         }
@@ -178,82 +266,8 @@ impl Tween {
         }
         self.duration = Duration::from_float_secs(time);
     }
-
-    /// Function which reads the list of "to" props and finds the matching ones
-    /// already saved in self.start_props to make sure that start_props and
-    /// end_props have matching Prop types in the same order.
-    pub fn to(mut self, props:Vec<Prop>) -> Self {
-        let animator = Animator::create(&self.tween_id, &self.start_props, &props, &self.easing);
-        self.animators.push(animator);
-        self
-    }
-
-    pub fn duration(mut self, secs: f64) -> Self {
-        // this gets recalculated on play() so the logic isn't too important
-        self.duration = self.duration + Duration::from_float_secs(secs);
-        if self.animators.len() > 0 {
-            if let Some(animator) = self.animators.last_mut() {
-                animator.seconds = secs;
-            }
-        }
-        self
-    }
-
-    pub fn delay(mut self, _seconds: f64) -> Self {
-        self.delay_s = Duration::from_float_secs(_seconds);
-        self
-    }
-
-    pub fn repeat(mut self, count: i32, delay: f64) -> Self {
-        self.repeat_count = count;
-        self.repeat_delay = Duration::from_float_secs(delay);
-        self
-    }
-
-    pub fn ease(mut self, easing: Easing) -> Self {
-        self.easing = easing;
-        self
-    }
-
-    /// Set time_scale which modifies the speed of the animation,
-    /// where 1.0 is considered normal time
-    pub fn speed(mut self, scale: f64) -> Self {
-        // prevent negative number for now
-        self.time_scale = scale.abs();
-        self
-    }
-
-    /// Run the animation to the end and reverse direction
-    pub fn yoyo(mut self) -> Self {
-        self.anim_type = AnimType::Yoyo;
-        if self.repeat_count < 1 { self.repeat_count = 1 }
-        self
-    }
-
-    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKContext) + 'static {
-        self.callbacks.push(Box::new(cb));
-    }
-
-    pub fn total_duration(&self) -> f64 {
-        let total = (self.duration + self.repeat_delay).as_float_secs() * (self.repeat_count + 1) as f64;
-
-        total
-    }
-
-    pub fn update(&mut self) -> Option<UIState> {
-        if self.state == TweenState::Running {
-            // For now, this assumes that animators do not overlap and are purely sequential
-            for animator in &mut self.animators {
-                let elapsed = self.started_at.elapsed().as_float_secs();
-                if animator.start_time < elapsed && animator.end_time >= elapsed {
-                    let ui_state = animator.update(self.started_at, self.time_scale);
-                    return Some(ui_state);
-                }
-            }
-        }
-        None
-    }
 }
+
 impl Playable for Tween {
 
     fn play(&mut self) {
