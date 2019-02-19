@@ -47,16 +47,18 @@ impl Animator {
         let mut props: Vec<Prop> = Vec::new();
         let elapsed = started_at.elapsed() - Duration::from_float_secs(self.start_time);
         let mut progress = 0.0 as f64;
-        // if self.easing != Easing::Linear {
-        //     let curve = self.easing.curve();
-        //     let solver = BezierSolver::from(curve.clone());
-        //     progress = solver.sstart_stateprogress);
-        // }end_state
+        // end_state
         if time_scale > 0.0 {
             progress = elapsed.as_float_secs() / self.seconds * time_scale;
         } else {
             progress =  1.0 - elapsed.as_float_secs() / self.seconds * time_scale.abs();
         }
+        if self.easing != Easing::Linear {
+            let curve = self.easing.curve();
+            let solver = BezierSolver::from(curve.clone());
+            progress = solver.solve(progress);
+        }
+
         if progress > 0.0 && progress <= 1.0 {
             for (i, prop) in self.start_state.props.iter().enumerate() {
                 if prop ==  &self.end_state.props[i] {
@@ -68,7 +70,7 @@ impl Animator {
                 // println!("Changing from={:?} to={:?} >>> interpolated={:?}", prop, &self.end_state.props[i], current);
 
                 // println!("----------------------------------------------");
-                // println!("elapsed={} progress={}", elapsed.as_float_secs(), progress);
+                // println!("elapsed={} progress={} >>> interpolated={:?}", elapsed.as_float_secs(), progress, current);
                 props.push(current);
             }
         }

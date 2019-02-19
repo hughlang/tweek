@@ -29,6 +29,10 @@ name = "ggbuttons"
 path = "examples/ggez/ggbuttons.rs"
 
 [[bin]]
+name = "ggease"
+path = "examples/ggez/ggease.rs"
+
+[[bin]]
 name = "ggscreen"
 path = "examples/ggez/ggscreen.rs"
 
