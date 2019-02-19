@@ -16,12 +16,12 @@ pub struct Animator {
     pub start_time: f64,
     pub end_time: f64,
     pub seconds: f64,
-    pub easing: AltEasing,
+    pub easing: Easing,
     pub debug: bool,
 }
 
 impl Animator {
-    pub fn create(id: &usize, props1: &Vec<Prop>, props2: &Vec<Prop>, ease: &AltEasing) -> Self {
+    pub fn create(id: &usize, props1: &Vec<Prop>, props2: &Vec<Prop>, ease: &Easing) -> Self {
         let tween_id = id.clone();
         let start_state = UIState::create(tween_id, props1.clone());
         let end_state = UIState::create(tween_id, props2.clone());
