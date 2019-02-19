@@ -60,15 +60,13 @@ impl Timeline {
 	pub fn create(tweens: Vec<Tween>) -> Self {
 		let mut timeline = Timeline::new();
 		let start = 0.0 as f64;
-		let mut id_list: Vec<usize> = Vec::new();
 
 		for t in tweens {
 			let id = t.tween_id;
-			id_list.push(id);
+			timeline.tween_ids.push(id);
 			let range = TweenRange::new(t, start);
 			timeline.children.insert(id.clone(), range);
 		}
-		timeline.tween_ids = id_list;
 		timeline
 	}
 
@@ -78,6 +76,10 @@ impl Timeline {
 			if let Some(range) = self.children.get_mut(&id) {
 				let tween = range.tween.borrow();
 				let total_secs = (&*tween).total_duration();
+				range.start = start;
+				range.end = range.start + total_secs;
+				println!("align start={} end={}", range.start, range.end);
+
 				match alignment {
 					TweenAlign::Normal => {
 
@@ -87,9 +89,6 @@ impl Timeline {
 					},
 					_ => (),
 				}
-
-				range.start = start;
-				range.end = range.start + total_secs;
 			}
 		}
 		self
@@ -103,6 +102,7 @@ impl Timeline {
 				let total_secs = (&mut *tween).total_duration();
 				range.start = index as f64 * offset;
 				range.end = range.start + total_secs;
+				println!("stagger start={} end={}", range.start, range.end);
 			}
 		}
 		self
@@ -160,9 +160,12 @@ impl Playable for Timeline {
 	/// The Timeline play method should only play the tweens where the start time
 	/// is not greater than the current elapsed time.
 	fn play(&mut self) {
-		for (_, range) in &self.children {
+		self.tl_start = Instant::now();
+		for (id, range) in &self.children {
 			let elapsed = self.tl_start.elapsed().as_float_secs();
 			if range.start <= elapsed && range.end > elapsed {
+
+				println!("timeline play id={}", id);
 				let mut tween = range.tween.borrow_mut();
 				(&mut *tween).play();
 				// range.state = TweenState::Running;

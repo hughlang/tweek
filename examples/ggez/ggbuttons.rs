@@ -55,7 +55,7 @@ impl MainState {
 
         controls.push(button);
 
-        let mut items: Vec<ItemState> = Vec::new();
+        let items: Vec<ItemState> = Vec::new();
         // items.push(item1);
 
         let s = MainState {

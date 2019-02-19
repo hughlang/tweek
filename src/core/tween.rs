@@ -196,6 +196,11 @@ impl Tween {
         for animator in &self.animators {
             time += animator.seconds;
         }
+
+        if self.repeat_count < 1 {
+            return time + self.delay_s.as_float_secs();
+        }
+
         let total = time + self.delay_s.as_float_secs() +
              (self.repeat_count as f64) * (time + self.repeat_delay.as_float_secs());
 
@@ -214,6 +219,28 @@ impl Tween {
             }
         }
         None
+    }
+
+    fn print_timeline(&self) {
+        // const MAX_WIDTH = 80; // ascii width
+        const LEAD_WIDTH: usize = 10;
+        let total_time = self.total_duration();
+        let interval = 0.1 as f64;
+        println!("x={} interval={}", total_time, interval);
+        let width = LEAD_WIDTH + (total_time / interval).floor() as usize + self.animators.len();
+        println!("{}", "=".repeat(width));
+        for (idx, animator) in self.animators.iter().enumerate() {
+            let pos = (animator.start_time / interval) as usize;
+            let label = format!("[{: <10}]", idx);
+            let bar = format!("{}", "*".repeat((animator.seconds / interval) as usize));
+            println!("{}{}{}", label, " ".repeat(pos), bar);
+
+            println!("{}", "-".repeat(width));
+
+        }
+        println!("{}", "=".repeat(width));
+
+
     }
 
     fn fix_animators(&mut self) {
@@ -241,7 +268,6 @@ impl Tween {
 
         println!("[{}] -------------------------------------------------------------------------------", self.tween_id);
         for animator in &mut self.animators {
-            println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
             let mut end_props: Vec<Prop> = Vec::new();
 
             for prop in &begin_props {
@@ -260,6 +286,7 @@ impl Tween {
             animator.start_state.props = begin_props.clone();
             animator.end_state.props = end_props.clone();
             begin_props = animator.end_state.props.clone();
+            println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
         }
 
     }
@@ -269,6 +296,8 @@ impl Playable for Tween {
 
     fn play(&mut self) {
         self.fix_animators();
+        self.print_timeline();
+
         self.started_at = Instant::now();
         self.state = TweenState::Running;
     }

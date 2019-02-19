@@ -44,6 +44,7 @@ impl Animator {
     }
 
     pub fn update(&self, started_at: Instant, time_scale: f64) -> UIState {
+        // if self.start_state.props.len() !=
         let mut props: Vec<Prop> = Vec::new();
         let elapsed = started_at.elapsed() - Duration::from_float_secs(self.start_time);
         let mut progress = 0.0 as f64;
@@ -62,7 +63,7 @@ impl Animator {
         if progress > 0.0 && progress <= 1.0 {
             for (i, prop) in self.start_state.props.iter().enumerate() {
                 if prop ==  &self.end_state.props[i] {
-                    // println!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);
+                    println!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);
                     props.push(prop.clone());
                     continue;
                 }
@@ -79,6 +80,8 @@ impl Animator {
 
     /// Given two Props of same type, calculate the interpolated state
     fn interpolate(initial: &Prop, target: &Prop, scale: f64) -> Prop {
+        println!("Interpolate from={:?} to={:?} scale={} ", initial, target, scale);
+        if initial.prop_id() != target.prop_id() { return initial.clone() }
 
         let result = match initial {
             Prop::Alpha(v1) => {

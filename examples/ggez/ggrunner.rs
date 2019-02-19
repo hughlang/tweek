@@ -39,7 +39,9 @@ impl MainState {
 
             let tween1 = Tween::with(item_id, &item1.layer)
                 .to(vec![position(400.0, ypos as f64), size(100.0, 100.0)])
-                .duration(1.0).yoyo();
+                .duration(0.5);
+
+                //.repeat(3, 0.25)
             ypos += 120.0;
             items.push(item1);
             tweens.push(tween1)
@@ -49,8 +51,8 @@ impl MainState {
         // let context = TKContext::new();
 
         let timeline = Timeline::create(tweens)
-            .stagger(0.2)
-            // .align(TweenAlign::Sequence)
+            // .stagger(0.2)
+            .align(TweenAlign::Sequence)
             ;
 
         tweek.add_timeline(timeline);
