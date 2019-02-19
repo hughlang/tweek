@@ -156,7 +156,7 @@ pub fn main() -> GameResult {
         .window_setup(conf::WindowSetup::default().title("Tween test"))
         .window_mode(
             conf::WindowMode::default()
-                .dimensions(640.0, 480.0)
+                .dimensions(1024.0, 768.0)
                 .hidpi(true),
         )
         .add_resource_path(resource_dir);
