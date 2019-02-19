@@ -20,7 +20,7 @@ const ROUND_ITEM_ID: usize = 101;
 
 struct MainState {
     tweek: Tweek,
-    context: TKContext,
+    // context: TKContext,
     items: Vec<ItemState>,
 }
 
@@ -28,35 +28,36 @@ impl MainState {
     fn new(_ctx: &mut Context) -> GameResult<MainState> {
 
         // Add a rectangle
-        let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
-        let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
-        item1.layer.graphics.color = graphics::Color::from_rgb_u32(0x333333);
 
-        let tween1 = Tween::with(SQUARE_ITEM_ID, &item1.layer)
-            .to(vec![position(400.0, 300.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(2.0);
+        let mut item_id = 100 as usize;
+        let mut ypos = 50.0 as f32;
+        let mut items: Vec<ItemState> = Vec::new();
+        let mut tweens: Vec<Tween> = Vec::new();
+        for i in 0..4 {
+            item_id = SQUARE_ITEM_ID + i as usize;
+            let rect = graphics::Rect::new(50.0, ypos, 50.0, 50.0);
+            let mut item1 = ItemState::new(item_id, Shape::Rectangle(rect))?;
+            item1.layer.graphics.color = graphics::Color::from_rgb_u32(0x333333);
 
-        // Add a circle
-        let mut item2 = ItemState::new(ROUND_ITEM_ID, Shape::Circle(mint::Point2{x: 500.0, y: 200.0}, 40.0))?;
-        item2.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
-
-        let tween2 = Tween::with(ROUND_ITEM_ID, &item2.layer)
-            .to(vec![position(40.0, 200.0), alpha(0.2)])
-            .duration(3.0);
+            let tween1 = Tween::with(item_id, &item1.layer)
+                .to(vec![position(400.0, ypos as f64), size(100.0, 100.0), alpha(0.2)])
+                .duration(1.0).yoyo();
+            ypos += 100.0;
+            items.push(item1);
+            tweens.push(tween1)
+        }
 
         let mut tweek = Tweek::new();
-        let context = TKContext::new();
-        let timeline = Timeline::create(vec![tween1, tween2], TweenAlign::Sequence);
+        // let context = TKContext::new();
+
+        let timeline = Timeline::create(tweens, TweenAlign::Sequence).stagger(0.2);
+
         tweek.add_timeline(timeline);
         &tweek.play();
 
-        let mut items: Vec<ItemState> = Vec::new();
-        items.push(item1);
-        items.push(item2);
-
         let s = MainState {
             tweek: tweek,
-            context: context,
+            // context: context,
             items: items,
         };
 
@@ -73,18 +74,6 @@ impl event::EventHandler for MainState {
         for item in &mut self.items {
             item.try_update(&mut self.tweek)?;
         }
-
-        // let item = &mut self.square_item;
-        // if let Some(update) = self.tweek.get_update(&item.get_id()) {
-        //     item.bounds.render_update(&update.props);
-        //     item.graphics.color.render_update(&update.props);
-        // }
-
-        // let item = &mut self.round_item;
-        // if let Some(update) = self.tweek.get_update(&item.get_id()) {
-        //     item.bounds.render_update(&update.props);
-        //     item.graphics.color.render_update(&update.props);
-        // }
 
         Ok(())
     }
@@ -116,7 +105,7 @@ pub fn main() -> GameResult {
 
     let cb = ContextBuilder::new("tween0", "tweenkit")
         .window_setup(setup)
-        .window_mode(conf::WindowMode::default().dimensions(800.0, 600.0))
+        .window_mode(conf::WindowMode::default().dimensions(1024.0, 768.0))
         .add_resource_path(resource_dir);
 
     let (ctx, events_loop) = &mut cb.build()?;

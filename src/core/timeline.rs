@@ -40,6 +40,7 @@ impl TweenRange {
 /// See also: https://greensock.com/asdocs/com/greensock/TimelineLite.html
 pub struct Timeline {
     children: HashMap<usize, TweenRange>,
+	tween_ids: Vec<usize>,
     tl_start: Instant,
     pub repeat_count: i32, // -1 = forever
     pub repeat_delay: Duration,
@@ -49,6 +50,7 @@ impl Timeline {
 	pub fn new() -> Self {
 		Timeline {
 			children: HashMap::new(),
+			tween_ids: Vec::new(),
 			tl_start: Instant::now(),
             repeat_count: 0,
             repeat_delay: Duration::from_secs(0),
@@ -58,9 +60,11 @@ impl Timeline {
 	pub fn create(tweens: Vec<Tween>, align: TweenAlign) -> Self {
 		let mut timeline = Timeline::new();
 		let mut start = 0.0 as f64;
+		let mut id_list: Vec<usize> = Vec::new();
 
 		for mut t in tweens {
 			let id = t.tween_id;
+			id_list.push(id);
 			let dur = t.total_duration();
 			// t.add_callback(move |e, ctx| {
 			// 	println!("OG callback: event={:?}", e);
@@ -82,10 +86,23 @@ impl Timeline {
 				},
 				_ => (),
 			}
-			timeline.children.insert(id, range);
+			timeline.children.insert(id.clone(), range);
 		}
-
+		timeline.tween_ids = id_list;
 		timeline
+	}
+
+	pub fn stagger(mut self, offset: f64) -> Self {
+
+		for (index, id) in self.tween_ids.iter().enumerate() {
+			if let Some(range) = self.children.get_mut(&id) {
+				let mut tween = range.tween.borrow_mut();
+				let total_secs = (&mut *tween).total_duration();
+				range.start = index as f64 * offset;
+				range.end = range.start + total_secs;
+			}
+		}
+		self
 	}
 
 	// fn setup(self, ctx: &mut TKContext) -> Self {
@@ -97,14 +114,14 @@ impl Timeline {
 
 	// 				// }
 	// 				// &self.play();
-	// 				// for (i, range) in &self.children {
-	// 				// 	println!("play – {}", i);
-	// 					// let elapsed = &self.tl_start.elapsed().as_float_secs();
-	// 				// 	if range.start < elapsed && range.end > elapsed {
-	// 				// 		let mut tween = range.tween.borrow_mut();
-	// 				// 		(&mut *tween).play();
-	// 				// 	}
-	// 				// }
+					// for (i, range) in &self.children {
+					// 	println!("play – {}", i);
+					// 	let elapsed = &self.tl_start.elapsed().as_float_secs();
+					// 	if range.start < elapsed && range.end > elapsed {
+					// 		let mut tween = range.tween.borrow_mut();
+					// 		(&mut *tween).play();
+					// 	}
+					// }
 
 	// 			},
 	// 			_ => (),
