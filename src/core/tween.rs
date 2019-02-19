@@ -127,7 +127,7 @@ impl Tween {
     /// already saved in self.start_props to make sure that start_props and
     /// end_props have matching Prop types in the same order.
     pub fn to(mut self, props:Vec<Prop>) -> Self {
-        let animator = Animator::create(&self.tween_id, &self.start_props, &props, &Easing::Linear);
+        let animator = Animator::create(&self.tween_id, &self.start_props, &props, &AltEasing::Linear);
         self.animators.push(animator);
         self
     }
@@ -163,7 +163,7 @@ impl Tween {
         self
     }
 
-    pub fn ease(mut self, easing: Easing) -> Self {
+    pub fn ease(mut self, easing: AltEasing) -> Self {
         if self.animators.len() > 0 {
             if let Some(animator) = self.animators.last_mut() {
                 animator.easing = easing;

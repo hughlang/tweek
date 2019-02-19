@@ -16,12 +16,12 @@ pub struct Animator {
     pub start_time: f64,
     pub end_time: f64,
     pub seconds: f64,
-    pub easing: Easing,
+    pub easing: AltEasing,
     pub debug: bool,
 }
 
 impl Animator {
-    pub fn create(id: &usize, props1: &Vec<Prop>, props2: &Vec<Prop>, ease: &Easing) -> Self {
+    pub fn create(id: &usize, props1: &Vec<Prop>, props2: &Vec<Prop>, ease: &AltEasing) -> Self {
         let tween_id = id.clone();
         let start_state = UIState::create(tween_id, props1.clone());
         let end_state = UIState::create(tween_id, props2.clone());
@@ -54,16 +54,16 @@ impl Animator {
         } else {
             progress =  1.0 - elapsed.as_float_secs() / self.seconds * time_scale.abs();
         }
-        if self.easing != Easing::Linear {
-            let curve = self.easing.curve();
-            let solver = BezierSolver::from(curve.clone());
-            progress = solver.solve(progress);
-        }
+        // if self.easing != Easing::Linear {
+        //     let curve = self.easing.curve();
+        //     let solver = BezierSolver::from(curve.clone());
+        //     progress = solver.solve(progress);
+        // }
 
         if progress > 0.0 && progress <= 1.0 {
             for (i, prop) in self.start_state.props.iter().enumerate() {
                 if prop ==  &self.end_state.props[i] {
-                    println!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);
+                    // println!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);
                     props.push(prop.clone());
                     continue;
                 }
@@ -80,7 +80,7 @@ impl Animator {
 
     /// Given two Props of same type, calculate the interpolated state
     fn interpolate(initial: &Prop, target: &Prop, scale: f64) -> Prop {
-        println!("Interpolate from={:?} to={:?} scale={} ", initial, target, scale);
+        // println!("Interpolate from={:?} to={:?} scale={} ", initial, target, scale);
         if initial.prop_id() != target.prop_id() { return initial.clone() }
 
         let result = match initial {
