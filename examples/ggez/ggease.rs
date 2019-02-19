@@ -9,6 +9,7 @@ use ggez::conf;
 use ggez::event::{self, MouseButton};
 use ggez::graphics::{self, DrawParam};
 use ggez::{Context, ContextBuilder, GameResult};
+use ggez::mint::Point2;
 
 use std::env;
 use std::path;
@@ -20,11 +21,31 @@ const SQUARE_ITEM_ID: usize = 100;
 // const TEXT_ITEM_ID: usize = 103;
 
 struct MainState {
+    gridmesh: graphics::Mesh,
     items: Vec<ItemState>,
+    frames: usize,
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
+        let width = ctx.conf.window_mode.width;
+        let height = ctx.conf.window_mode.height;
+
+        let color = graphics::BLACK;
+        let mut builder = graphics::MeshBuilder::new();
+
+        let mut xpos = 0.0;
+        while xpos < width {
+            builder.line(&[Point2{x: xpos, y: 0.0}, Point2{x: xpos, y: height}], 1.0, color,)?;
+            xpos += 50.0;
+        }
+        let mut ypos = 0.0;
+        while ypos < height {
+            builder.line(&[Point2{x: 0.0, y: ypos}, Point2{x: width, y: ypos}], 1.0, color,)?;
+            ypos += 50.0;
+        }
+
+        let gridmesh = builder.build(ctx)?;
 
         // Add a rectangle
         let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
@@ -33,7 +54,9 @@ impl MainState {
 
         let mut tween1 = Tween::with(SQUARE_ITEM_ID, &item1.layer)
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(0.5).ease(Easing::SineInOut).repeat(7, 0.2).yoyo();
+            .duration(0.5).repeat(7, 0.2).yoyo()
+            .ease(Easing::SineInOut)
+            ;
 
         &tween1.play();
         item1.tween = Some(tween1);
@@ -44,9 +67,11 @@ impl MainState {
         // items.push(item2);
         // items.push(item3);
         // items.push(item4);
-
+        let frames = 0 as usize;
         let s = MainState {
-            items
+            gridmesh,
+            items,
+            frames
         };
         Ok(s)
     }
@@ -62,13 +87,18 @@ impl event::EventHandler for MainState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        graphics::clear(ctx, graphics::BLACK);
-
+        graphics::clear(ctx, graphics::WHITE);
+        graphics::draw(ctx, &self.gridmesh, DrawParam::default())?;
         for item in &mut self.items {
             item.render(ctx)?;
         }
 
         graphics::present(ctx)?;
+
+        self.frames += 1;
+        if (self.frames % 100) == 0 {
+            println!("FPS: {}", ggez::timer::fps(ctx));
+        }
 
         // timer::yield_now();
         Ok(())

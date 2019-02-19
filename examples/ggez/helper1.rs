@@ -13,6 +13,7 @@ use ggez::mint;
 
 use tween::*;
 
+#[allow(dead_code)]
 pub enum Shape {
     Circle(mint::Point2<f32>, f32),
     Rectangle(graphics::Rect),
@@ -64,6 +65,7 @@ impl ItemState {
         if let Some(tween) = &mut self.tween {
             tween.tick();
             if let Some(update) = tween.get_update(&self.id) {
+                // println!("update props={:?}", update.props);
                 self.layer.render_update(&update.props);
                 self.layer.render_update(&update.props);
             }
@@ -75,9 +77,7 @@ impl ItemState {
         match self.shape {
             Shape::Rectangle(_) => {
                 let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.layer.frame, self.layer.graphics.color)?;
-                let pt = mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y};
                 let drawparams = graphics::DrawParam::new()
-                    .dest(pt)
                     .rotation(self.layer.graphics.rotation as f32)
                     .offset(mint::Point2{x: 0.5, y: 0.5});
                 let _result = graphics::draw(ctx, &mesh, drawparams);

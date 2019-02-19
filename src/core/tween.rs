@@ -125,72 +125,66 @@ impl Tween {
         tween
     }
 
-    /// Function which reads the list of "to" props and finds the matching ones
-    /// already saved in self.start_props to make sure that start_props and
-    /// end_props have matching Prop types in the same order.
-    pub fn to(mut self, props:Vec<Prop>) -> Self {
-        // let prop_ids: Vec<u32> = props.iter().map(|x| x.prop_id()).collect();
+    fn fix_animators(&mut self) {
+        let mut prop_map: HashMap<u32, Prop> = HashMap::new();
+
+        // Create map of all manipulated Props in all animations
+        for animator in &mut self.animators {
+            for prop in &animator.end_state.props {
+                prop_map.insert(prop.prop_id(), prop.clone());
+            }
+        }
 
         let mut start_map: HashMap<u32, Prop> = HashMap::new();
         for prop in &self.start_props {
             start_map.insert(prop.prop_id(), prop.clone());
         }
-        let mut last_props: Vec<Prop> = Vec::new();
-        let mut end_props: Vec<Prop> = Vec::new();
+        let mut begin_props: Vec<Prop> = Vec::new();
 
-        if self.animators.len() == 0 {
-            for prop in &props {
-                // technically, it would be a bug if the corresponding prop was not found in start_props.
-                if let Some(start_prop) = start_map.get(&prop.prop_id()) {
-                    last_props.push(start_prop.clone());
-                }
-            }
-
-            let animator = Animator::create(&self.tween_id, &last_props, &props, &self.easing);
-            self.animators.push(animator);
-
-        } else {
-            if let Some(previous) = self.animators.last() {
-
-                let mut all_props: HashMap<u32, Prop> = HashMap::new();
-                let mut new_props: Vec<Prop> = Vec::new();
-
-                // Fill hashmap with last props and overwrite matching ones
-                for prop in &previous.end_state.props {
-                    all_props.insert(prop.prop_id(), prop.clone());
-                }
-                for prop in &props {
-                    all_props.insert(prop.prop_id(), prop.clone());
-                }
-
-                for (id, prop) in all_props {
-                    let last_prop = previous.end_state.get_prop_value(id);
-                    if last_prop != Prop::None {
-                        last_props.push(last_prop);
-                        end_props.push(prop.clone());
-                    } else {
-                        if let Some(start_prop) = start_map.get(&id) {
-                            last_props.push(start_prop.clone());
-                            end_props.push(prop.clone());
-
-                            // A new prop was added. Need to write this value back to all previous animators
-                            new_props.push(start_prop.clone());
-                        } else {
-                            // Ignore
-                        }
-                    }
-                }
-
-                for animator in &mut self.animators {
-                    for new_prop in &new_props {
-                        animator.start_state.props.push(new_prop.clone());
-                        animator.end_state.props.push(new_prop.clone());
-                    }
-                }
-                let animator = Animator::create(&self.tween_id, &last_props, &end_props, &self.easing);
-                self.animators.push(animator);
+        // Use prop_map as template to fill start_props with the filtered set of props
+        for (id, _) in prop_map {
+            if let Some(last_prop) = start_map.get(&id) {
+                begin_props.push(last_prop.clone());
             }
         }
+        for animator in &mut self.animators {
+            let mut end_props: Vec<Prop> = Vec::new();
+            // begin_props should already have the clean array of props
+            animator.start_state.props = begin_props.clone();
+
+            for prop in begin_props {
+                let end_prop = animator.end_state.get_prop_value(prop.prop_id());
+                if end_prop != Prop::None {
+                    end_props.push(end_prop);
+                } else {
+                    if let Some(begin_prop) = start_map.get(&prop.prop_id()) {
+                        end_props.push(begin_prop.clone());
+                    }
+                }
+            }
+            animator.end_state.props = end_props.clone();
+            begin_props = animator.end_state.props.clone();
+        }
+
+        let mut time = 0.0 as f64;
+        // If there are sequenced animators, set the start and end times
+        // so the time ranges can be evaluated when getting updates
+        println!("------------------------------------------------------------");
+        for animator in &mut self.animators {
+            animator.start_time = time;
+            animator.end_time = animator.start_time + animator.seconds;
+            time += animator.seconds;
+            println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
+        }
+        self.duration = Duration::from_float_secs(time);
+    }
+
+    /// Function which reads the list of "to" props and finds the matching ones
+    /// already saved in self.start_props to make sure that start_props and
+    /// end_props have matching Prop types in the same order.
+    pub fn to(mut self, props:Vec<Prop>) -> Self {
+        let animator = Animator::create(&self.tween_id, &self.start_props, &props, &self.easing);
+        self.animators.push(animator);
         self
     }
 
@@ -263,17 +257,7 @@ impl Tween {
 impl Playable for Tween {
 
     fn play(&mut self) {
-        let mut time = 0.0 as f64;
-        // If there are sequenced animators, set the start and end times
-        // so the time ranges can be evaluated when getting updates
-        for animator in &mut self.animators {
-            animator.start_time = time;
-            animator.end_time = animator.start_time + animator.seconds;
-            time += animator.seconds;
-            println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
-
-        }
-        self.duration = Duration::from_float_secs(time);
+        self.fix_animators();
         self.started_at = Instant::now();
         self.state = TweenState::Running;
     }
