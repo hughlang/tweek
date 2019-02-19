@@ -12,9 +12,12 @@ use ggez::event::{self, MouseButton};
 use ggez::graphics;
 use ggez::timer;
 use ggez::{Context, ContextBuilder, GameResult};
-
+use ggez::input::{gamepad, keyboard, mouse};
+// use ggez::wi
 use std::env;
 use std::path;
+// use winit::{MouseButton, MouseCursor};
+
 use tween::*;
 
 const SQUARE_ITEM_ID: usize = 100;
@@ -25,6 +28,7 @@ const TEXT_ITEM_ID: usize = 103;
 struct MainState {
     items: Vec<ItemState>,
     buttons: Vec<GGButton>,
+    frames: usize,
 }
 
 impl MainState {
@@ -49,19 +53,20 @@ impl MainState {
 
         let frame = graphics::Rect::new(50.0, 300.0, 120.0, 50.0);
         let mut button = GGButton::new(frame).with_title("Play")
-            .with_props(&vec![alpha(1.0)]);
+            .with_props(&vec![color(0xCD09AA)]);
         button.set_font(&font, &24.0, &graphics::Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&graphics::Color::from_rgb_u32(0x999999));
-        button.set_on_hover(vec![color(0xFF8920)], 0.25);
+        button.set_on_hover(vec![color(0xFF8920)], 0.0);
 
         controls.push(button);
 
         let mut items: Vec<ItemState> = Vec::new();
-        items.push(item1);
+        // items.push(item1);
 
         let s = MainState {
             items: items,
             buttons: controls,
+            frames: 0,
         };
         Ok(s)
     }
@@ -93,7 +98,12 @@ impl event::EventHandler for MainState {
 
         graphics::present(ctx)?;
 
-        timer::yield_now();
+        // self.frames += 1;
+        // if (self.frames % 10) == 0 {
+        //     println!("FPS: {}", ggez::timer::fps(ctx));
+        // }
+
+        // timer::yield_now();
         Ok(())
     }
 
@@ -102,9 +112,10 @@ impl event::EventHandler for MainState {
         &mut self,
         _ctx: &mut Context,
         _button: MouseButton,
-        _x: f32,
-        _y: f32,
+        x: f32,
+        y: f32,
     ) {
+        println!("Mouse down at: x={} y={}", x, y);
     }
 
     /// A mouse button was released
@@ -119,10 +130,12 @@ impl event::EventHandler for MainState {
 
     /// The mouse was moved; it provides both absolute x and y coordinates in the window,
     /// and relative x and y coordinates compared to its last position.
-    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, _dx: f32, _dy: f32) {
+    fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32, _dx: f32, _dy: f32) {
         for button in &mut self.buttons {
             if button.handle_mouse_at(x, y) {
-
+                mouse::set_cursor_type(ctx, mouse::MouseCursor::Hand);
+            } else {
+                mouse::set_cursor_type(ctx, mouse::MouseCursor::Default);
             }
             // control.render(ctx)?;
         }

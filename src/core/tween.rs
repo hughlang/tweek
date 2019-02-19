@@ -349,6 +349,7 @@ pub trait Tweenable {
     fn get_prop(&self, prop: &Prop) -> Prop;
     fn apply(&mut self, prop: &Prop);
     fn render_update(&mut self, props: &Vec<Prop>) {
+        // println!("render update ={:?}", props);
         for prop in props {
             self.apply(prop);
         }

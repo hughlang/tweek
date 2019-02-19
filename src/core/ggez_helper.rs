@@ -218,21 +218,33 @@ impl GGDisplayable for GGButton {
                     // if self.on_hover.len() > 0 {
                     self.mouse_state = MouseState::Hover;
                     println!("Mouse hover at: x={} y={}", x, y);
-                    let mut tween = Tween::with(0, &self.layer)
-                        .to(vec![color(0xFF8920)])
-                        .duration(0.2);
-                    &tween.play();
-                    self.layer.animation = Some(tween);
+                    println!("Layer frame = {:?}", self.layer.frame);
 
-                    // }
+                    if let Some(transition) = &self.on_hover {
+                        if transition.seconds > 0.0 {
+                            let mut tween = Tween::with(0, &self.layer)
+                                .to(transition.props.clone())
+                                .duration(transition.seconds);
+                            &tween.play();
+                            self.layer.animation = Some(tween);
+                        } else {
+                            self.layer.render_update(&transition.props.clone());
+                        }
+                    }
                 },
                 _ => (),
             }
+            return true;
         } else {
-            // Start reverse animation
-            self.layer.render_update(&self.get_defaults());
-            self.mouse_state = MouseState::None;
-            self.layer.animation = None;
+            match self.mouse_state {
+                MouseState::Hover => {
+                    println!("Mouse out at: x={} y={}", x, y);
+                    self.layer.render_update(&self.get_defaults());
+                    self.mouse_state = MouseState::None;
+                    self.layer.animation = None;
+                },
+                _ => (),
+            }
         }
         false
     }

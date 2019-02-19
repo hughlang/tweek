@@ -28,6 +28,10 @@ path = "examples/ggez/ggtransform.rs"
 name = "ggbuttons"
 path = "examples/ggez/ggbuttons.rs"
 
+[[bin]]
+name = "ggscreen"
+path = "examples/ggez/ggscreen.rs"
+
 [features]
 default = []
 wasm = []
