@@ -20,19 +20,19 @@ pub trait Playable {
     fn stop(&mut self);
     fn pause(&mut self);
     fn reset(&mut self);
-    fn sync(&mut self, ctx: &mut TKContext);
+    fn sync(&mut self, ctx: &mut TKState);
     // fn resume(&mut self);
     // fn seek(&mut self, pos: f64);
 }
 
-/// This is an experimental trait with the intention of passing around a mutable TKContext
-/// which other code can use. TKContext has a shared tween_store where all tweens are registered.
+/// This is an experimental trait with the intention of passing around a mutable TKState
+/// which other code can use. TKState has a shared tween_store where all tweens are registered.
 /// Some ideas
 /// * allow other code to add callback functions that execute when specific events happen?
 ///
 pub trait TweekAware {
-    fn tk_play(&mut self, ctx: &mut TKContext);
-    fn tk_tick(&mut self, ctx: &mut TKContext);
+    fn tk_play(&mut self, ctx: &mut TKState);
+    fn tk_tick(&mut self, ctx: &mut TKState);
 
 }
 
@@ -49,15 +49,15 @@ pub enum TKEvent {
 	// case completed
 }
 
-pub struct TKContext {
+pub struct TKState {
     pub time_scale: f64,
     pub events: Vec<TKEvent>,
     tween_store: HashMap<usize, TweenRef>,
 }
 
-impl TKContext {
+impl TKState {
     pub fn new() -> Self {
-        TKContext {
+        TKState {
             time_scale: 1.0,
             events: Vec::new(),
             tween_store: HashMap::new(),
@@ -94,7 +94,7 @@ impl TKContext {
 /// The tween_db is an attempt to centralize ownership of Tweens in one place
 /// when using a Timeline. TBD
 pub struct Tweek {
-    subscribers: Vec<Rc<Fn(TKEvent, &mut TKContext) + 'static>>,
+    subscribers: Vec<Rc<Fn(TKEvent, &mut TKState) + 'static>>,
     timelines: Vec<Rc<RefCell<Timeline>>>,
 }
 
@@ -113,7 +113,7 @@ impl Tweek {
     /// See: https://www.ralfj.de/projects/rust-101/part12.html
     /// This method should be called by a Timeline that wants to receive callbacks from
     /// Tweek.
-    pub fn add_subscriber<C>(&mut self, cb: C) where C: Fn(TKEvent, &mut TKContext) + 'static {
+    pub fn add_subscriber<C>(&mut self, cb: C) where C: Fn(TKEvent, &mut TKState) + 'static {
         println!("Adding subscriber");
         self.subscribers.push(Rc::new(cb));
     }
@@ -199,7 +199,7 @@ impl Playable for Tweek {
         None
     }
 
-    fn sync(&mut self, ctx: &mut TKContext) {
+    fn sync(&mut self, ctx: &mut TKState) {
         for tl in &self.timelines {
             let mut timeline = tl.borrow_mut();
 			(&mut *timeline).sync(ctx);

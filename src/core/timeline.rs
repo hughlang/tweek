@@ -107,7 +107,7 @@ impl Timeline {
 		self
 	}
 
-	// fn setup(self, ctx: &mut TKContext) -> Self {
+	// fn setup(self, ctx: &mut TKState) -> Self {
 	// 	tweek.add_subscriber( |e, g| {
     //         println!("Tweek subscriber: event={:?}", e);
 	// 		match e {
@@ -214,7 +214,7 @@ impl Playable for Timeline {
 		events
 	}
 
-    fn sync(&mut self, ctx: &mut TKContext) {
+    fn sync(&mut self, ctx: &mut TKState) {
 		for (_, range) in &self.children {
 			let mut tween = range.tween.borrow_mut();
 			(&mut *tween).sync(ctx);

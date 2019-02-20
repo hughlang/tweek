@@ -19,7 +19,6 @@ const SQUARE_ITEM_ID: usize = 100;
 
 struct MainState {
     tweek: Tweek,
-    // context: TKContext,
     items: Vec<ItemState>,
 }
 
@@ -48,7 +47,6 @@ impl MainState {
         }
 
         let mut tweek = Tweek::new();
-        // let context = TKContext::new();
 
         let timeline = Timeline::create(tweens)
             // .stagger(0.2)
