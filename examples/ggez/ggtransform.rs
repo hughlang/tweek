@@ -4,7 +4,7 @@ mod helper1;
 use helper1::*;
 
 extern crate ggez;
-extern crate tween;
+extern crate tweek;
 
 use ggez::conf;
 use ggez::event;
@@ -15,7 +15,7 @@ use ggez::mint;
 
 use std::env;
 use std::path;
-use tween::prelude::*;
+use tweek::prelude::*;
 
 const SQUARE_ITEM_ID: usize = 100;
 const ROUND_ITEM_ID: usize = 101;

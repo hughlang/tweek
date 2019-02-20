@@ -5,13 +5,13 @@
 ///
 
 extern crate ggez;
-extern crate tween;
+extern crate tweek;
 
 use ggez::graphics;
 use ggez::{Context, GameResult};
 use ggez::mint;
 
-use tween::prelude::*;
+use tweek::prelude::*;
 
 #[allow(dead_code)]
 pub enum Shape {

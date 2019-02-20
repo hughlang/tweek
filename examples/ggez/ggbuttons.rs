@@ -5,7 +5,7 @@ mod helper1;
 use helper1::*;
 
 extern crate ggez;
-extern crate tween;
+extern crate tweek;
 
 use ggez::conf;
 use ggez::event::{self, MouseButton};
@@ -16,7 +16,7 @@ use ggez::input::{ mouse};
 use std::env;
 use std::path;
 
-use tween::prelude::*;
+use tweek::prelude::*;
 
 const SQUARE_ITEM_ID: usize = 100;
 

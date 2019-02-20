@@ -1,4 +1,4 @@
-#![crate_name = "tween"]
+#![crate_name = "tweek"]
 #![crate_type = "lib"]
 
 #![feature(duration_float)]

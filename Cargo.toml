@@ -1,11 +1,11 @@
 [package]
-name = "tweenkit"
+name = "tweek-rust"
 version = "0.1.0"
 authors = ["Hugh Lang <hughlang@gmail.com>"]
 edition = "2018"
 
 [lib]
-name = "tween"
+name = "tweek"
 path = "src/lib.rs"
 
 [[bin]]
