@@ -10,8 +10,6 @@ use crate::core::*;
 
 use ggez::graphics::{self, DrawParam};
 use ggez::mint;
-use ggez::{Context, GameResult};
-use std::{collections::HashMap};
 
 
 //-- Base -----------------------------------------------------------------------

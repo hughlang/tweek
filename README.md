@@ -1,16 +1,25 @@
-# Welcome to TweenRS
+# Tweek: A Tween Animation Kit for Rust
+
+What's a "Tween"? I can tell you it definitely isn't (this)[https://www.merriam-webster.com/dictionary/tween]. 
+
 
 This is my attempt to write a Tween animation library for Rust.
 
+
+
 ## Examples
 
-* cargo run --bin ggtween1
-* cargo run --bin ggease
+* cargo run --bin ggmix
+* cargo run --bin ggsequence
+
+
+## UI Components and Widgets
+
+The ggez_support folder has a number of custom components which are mostly designed to help with the examples. However, they also show how far you can go in building custom UIs with Tweek using GGEZ.
 
 
 ## Developer Notes
 
-* This project currently relies on a local checkout of rust-sdl2 in the same parent directory as this project.
 * Install rustfmt: https://github.com/rust-lang/rustfmt
   * Run it with `cargo fmt`
 

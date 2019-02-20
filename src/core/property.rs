@@ -84,14 +84,14 @@ impl UIState {
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct Transition {
+pub struct UITransition {
     pub props: Vec<Prop>,
     pub seconds: f64,
 }
 
-impl Transition {
+impl UITransition {
     pub fn new(props: Vec<Prop>, seconds: f64) -> Self {
-        Transition {
+        UITransition {
             props,
             seconds,
         }

@@ -1,7 +1,7 @@
-pub use self::ggez_helper::*;
+pub use self::base::*;
 pub use self::controls::*;
 pub use self::tools::*;
 
-mod ggez_helper;
+mod base;
 mod controls;
 mod tools;

@@ -5,12 +5,12 @@ extern crate ggez;
 
 use crate::core::*;
 
-use ggez::graphics::{self, DrawParam};
+use ggez::graphics::{self, DrawParam, Color};
 use ggez::mint;
 use ggez::{Context, GameResult};
 use std::{collections::HashMap};
 
-use super::ggez_helper::*;
+use super::base::*;
 
 
 pub enum MouseState {
@@ -30,6 +30,20 @@ pub trait GGDisplayable {
         false
     }
 }
+
+pub trait TKResponder {
+    fn handle_mouse_move(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
+        false
+    }
+    fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
+        false
+    }
+    fn handle_mouse_up(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
+        false
+    }
+}
+
+
 
 //-- GGLabel -----------------------------------------------------------------------
 
@@ -96,8 +110,11 @@ pub struct GGButton {
     pub layer: GGLayer,
     pub label: Option<GGLabel>,
     pub defaults: HashMap<u32, Prop>,
-    pub on_hover: Option<Transition>,
+    pub hover_animation: Option<UITransition>,
     pub mouse_state: MouseState,
+    pub onclick: Option<Box<FnMut(TKAction, &mut TKState) + 'static>>,
+    callbacks: Vec<Box<FnMut(TKAction, &mut TKState) + 'static>>,
+
 }
 
 impl GGButton {
@@ -107,8 +124,10 @@ impl GGButton {
             layer: layer,
             label: None,
             defaults: HashMap::new(),
-            on_hover: None,
+            hover_animation: None,
             mouse_state: MouseState::None,
+            onclick: None,
+            callbacks: Vec::new(),
         }
     }
 
@@ -146,9 +165,18 @@ impl GGButton {
     }
 
     pub fn set_on_hover(&mut self, props: Vec<Prop>, seconds: f64) {
-        let transition = Transition::new(props, seconds);
-        self.on_hover = Some(transition);
+        let transition = UITransition::new(props, seconds);
+        self.hover_animation = Some(transition);
     }
+
+    pub fn set_onclick<C>(&mut self, cb: C) where C: FnMut(TKAction, &mut TKState) + 'static {
+        self.onclick = Some(Box::new(cb));
+    }
+
+    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKAction, &mut TKState) + 'static {
+        self.callbacks.push(Box::new(cb));
+    }
+
 
 }
 
@@ -190,7 +218,7 @@ impl GGDisplayable for GGButton {
                     println!("Mouse hover at: x={} y={}", x, y);
                     println!("Layer frame = {:?}", self.layer.frame);
 
-                    if let Some(transition) = &self.on_hover {
+                    if let Some(transition) = &self.hover_animation {
                         if transition.seconds > 0.0 {
                             let mut tween = Tween::with(0, &self.layer)
                                 .to(transition.props.clone())
@@ -220,3 +248,87 @@ impl GGDisplayable for GGButton {
     }
 
 }
+
+impl TKResponder for GGButton {
+    // TODO: handle mouse down/up actions
+    fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
+        false
+    }
+    fn handle_mouse_up(&mut self, x: f32, y: f32, _state: &mut TKState) -> bool {
+        if self.layer.frame.contains(mint::Point2{ x, y }) {
+            if let Some(cb) = &self.onclick {
+                (&*cb);
+            }
+        }
+        false
+    }
+
+}
+
+//-- GGProgressBar -----------------------------------------------------------------------
+
+pub struct GGProgressBar {
+    pub bg_layer: GGLayer,
+    pub fg_layer: GGLayer,
+    pub bg_image: Option<graphics::Mesh>,
+    pub progress: f32,      // between 0.0 and 1.0
+}
+
+impl GGProgressBar {
+    pub fn new(frame: graphics::Rect) -> Self {
+        let layer1 = GGLayer::new(frame, DrawParam::new().color(graphics::BLACK));
+        let layer2 = GGLayer::new(frame, DrawParam::new().color(graphics::WHITE));
+
+        GGProgressBar {
+            bg_layer: layer1,
+            fg_layer: layer2,
+            bg_image: None,
+            progress: 0.30,   // set nice default
+        }
+    }
+
+    /// This should be called in the update() part of the run loop with the latest
+    /// time-elapsed percentage
+    pub fn set_progress(&mut self, value: f32) {
+        // Must be between 0.0 and 1.0
+        self.progress = value;
+        self.fg_layer.frame.w = self.bg_layer.frame.w * self.progress;
+    }
+
+    pub fn set_track_color(&mut self, color: Color) {
+        self.bg_layer.graphics.color = color;
+    }
+
+    pub fn set_progress_color(&mut self, color: Color) {
+        self.fg_layer.graphics.color = color;
+    }
+}
+
+impl GGDisplayable for GGProgressBar {
+    fn update(&mut self) -> GameResult {
+        Ok(())
+    }
+    fn render(&mut self, ctx: &mut Context) -> GameResult {
+        if let Some(bg) = &self.bg_image {
+            graphics::draw(ctx, bg, self.bg_layer.graphics)?;
+        } else {
+            let mesh = graphics::Mesh::new_rectangle(
+                ctx,
+                graphics::DrawMode::fill(),
+                self.bg_layer.frame,
+                self.bg_layer.graphics.color,
+            )?;
+            graphics::draw(ctx, &mesh, self.bg_layer.graphics)?;
+            self.bg_image = Some(mesh);
+        }
+        let mesh = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            self.fg_layer.frame,
+            self.fg_layer.graphics.color,
+        )?;
+        graphics::draw(ctx, &mesh, self.fg_layer.graphics)?;
+        Ok(())
+    }
+}
+

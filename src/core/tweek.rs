@@ -49,8 +49,17 @@ pub enum TKEvent {
 	// case completed
 }
 
+#[derive(Copy, Clone, Debug)]
+pub enum TKAction {
+    Click,
+    Hover,
+}
+
+
 pub struct TKState {
     pub time_scale: f64,
+    pub elapsed_time: f32,
+    pub total_time: f32,
     pub events: Vec<TKEvent>,
     tween_store: HashMap<usize, TweenRef>,
 }
@@ -59,6 +68,8 @@ impl TKState {
     pub fn new() -> Self {
         TKState {
             time_scale: 1.0,
+            elapsed_time: 0.0,
+            total_time: 0.0,
             events: Vec::new(),
             tween_store: HashMap::new(),
         }

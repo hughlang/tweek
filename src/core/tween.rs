@@ -12,7 +12,7 @@ use super::animator::*;
 use super::ease::*;
 use super::tweek::*;
 
-//-- Base -----------------------------------------------------------------------
+//-- Helpers -----------------------------------------------------------------------
 
 pub fn position(x: f64, y: f64) -> Prop {
     Prop::Position(Point2D::new(x, y))
@@ -37,6 +37,18 @@ pub fn rotate(degrees: f64) -> Prop {
     Prop::Rotate(FloatProp::new(degrees.to_radians()))
 }
 
+//-- Base -----------------------------------------------------------------------
+
+pub trait Tweenable {
+    fn get_prop(&self, prop: &Prop) -> Prop;
+    fn apply(&mut self, prop: &Prop);
+    fn render_update(&mut self, props: &Vec<Prop>) {
+        for prop in props {
+            self.apply(prop);
+        }
+    }
+}
+
 /// The TweenState represents the animation state machine.
 #[derive(PartialEq)]
 pub enum TweenState {
@@ -52,6 +64,7 @@ pub enum AnimType {
     Normal,
     Yoyo,
 }
+
 
 //-- Main -----------------------------------------------------------------------
 
@@ -369,16 +382,6 @@ impl Playable for Tween {
 
 //-- Support -----------------------------------------------------------------------
 
-pub trait Tweenable {
-    fn get_prop(&self, prop: &Prop) -> Prop;
-    fn apply(&mut self, prop: &Prop);
-    fn render_update(&mut self, props: &Vec<Prop>) {
-        for prop in props {
-            self.apply(prop);
-        }
-    }
-}
-
 impl Hash for Tween {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.global_id.hash(state);
@@ -393,3 +396,8 @@ impl PartialEq for Tween {
 
 impl Eq for Tween {}
 
+impl Drop for Tween {
+    fn drop(&mut self) {
+        println!("Dropping: {}", self.tween_id);
+    }
+}

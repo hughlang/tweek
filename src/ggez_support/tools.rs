@@ -8,11 +8,11 @@ use crate::core::*;
 
 use ggez::graphics::{self, Color};
 use ggez::mint::Point2;
-use ggez::{Context, GameResult, GameError};
+use ggez::{Context, GameResult};
 // use std::{collections::HashMap};
 
 #[allow(unused_imports)]
-use super::ggez_helper::*;
+use super::base::*;
 use super::controls::*;
 
 pub struct GGTools {
@@ -38,12 +38,14 @@ impl GGTools {
         Ok(gridmesh)
     }
 
+    /// At a minimum, a progress bar is two rectangles that show the timeline progress of
+    /// the current animations. It depends on TKState for information, I guess?
     pub fn build_progress_bar(ctx: &mut Context, state: &mut TKState) -> GameResult {
 
         Ok(())
     }
 
-    pub fn build_play_button(ctx: &mut Context, frame: graphics::Rect) -> GameResult<GGButton> {
+    pub fn build_play_button(ctx: &mut Context, frame: graphics::Rect, onclick: Box<FnMut(TKEvent, &mut TKState) + 'static>) -> GameResult<GGButton> {
         let mut button = GGButton::new(frame).with_title("Play")
             .with_props(&vec![color(0xCD09AA)]);
         let font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
