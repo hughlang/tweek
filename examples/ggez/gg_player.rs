@@ -21,6 +21,7 @@ use tweek::prelude::*;
 const SQUARE_ITEM_ID: usize = 100;
 
 struct MainState {
+    tweek: Tweek,
     tk_state: TKState,
     buttons: Vec<GGButton>,
     progress_bar: GGProgressBar,
@@ -29,29 +30,49 @@ struct MainState {
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         // Add a rectangle
-        let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
-        let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
-        item1.layer.graphics.color = Color::from_rgb_u32(0x333333);
 
-        let mut tween1 = Tween::with(SQUARE_ITEM_ID, &item1.layer)
-            .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(1.0)
-            .repeat(7, 0.25)
-            .yoyo();
 
-        &tween1.play();
-        item1.tween = Some(tween1);
+        let mut ypos = 50.0 as f32;
+        let mut items: Vec<ItemState> = Vec::new();
+        let mut tweens: Vec<Tween> = Vec::new();
+        for i in 0..4 {
+            let item_id = SQUARE_ITEM_ID + i as usize;
+            let rect = graphics::Rect::new(50.0, ypos, 50.0, 50.0);
+            let mut item1 = ItemState::new(item_id, Shape::Rectangle(rect))?;
+            item1.layer.graphics.color = graphics::Color::from_rgb_u32(0x333333);
+
+            let tween1 = Tween::with(item_id, &item1.layer)
+                .to(vec![position(400.0, ypos as f64), size(100.0, 100.0)])
+                .duration(0.5);
+
+                //.repeat(3, 0.25)
+            ypos += 120.0;
+            items.push(item1);
+            tweens.push(tween1)
+        }
+
+        let mut tweek = Tweek::new();
+
+        let timeline = Timeline::add(tweens)
+            // .stagger(0.2)
+            .align(TweenAlign::Sequence)
+            ;
+
+        tweek.add_timeline(timeline);
+        &tweek.play();
+
 
         let font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
 
         let mut controls: Vec<GGButton> = Vec::new();
 
         let frame = graphics::Rect::new(300.0, 300.0, 120.0, 50.0);
-        let mut button = GGButton::new(frame).with_title("Play");
-            // .with_props(&vec![color(HexColors::Lavender)]);
+        let mut button = GGButton::new(frame).with_title("Play")
+            .with_props(&vec![color(HexColors::Lavender)]);
         button.set_font(&font, &24.0, &Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&Color::from_rgb_u32(0x999999));
         button.set_hover_animation(vec![color(0xFF8920)], 0.1);
+
         button.set_onclick(move |_action, _state| {
             // println!("Button onclick: action={:?}", action);
 
@@ -67,6 +88,7 @@ impl MainState {
         let tk_state = TKState::new();
 
         let s = MainState {
+            tweek: tweek,
             tk_state: tk_state,
             progress_bar: progress,
             buttons: controls,
@@ -77,6 +99,11 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
+
+        self.tweek.update(&mut self.tk_state);
+        let progress = self.tk_state.elapsed_time / self.tk_state.total_time;
+        self.progress_bar.set_progress(progress as f32);
+
         for control in &mut self.buttons {
             control.update()?;
         }

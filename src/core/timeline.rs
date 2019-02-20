@@ -21,7 +21,7 @@ pub struct TweenRange {
 
 impl TweenRange {
 	fn new(tween: Tween, start: f64) -> Self {
-		let end = start + &tween.total_duration();
+		let end = start + &tween.total_time();
 		TweenRange {
 			tween: Rc::new(RefCell::new(tween)),
 			start: start,
@@ -41,8 +41,9 @@ pub struct Timeline {
     children: HashMap<usize, TweenRange>,
 	tween_ids: Vec<usize>,
     tl_start: Instant,
-    pub repeat_count: i32, // -1 = forever
+    pub repeat_count: u32,
     pub repeat_delay: Duration,
+	pub repeat_forever: bool,
 }
 
 impl Timeline {
@@ -53,10 +54,11 @@ impl Timeline {
 			tl_start: Instant::now(),
             repeat_count: 0,
             repeat_delay: Duration::from_secs(0),
+			repeat_forever: false,
 		}
 	}
 
-	pub fn create(tweens: Vec<Tween>) -> Self {
+	pub fn add(tweens: Vec<Tween>) -> Self {
 		let mut timeline = Timeline::new();
 		let start = 0.0 as f64;
 
@@ -74,7 +76,7 @@ impl Timeline {
 		for id in &self.tween_ids {
 			if let Some(range) = self.children.get_mut(&id) {
 				let tween = range.tween.borrow();
-				let total_secs = (&*tween).total_duration();
+				let total_secs = (&*tween).total_time();
 				range.start = start;
 				range.end = range.start + total_secs;
 				println!("align start={} end={}", range.start, range.end);
@@ -98,7 +100,7 @@ impl Timeline {
 		for (index, id) in self.tween_ids.iter().enumerate() {
 			if let Some(range) = self.children.get_mut(&id) {
 				let mut tween = range.tween.borrow_mut();
-				let total_secs = (&mut *tween).total_duration();
+				let total_secs = (&mut *tween).total_time();
 				range.start = index as f64 * offset;
 				range.end = range.start + total_secs;
 				println!("stagger start={} end={}", range.start, range.end);
@@ -107,32 +109,7 @@ impl Timeline {
 		self
 	}
 
-	// fn setup(self, ctx: &mut TKState) -> Self {
-	// 	tweek.add_subscriber( |e, g| {
-    //         println!("Tweek subscriber: event={:?}", e);
-	// 		match e {
-	// 			TKEvent::Completed(id) => {
-	// 				// if let Some(tween) = self.children.get(&id) {
-
-	// 				// }
-	// 				// &self.play();
-					// for (i, range) in &self.children {
-					// 	println!("play – {}", i);
-					// 	let elapsed = &self.tl_start.elapsed().as_float_secs();
-					// 	if range.start < elapsed && range.end > elapsed {
-					// 		let mut tween = range.tween.borrow_mut();
-					// 		(&mut *tween).play();
-					// 	}
-					// }
-
-	// 			},
-	// 			_ => (),
-	// 		}
-    //     });
-	// 	self
-	// }
-
-    pub fn repeat(mut self, count: i32, delay: f64) -> Self {
+    pub fn repeat(mut self, count: u32, delay: f64) -> Self {
         self.repeat_count = count;
         self.repeat_delay = Duration::from_float_secs(delay);
         self
@@ -142,15 +119,13 @@ impl Timeline {
 		println!("notify event={:?}", event);
 	}
 
-	// pub fn get_total_duration(&self) -> f64 {
-	// 	// let mut max = 0 as f64;
-	// 	// for range in self.children {
-
-	// 	// }
-	// 	let x = self.children.values().max_by_key(|v| v.end );
-
-
-	// }
+	pub fn total_time(&self) -> f64 {
+		let floats: Vec<f64> = self.children.values().map(|x| x.end).collect();
+		if let Some(max) = floats.iter().cloned().max_by(|a, b| a.partial_cmp(b).expect("Tried to compare a NaN")) {
+			return max;
+		}
+		0.0
+	}
 
 }
 
@@ -172,6 +147,7 @@ impl Playable for Timeline {
 		}
 	}
 
+	// Deprecate this to a no-op
     fn tick(&mut self) -> Vec<TKEvent> {
         let mut events: Vec<TKEvent> = Vec::new();
 		for (_, range) in &self.children {
@@ -200,7 +176,7 @@ impl Playable for Timeline {
 				TKEvent::Completed(id) => {
 					// Decide: repeat?
 					println!("Completed={}", id);
-					if let Some(range) = &self.children.get(id) {
+					if let Some(_range) = &self.children.get(id) {
 
 						// self.reset();
 						// let mut tween = range.tween.borrow_mut();
@@ -245,6 +221,36 @@ impl Playable for Timeline {
         None
     }
 
+}
+
+#[allow(unused_variables)]
+impl TimelineAware for Timeline {
+	/// Purpose: Tell each child tween to run tick() method and provide
+	/// information updates to TKState
+    fn update(&mut self, ctx: &mut TKState) {
+		for (_, range) in &self.children {
+			let elapsed = self.tl_start.elapsed().as_float_secs();
+			if range.start <= elapsed && range.end > elapsed {
+				let mut tween = range.tween.borrow_mut();
+				match tween.state {
+					TweenState::Idle | TweenState::Pending => {
+						(&mut *tween).play();
+					},
+					_ => {
+						let mut events = (&mut *tween).tick();
+						ctx.events.append(&mut events);
+					}
+				}
+			} else {
+				let mut tween = range.tween.borrow_mut();
+				let mut events = (&mut *tween).tick();
+				ctx.events.append(&mut events);
+			}
+		}
+		ctx.elapsed_time = self.tl_start.elapsed().as_float_secs();
+		ctx.total_time = self.total_time();
+
+    }
 }
 
 //-- Support -----------------------------------------------------------------------

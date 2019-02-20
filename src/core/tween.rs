@@ -84,7 +84,7 @@ pub struct Tween {
     pub anim_type: AnimType,
     start_props: Vec<Prop>,
     animators: Vec<Animator>,
-    callbacks: Vec<Box<FnMut(TKEvent, &mut TKState) + 'static>>,
+    callbacks: Vec<Box<FnMut(TKEvent, &mut TKState) + 'static>>, // Don't need this.
 }
 
 impl Tween {
@@ -176,7 +176,7 @@ impl Tween {
         self
     }
 
-    pub fn ease(mut self, ease: Ease) -> Self {
+    pub fn timing(mut self, ease: Ease) -> Self {
         if self.animators.len() > 0 {
             if let Some(animator) = self.animators.last_mut() {
                 animator.ease = ease;
@@ -204,7 +204,7 @@ impl Tween {
         self.callbacks.push(Box::new(cb));
     }
 
-    pub fn total_duration(&self) -> f64 {
+    pub fn total_time(&self) -> f64 {
         let mut time = 0.0 as f64;
         for animator in &self.animators {
             time += animator.seconds;
@@ -237,7 +237,7 @@ impl Tween {
     fn print_timeline(&self) {
         // const MAX_WIDTH = 80; // ascii width
         const LEAD_WIDTH: usize = 10;
-        let total_time = self.total_duration();
+        let total_time = self.total_time();
         let interval = 0.1 as f64;
         println!("x={} interval={}", total_time, interval);
         let width = LEAD_WIDTH + (total_time / interval).floor() as usize + self.animators.len();
@@ -353,7 +353,7 @@ impl Playable for Tween {
         return self.update();
     }
 
-    fn sync(&mut self, ctx: &mut TKState) {
+    fn sync(&mut self, _ctx: &mut TKState) {
 
     }
 
@@ -367,6 +367,7 @@ impl Playable for Tween {
 
     fn reset(&mut self) {
         if self.anim_type == AnimType::Yoyo {
+            // Q: What is the logic here?
             if self.time_scale > 0.0 {
                 self.time_scale *= -1.0;
             } else {

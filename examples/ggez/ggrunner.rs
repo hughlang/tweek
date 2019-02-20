@@ -48,7 +48,7 @@ impl MainState {
 
         let mut tweek = Tweek::new();
 
-        let timeline = Timeline::create(tweens)
+        let timeline = Timeline::add(tweens)
             // .stagger(0.2)
             .align(TweenAlign::Sequence)
             ;

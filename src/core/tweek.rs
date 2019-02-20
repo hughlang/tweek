@@ -25,16 +25,6 @@ pub trait Playable {
     // fn seek(&mut self, pos: f64);
 }
 
-/// This is an experimental trait with the intention of passing around a mutable TKState
-/// which other code can use. TKState has a shared tween_store where all tweens are registered.
-/// Some ideas
-/// * allow other code to add callback functions that execute when specific events happen?
-///
-pub trait TweekAware {
-    fn tk_play(&mut self, ctx: &mut TKState);
-    fn tk_tick(&mut self, ctx: &mut TKState);
-
-}
 
 #[derive(Copy, Clone, Debug)]
 pub enum TKEvent {
@@ -58,8 +48,8 @@ pub enum TKAction {
 
 pub struct TKState {
     pub time_scale: f64,
-    pub elapsed_time: f32,
-    pub total_time: f32,
+    pub elapsed_time: f64,
+    pub total_time: f64,
     pub events: Vec<TKEvent>,
     tween_store: HashMap<usize, TweenRef>,
 }
@@ -216,5 +206,25 @@ impl Playable for Tweek {
 			(&mut *timeline).sync(ctx);
         }
     }
+}
 
+/// This is an experimental trait with the intention of passing around a mutable TKState
+/// which other code can use. TKState has a shared tween_store where all tweens are registered.
+/// Some ideas
+/// * allow other code to add callback functions that execute when specific events happen?
+///
+pub trait TimelineAware {
+    // fn tk_play(&mut self, ctx: &mut TKState);
+    fn update(&mut self, ctx: &mut TKState);
+
+}
+
+impl TimelineAware for Tweek {
+
+    fn update(&mut self, ctx: &mut TKState) {
+        for tl in &self.timelines {
+            let mut timeline = tl.borrow_mut();
+            (&mut *timeline).update(ctx);
+        }
+    }
 }
