@@ -48,16 +48,25 @@ impl Ease {
     pub fn get_ratio(self, p: f32) -> f32 {
         match self {
             Ease::Linear => p,
-            Ease::SineIn => -1.0 * (p * PI / 2.0).cos() + 1.0,
-            Ease::SineOut => (p * PI / 2.0).sin(),
-            Ease::SineInOut => -0.5 * (PI * p).cos() - 1.0,
+            Ease::SineIn => {
+                // AS3: -Math.cos(p * _HALF_PI) + 1;
+                -1.0 * (p * PI / 2.0).cos() + 1.0
+            },
+            Ease::SineOut => {
+                // AS3: Math.sin(p * _HALF_PI);
+                (p * PI / 2.0).sin()
+            },
+            Ease::SineInOut => {
+                // AS3: -0.5 * (Math.cos(Math.PI * p) - 1);
+                -0.5 * ((PI * p).cos() - 1.0)
+            },
             Ease::ExpoIn => {
                 // AS3: Math.pow(2, 10 * (p - 1)) - 0.001;
-                return 2.0_f32.powf(10.0 * (p - 1.0)) - 0.001;
+                2.0_f32.powf(10.0 * (p - 1.0)) - 0.001
             }
             Ease::ExpoOut => {
                 // AS3: 1 - Math.pow(2, -10 * p);
-                return 1.0 - 2.0_f32.powf(-10.0 * p);
+                1.0 - 2.0_f32.powf(-10.0 * p)
             }
             Ease::ExpoInOut => {
                 // AS3: ((p*=2) < 1) ? 0.5 * Math.pow(2, 10 * (p - 1)) : 0.5 * (2 - Math.pow(2, -10 * (p - 1)));
@@ -236,7 +245,10 @@ impl Ease {
                     return AMPLITUDE * 2.0_f32.powf(-10.0 * p) * ((p - curve) * PI_2 / period).sin() * 0.5 + 1.0;
                 }
             },
-            _ => 0.0,
+            _ => {
+                println!("************* Not implemented: {:?}", self);
+                0.0
+            },
         }
 
     }
