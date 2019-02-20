@@ -22,8 +22,8 @@ const SQUARE_ITEM_ID: usize = 100;
 
 struct MainState {
     tk_state: TKState,
-    items: Vec<ItemState>,
     buttons: Vec<GGButton>,
+    progress_bar: GGProgressBar,
 }
 
 impl MainState {
@@ -57,6 +57,9 @@ impl MainState {
         });
 
         controls.push(button);
+        let frame = graphics::Rect::new(50.0, 500.0, 500.0, 8.0);
+        let progress = GGProgressBar::new(frame);
+
 
         let items: Vec<ItemState> = Vec::new();
         // items.push(item1);
@@ -64,7 +67,7 @@ impl MainState {
 
         let s = MainState {
             tk_state: tk_state,
-            items: items,
+            progress_bar: progress,
             buttons: controls,
         };
         Ok(s)
@@ -73,10 +76,6 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        for item in &mut self.items {
-            item.update()?;
-        }
-
         for control in &mut self.buttons {
             control.update()?;
         }
@@ -86,10 +85,6 @@ impl event::EventHandler for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, graphics::BLACK);
-
-        for item in &mut self.items {
-            item.render(ctx)?;
-        }
 
         for control in &mut self.buttons {
             control.render(ctx)?;
