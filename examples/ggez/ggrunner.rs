@@ -13,7 +13,8 @@ use ggez::mint;
 
 use std::env;
 use std::path;
-use tween::*;
+use tween::prelude::*;
+
 
 const SQUARE_ITEM_ID: usize = 100;
 

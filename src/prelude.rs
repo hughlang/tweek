@@ -1,4 +1,5 @@
 pub use crate::{
-    easing::*,
+    core::*,
+    ggez_support::*,
 };
 

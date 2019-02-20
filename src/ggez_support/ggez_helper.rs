@@ -6,15 +6,17 @@
 ///
 extern crate ggez;
 
+use crate::core::*;
+
 use ggez::graphics::{self, DrawParam};
 use ggez::mint;
 use ggez::{Context, GameResult};
 use std::{collections::HashMap};
 // use std::{time::{Duration,Instant}};
 
-use super::property::*;
-use super::tween::*;
-use super::tweek::*;
+// use super::property::*;
+// use super::tween::*;
+// use super::tweek::*;
 
 //-- Base -----------------------------------------------------------------------
 

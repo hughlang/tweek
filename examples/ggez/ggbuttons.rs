@@ -12,11 +12,11 @@ use ggez::event::{self, MouseButton};
 use ggez::graphics;
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::input::{ mouse};
-// use ggez::wi
+
 use std::env;
 use std::path;
 
-use tween::*;
+use tween::prelude::*;
 
 const SQUARE_ITEM_ID: usize = 100;
 

@@ -11,7 +11,7 @@ use ggez::graphics;
 use ggez::{Context, GameResult};
 use ggez::mint;
 
-use tween::*;
+use tween::prelude::*;
 
 #[allow(dead_code)]
 pub enum Shape {
