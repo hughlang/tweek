@@ -5,6 +5,8 @@ use ggez::graphics::{self, DrawParam};
 use ggez::nalgebra as na;
 use ggez::{Context, ContextBuilder, GameResult};
 
+use tweek::prelude::*;
+
 struct MainState {
     gridmesh: graphics::Mesh,
 }
@@ -14,21 +16,8 @@ impl MainState {
         let width = ctx.conf.window_mode.width;
         let height = ctx.conf.window_mode.height;
 
-        let color = graphics::BLACK;
-        let mut builder = graphics::MeshBuilder::new();
+        let gridmesh = GGTools::build_grid(ctx, width, height, 50.0, graphics::BLACK)?;
 
-        let mut xpos = 0.0;
-        while xpos < width {
-            builder.line(&[na::Point2::new(xpos, 0.0), na::Point2::new(xpos, height)], 1.0, color,)?;
-            xpos += 50.0;
-        }
-        let mut ypos = 0.0;
-        while ypos < height {
-            builder.line(&[na::Point2::new(0.0, ypos), na::Point2::new(width, ypos)], 1.0, color,)?;
-            ypos += 50.0;
-        }
-
-        let gridmesh = builder.build(ctx)?;
         Ok(Self { gridmesh })
     }
 }

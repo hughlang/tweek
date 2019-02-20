@@ -9,7 +9,7 @@ use ggez::conf;
 use ggez::event::{self, MouseButton};
 use ggez::graphics::{self, DrawParam};
 use ggez::{Context, ContextBuilder, GameResult};
-use ggez::mint::Point2;
+// use ggez::mint::Point2;
 
 use std::env;
 use std::path;
@@ -32,21 +32,7 @@ impl MainState {
         let width = ctx.conf.window_mode.width;
         let height = ctx.conf.window_mode.height;
 
-        let color = graphics::BLACK;
-        let mut builder = graphics::MeshBuilder::new();
-
-        let mut xpos = 0.0;
-        while xpos < width {
-            builder.line(&[Point2{x: xpos, y: 0.0}, Point2{x: xpos, y: height}], 1.0, color,)?;
-            xpos += 50.0;
-        }
-        let mut ypos = 0.0;
-        while ypos < height {
-            builder.line(&[Point2{x: 0.0, y: ypos}, Point2{x: width, y: ypos}], 1.0, color,)?;
-            ypos += 50.0;
-        }
-
-        let gridmesh = builder.build(ctx)?;
+        let gridmesh = GGTools::build_grid(ctx, width, height, 50.0, graphics::BLACK)?;
 
         // Add a rectangle
         let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
