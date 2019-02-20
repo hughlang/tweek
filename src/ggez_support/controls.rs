@@ -113,7 +113,6 @@ pub struct GGButton {
     pub hover_animation: Option<UITransition>,
     pub mouse_state: MouseState,
     pub onclick: Option<Box<FnMut(TKAction, &mut TKState) + 'static>>,
-    callbacks: Vec<Box<FnMut(TKAction, &mut TKState) + 'static>>,
 
 }
 
@@ -127,7 +126,6 @@ impl GGButton {
             hover_animation: None,
             mouse_state: MouseState::None,
             onclick: None,
-            callbacks: Vec::new(),
         }
     }
 
@@ -172,11 +170,6 @@ impl GGButton {
     pub fn set_onclick<C>(&mut self, cb: C) where C: FnMut(TKAction, &mut TKState) + 'static {
         self.onclick = Some(Box::new(cb));
     }
-
-    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKAction, &mut TKState) + 'static {
-        self.callbacks.push(Box::new(cb));
-    }
-
 
 }
 
@@ -254,10 +247,12 @@ impl TKResponder for GGButton {
     fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
         false
     }
-    fn handle_mouse_up(&mut self, x: f32, y: f32, _state: &mut TKState) -> bool {
+    fn handle_mouse_up(&mut self, x: f32, y: f32, state: &mut TKState) -> bool {
         if self.layer.frame.contains(mint::Point2{ x, y }) {
-            if let Some(cb) = &self.onclick {
-                (&*cb);
+            println!("Click at: x={} y={}", x, y);
+            if let Some(cb) = &mut self.onclick {
+                // TODO: modify state or pass new information
+                (&mut *cb)(TKAction::Click, state);
             }
         }
         false

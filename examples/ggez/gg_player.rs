@@ -21,6 +21,7 @@ use tweek::prelude::*;
 const SQUARE_ITEM_ID: usize = 100;
 
 struct MainState {
+    tk_state: TKState,
     items: Vec<ItemState>,
     buttons: Vec<GGButton>,
 }
@@ -59,8 +60,10 @@ impl MainState {
 
         let items: Vec<ItemState> = Vec::new();
         // items.push(item1);
+        let tk_state = TKState::new();
 
         let s = MainState {
+            tk_state: tk_state,
             items: items,
             buttons: controls,
         };
@@ -122,6 +125,11 @@ impl event::EventHandler for MainState {
         _x: f32,
         _y: f32,
     ) {
+        for button in &mut self.buttons {
+            let did_click = button.handle_mouse_up(_x, _y, &mut self.tk_state);
+
+        }
+
     }
 
     /// The mouse was moved; it provides both absolute x and y coordinates in the window,
