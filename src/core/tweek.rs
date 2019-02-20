@@ -11,6 +11,8 @@ use super::tween::*;
 
 //-- Base -----------------------------------------------------------------------
 
+pub type TweenRef = Rc<RefCell<Tween>>;
+
 pub trait Playable {
     fn play(&mut self);
     fn tick(&mut self) -> Vec<TKEvent>;
@@ -21,6 +23,17 @@ pub trait Playable {
     fn sync(&mut self, ctx: &mut TKContext);
     // fn resume(&mut self);
     // fn seek(&mut self, pos: f64);
+}
+
+/// This is an experimental trait with the intention of passing around a mutable TKContext
+/// which other code can use. TKContext has a shared tween_store where all tweens are registered.
+/// Some ideas
+/// * allow other code to add callback functions that execute when specific events happen?
+///
+pub trait TweekAware {
+    fn tk_play(&mut self, ctx: &mut TKContext);
+    fn tk_tick(&mut self, ctx: &mut TKContext);
+
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -39,6 +52,7 @@ pub enum TKEvent {
 pub struct TKContext {
     pub time_scale: f64,
     pub events: Vec<TKEvent>,
+    tween_store: HashMap<usize, TweenRef>,
 }
 
 impl TKContext {
@@ -46,7 +60,28 @@ impl TKContext {
         TKContext {
             time_scale: 1.0,
             events: Vec::new(),
+            tween_store: HashMap::new(),
         }
+    }
+
+    pub fn get_update(&mut self, id: &usize) -> Option<UIState> {
+        if let Some(rc) = self.tween_store.get(id) {
+            let mut tween = rc.borrow_mut();
+            let update = (&mut *tween).update();
+            return update;
+        }
+        None
+    }
+
+    // pub fn get_tween(&self, id: &usize) -> Option<TweenRef> {
+        // if let Some(rc) = self.tween_store.get(id) {
+        //     Some(rc)
+        // }
+    //     None
+    // }
+
+    pub fn register_tween(&mut self, tween: Tween) {
+        self.tween_store.insert(tween.tween_id.clone(), Rc::new(RefCell::new(tween)));
     }
 }
 

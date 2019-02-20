@@ -23,7 +23,6 @@ const SQUARE_ITEM_ID: usize = 100;
 struct MainState {
     items: Vec<ItemState>,
     buttons: Vec<GGButton>,
-    frames: usize,
 }
 
 impl MainState {
@@ -61,7 +60,6 @@ impl MainState {
         let s = MainState {
             items: items,
             buttons: controls,
-            frames: 0,
         };
         Ok(s)
     }

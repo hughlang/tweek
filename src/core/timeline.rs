@@ -11,7 +11,6 @@ use super::tween::*;
 
 //-- Base -----------------------------------------------------------------------
 
-pub type TweenRef = Rc<RefCell<Tween>>;
 
 pub struct TweenRange {
     tween: TweenRef,
