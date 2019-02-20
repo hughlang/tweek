@@ -71,7 +71,7 @@ pub struct Tween {
     pub anim_type: AnimType,
     start_props: Vec<Prop>,
     animators: Vec<Animator>,
-    callbacks: Vec<Box<FnMut(TKEvent, &mut TKContext) + 'static>>,
+    callbacks: Vec<Box<FnMut(TKEvent, &mut TKState) + 'static>>,
 }
 
 impl Tween {
@@ -187,7 +187,7 @@ impl Tween {
         self
     }
 
-    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKContext) + 'static {
+    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKState) + 'static {
         self.callbacks.push(Box::new(cb));
     }
 
@@ -340,7 +340,7 @@ impl Playable for Tween {
         return self.update();
     }
 
-    fn sync(&mut self, ctx: &mut TKContext) {
+    fn sync(&mut self, ctx: &mut TKState) {
 
     }
 

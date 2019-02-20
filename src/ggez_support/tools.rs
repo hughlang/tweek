@@ -38,7 +38,7 @@ impl GGTools {
         Ok(gridmesh)
     }
 
-    pub fn build_progress_bar(ctx: &mut Context, tk_state: &mut TKContext) -> GameResult {
+    pub fn build_progress_bar(ctx: &mut Context, state: &mut TKState) -> GameResult {
 
         Ok(())
     }
