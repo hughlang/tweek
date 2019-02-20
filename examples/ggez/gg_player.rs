@@ -23,14 +23,45 @@ const SQUARE_ITEM_ID: usize = 100;
 struct MainState {
     tweek: Tweek,
     tk_state: TKState,
+    items: Vec<ItemState>,
     buttons: Vec<GGButton>,
     progress_bar: GGProgressBar,
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
-        // Add a rectangle
+        let screen_w = ctx.conf.window_mode.width;
+        let screen_h = ctx.conf.window_mode.height;
 
+        const BAR_WIDTH: f32 = 500.0;
+
+        let font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
+
+        let mut buttons: Vec<GGButton> = Vec::new();
+
+        let mut ypos = screen_h;
+        let xpos = (screen_w - BAR_WIDTH)/2.0;
+
+        ypos -= 60.0;
+        // Create play button
+        let frame = graphics::Rect::new(xpos, ypos, 80.0, 36.0);
+        let mut button = GGButton::new(frame).with_title("Play")
+            .with_props(&vec![color(HexColors::Lavender)]);
+        button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
+        button.set_color(&Color::from_rgb_u32(0x999999));
+        button.set_hover_animation(vec![color(0xFF8920)], 0.1);
+        button.set_onclick(move |_action, _state| {
+            // println!("Button onclick: action={:?}", action);
+
+        });
+        buttons.push(button);
+
+        ypos -= 20.0;
+        // Create progress bar
+        let frame = graphics::Rect::new(xpos, ypos, BAR_WIDTH, 4.0);
+        let mut progress = GGProgressBar::new(frame);
+        progress.set_track_color(Color::from_rgb_u32(HexColors::MediumSlateBlue));
+        progress.set_progress_color(Color::from_rgb_u32(HexColors::Azure));
 
         let mut ypos = 50.0 as f32;
         let mut items: Vec<ItemState> = Vec::new();
@@ -42,7 +73,7 @@ impl MainState {
             item1.layer.graphics.color = graphics::Color::from_rgb_u32(0x333333);
 
             let tween1 = Tween::with(item_id, &item1.layer)
-                .to(vec![position(400.0, ypos as f64), size(100.0, 100.0)])
+                .to(vec![position(400.0, ypos as f64), size(80.0, 80.0)])
                 .duration(0.5);
 
                 //.repeat(3, 0.25)
@@ -61,37 +92,14 @@ impl MainState {
         tweek.add_timeline(timeline);
         &tweek.play();
 
-
-        let font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
-
-        let mut controls: Vec<GGButton> = Vec::new();
-
-        let frame = graphics::Rect::new(300.0, 300.0, 120.0, 50.0);
-        let mut button = GGButton::new(frame).with_title("Play")
-            .with_props(&vec![color(HexColors::Lavender)]);
-        button.set_font(&font, &24.0, &Color::from_rgb_u32(0xFFFFFF));
-        button.set_color(&Color::from_rgb_u32(0x999999));
-        button.set_hover_animation(vec![color(0xFF8920)], 0.1);
-
-        button.set_onclick(move |_action, _state| {
-            // println!("Button onclick: action={:?}", action);
-
-        });
-
-        controls.push(button);
-        let frame = graphics::Rect::new(50.0, 500.0, 500.0, 4.0);
-        let mut progress = GGProgressBar::new(frame);
-        progress.set_track_color(Color::from_rgb_u32(HexColors::MediumSlateBlue));
-        progress.set_progress_color(Color::from_rgb_u32(HexColors::Azure));
-        progress.set_progress(0.30);
-
         let tk_state = TKState::new();
 
         let s = MainState {
             tweek: tweek,
             tk_state: tk_state,
+            items: items,
             progress_bar: progress,
-            buttons: controls,
+            buttons: buttons,
         };
         Ok(s)
     }
@@ -102,7 +110,13 @@ impl event::EventHandler for MainState {
 
         self.tweek.update(&mut self.tk_state);
         let progress = self.tk_state.elapsed_time / self.tk_state.total_time;
-        self.progress_bar.set_progress(progress as f32);
+        if progress <= 1.0 {
+            self.progress_bar.set_progress(progress as f32);
+        }
+
+        for item in &mut self.items {
+            item.try_update(&mut self.tweek)?;
+        }
 
         for control in &mut self.buttons {
             control.update()?;
@@ -117,6 +131,10 @@ impl event::EventHandler for MainState {
         for control in &mut self.buttons {
             control.render(ctx)?;
         }
+        for item in &mut self.items {
+            item.render(ctx)?;
+        }
+
         self.progress_bar.render(ctx)?;
 
         graphics::present(ctx)?;
