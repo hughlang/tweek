@@ -50,7 +50,7 @@ impl MainState {
             .with_props(&vec![color(0xCD09AA)]);
         button.set_font(&font, &24.0, &graphics::Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&graphics::Color::from_rgb_u32(0x999999));
-        button.set_on_hover(vec![color(0xFF8920)], 0.1);
+        button.set_hover_animation(vec![color(0xFF8920)], 0.1);
 
         controls.push(button);
 

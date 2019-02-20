@@ -26,13 +26,10 @@ pub trait GGDisplayable {
     fn render_inside(&mut self, _rect: &graphics::Rect, _ctx: &mut Context) -> GameResult {
         Ok(())
     }
-    fn handle_mouse_at(&mut self, _x: f32, _y: f32) -> bool {
-        false
-    }
 }
 
 pub trait TKResponder {
-    fn handle_mouse_move(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
+    fn handle_mouse_at(&mut self, _x: f32, _y: f32) -> bool {
         false
     }
     fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
@@ -110,9 +107,9 @@ pub struct GGButton {
     pub layer: GGLayer,
     pub label: Option<GGLabel>,
     pub defaults: HashMap<u32, Prop>,
-    pub hover_animation: Option<UITransition>,
-    pub mouse_state: MouseState,
-    pub onclick: Option<Box<FnMut(TKAction, &mut TKState) + 'static>>,
+    hover_animation: Option<UITransition>,
+    mouse_state: MouseState,
+    onclick: Option<Box<FnMut(TKAction, &mut TKState) + 'static>>,
 
 }
 
@@ -162,7 +159,7 @@ impl GGButton {
         props
     }
 
-    pub fn set_on_hover(&mut self, props: Vec<Prop>, seconds: f64) {
+    pub fn set_hover_animation(&mut self, props: Vec<Prop>, seconds: f64) {
         let transition = UITransition::new(props, seconds);
         self.hover_animation = Some(transition);
     }
@@ -201,6 +198,24 @@ impl GGDisplayable for GGButton {
         Ok(())
     }
 
+}
+
+impl TKResponder for GGButton {
+
+    fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
+        false
+    }
+    fn handle_mouse_up(&mut self, x: f32, y: f32, state: &mut TKState) -> bool {
+        if self.layer.frame.contains(mint::Point2{ x, y }) {
+            println!("Click at: x={} y={}", x, y);
+            if let Some(cb) = &mut self.onclick {
+                // TODO: modify state or pass new information
+                (&mut *cb)(TKAction::Click, state);
+            }
+        }
+        false
+    }
+
     fn handle_mouse_at(&mut self, x: f32, y: f32) -> bool {
         if self.layer.frame.contains(mint::Point2{ x, y }) {
             match self.mouse_state {
@@ -208,8 +223,6 @@ impl GGDisplayable for GGButton {
                     // change state to hover and start animations
                     // if self.on_hover.len() > 0 {
                     self.mouse_state = MouseState::Hover;
-                    println!("Mouse hover at: x={} y={}", x, y);
-                    println!("Layer frame = {:?}", self.layer.frame);
 
                     if let Some(transition) = &self.hover_animation {
                         if transition.seconds > 0.0 {
@@ -239,25 +252,6 @@ impl GGDisplayable for GGButton {
         }
         false
     }
-
-}
-
-impl TKResponder for GGButton {
-    // TODO: handle mouse down/up actions
-    fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
-        false
-    }
-    fn handle_mouse_up(&mut self, x: f32, y: f32, state: &mut TKState) -> bool {
-        if self.layer.frame.contains(mint::Point2{ x, y }) {
-            println!("Click at: x={} y={}", x, y);
-            if let Some(cb) = &mut self.onclick {
-                // TODO: modify state or pass new information
-                (&mut *cb)(TKAction::Click, state);
-            }
-        }
-        false
-    }
-
 }
 
 //-- GGProgressBar -----------------------------------------------------------------------

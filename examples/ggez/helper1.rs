@@ -81,6 +81,7 @@ impl ItemState {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn render(&mut self, ctx: &mut Context) -> GameResult {
         match self.shape {
             Shape::Rectangle(_) => {

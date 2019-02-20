@@ -9,7 +9,7 @@ extern crate tweek;
 
 use ggez::conf;
 use ggez::event::{self, MouseButton};
-use ggez::graphics;
+use ggez::graphics::{self, Color};
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::input::{ mouse};
 
@@ -31,7 +31,7 @@ impl MainState {
         // Add a rectangle
         let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
         let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
-        item1.layer.graphics.color = graphics::Color::from_rgb_u32(0x333333);
+        item1.layer.graphics.color = Color::from_rgb_u32(0x333333);
 
         let mut tween1 = Tween::with(SQUARE_ITEM_ID, &item1.layer)
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
@@ -47,22 +47,23 @@ impl MainState {
         let mut controls: Vec<GGButton> = Vec::new();
 
         let frame = graphics::Rect::new(300.0, 300.0, 120.0, 50.0);
-        let mut button = GGButton::new(frame).with_title("Play")
-            .with_props(&vec![color(0xCD09AA)]);
-        button.set_font(&font, &24.0, &graphics::Color::from_rgb_u32(0xFFFFFF));
-        button.set_color(&graphics::Color::from_rgb_u32(0x999999));
-        button.set_on_hover(vec![color(0xFF8920)], 0.1);
-        button.set_onclick(move |action, state| {
-            println!("Button onclick: action={:?}", action);
+        let mut button = GGButton::new(frame).with_title("Play");
+            // .with_props(&vec![color(HexColors::Lavender)]);
+        button.set_font(&font, &24.0, &Color::from_rgb_u32(0xFFFFFF));
+        button.set_color(&Color::from_rgb_u32(0x999999));
+        button.set_hover_animation(vec![color(0xFF8920)], 0.1);
+        button.set_onclick(move |_action, _state| {
+            // println!("Button onclick: action={:?}", action);
+
         });
 
         controls.push(button);
-        let frame = graphics::Rect::new(50.0, 500.0, 500.0, 8.0);
-        let progress = GGProgressBar::new(frame);
+        let frame = graphics::Rect::new(50.0, 500.0, 500.0, 4.0);
+        let mut progress = GGProgressBar::new(frame);
+        progress.set_track_color(Color::from_rgb_u32(HexColors::MediumSlateBlue));
+        progress.set_progress_color(Color::from_rgb_u32(HexColors::Azure));
+        progress.set_progress(0.30);
 
-
-        let items: Vec<ItemState> = Vec::new();
-        // items.push(item1);
         let tk_state = TKState::new();
 
         let s = MainState {
@@ -89,6 +90,7 @@ impl event::EventHandler for MainState {
         for control in &mut self.buttons {
             control.render(ctx)?;
         }
+        self.progress_bar.render(ctx)?;
 
         graphics::present(ctx)?;
 
@@ -121,7 +123,7 @@ impl event::EventHandler for MainState {
         _y: f32,
     ) {
         for button in &mut self.buttons {
-            let did_click = button.handle_mouse_up(_x, _y, &mut self.tk_state);
+            let _did_click = button.handle_mouse_up(_x, _y, &mut self.tk_state);
 
         }
 
