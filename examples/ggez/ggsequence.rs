@@ -55,7 +55,7 @@ impl MainState {
             // This does nothing yet
             println!("OG callback: event={:?}", e);
             match e {
-                TKEvent::Completed(id) => {
+                TKEvent::Completed(_id) => {
                     ctx.events.push(e);
                 },
                 _ => (),

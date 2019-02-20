@@ -102,6 +102,7 @@ impl event::EventHandler for MainState {
         println!("Mouse down at: x={} y={}", x, y);
     }
 
+    #[allow(unused_variables)]
     fn resize_event(&mut self, ctx: &mut Context, width: f32, height: f32) {
         println!("resize_event w={} h={}", width, height);
         // let new_rect = graphics::Rect::new(0.0, 0.0, width, height);

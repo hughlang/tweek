@@ -8,11 +8,12 @@ use crate::core::*;
 
 use ggez::graphics::{self, Color};
 use ggez::mint::Point2;
-use ggez::{Context, GameResult};
+use ggez::{Context, GameResult, GameError};
 // use std::{collections::HashMap};
 
 #[allow(unused_imports)]
 use super::ggez_helper::*;
+use super::controls::*;
 
 pub struct GGTools {
 
@@ -35,5 +36,22 @@ impl GGTools {
 
         let gridmesh = builder.build(ctx)?;
         Ok(gridmesh)
+    }
+
+    pub fn build_progress_bar(ctx: &mut Context, tk_state: &mut TKContext) -> GameResult {
+
+        Ok(())
+    }
+
+    pub fn build_play_button(ctx: &mut Context, frame: graphics::Rect) -> GameResult<GGButton> {
+        let mut button = GGButton::new(frame).with_title("Play")
+            .with_props(&vec![color(0xCD09AA)]);
+        let font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
+
+        button.set_font(&font, &24.0, &graphics::Color::from_rgb_u32(0xFFFFFF));
+        button.set_color(&graphics::Color::from_rgb_u32(0x999999));
+        button.set_on_hover(vec![color(0xFF8920)], 0.1);
+
+        Ok(button)
     }
 }

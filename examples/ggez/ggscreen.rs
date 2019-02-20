@@ -2,7 +2,6 @@ use ggez;
 use ggez::conf;
 use ggez::event::{self, MouseButton};
 use ggez::graphics::{self, DrawParam};
-use ggez::nalgebra as na;
 use ggez::{Context, ContextBuilder, GameResult};
 
 use tweek::prelude::*;

@@ -31,7 +31,7 @@ pub trait GGDisplayable {
     }
 }
 
-//-- Main -----------------------------------------------------------------------
+//-- GGLabel -----------------------------------------------------------------------
 
 pub struct GGLabel {
     pub layer: GGLayer,
@@ -89,6 +89,8 @@ impl GGDisplayable for GGLabel {
         Ok(())
     }
 }
+
+//-- GGButton -----------------------------------------------------------------------
 
 pub struct GGButton {
     pub layer: GGLayer,

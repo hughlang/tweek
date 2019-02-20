@@ -9,7 +9,6 @@ use ggez::conf;
 use ggez::event::{self};
 use ggez::graphics::{self};
 use ggez::{Context, ContextBuilder, GameResult};
-use ggez::mint;
 
 use std::env;
 use std::path;
