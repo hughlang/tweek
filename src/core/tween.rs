@@ -2,6 +2,7 @@
 extern crate ggez;
 extern crate uuid;
 
+use cgmath::*;
 use std::{collections::HashMap};
 use std::{time::{Duration,Instant}};
 use std::hash::{Hash, Hasher};
@@ -16,6 +17,14 @@ use super::tweek::*;
 
 pub fn position(x: f64, y: f64) -> Prop {
     Prop::Position(Point2D::new(x, y))
+}
+
+pub fn shift_x(x: f64) -> Prop {
+    Prop::Shift(Point2D::new(x, 0.0))
+}
+
+pub fn shift_y(y: f64) -> Prop {
+    Prop::Shift(Point2D::new(0.0, y))
 }
 
 pub fn size(w: f64, h: f64) -> Prop {
@@ -137,11 +146,34 @@ impl Tween {
         tween
     }
 
+
+
     /// Function which reads the list of "to" props and finds the matching ones
     /// already saved in self.start_props to make sure that start_props and
     /// end_props have matching Prop types in the same order.
     pub fn to(mut self, props:Vec<Prop>) -> Self {
-        let animator = Animator::create(&self.tween_id, &self.start_props, &props);
+
+        // Some of the props may include offset types like Shift. These need to be separated
+        // from the basic props
+        let mut cleaned_props: Vec<Prop> = Vec::new();
+        let mut sum_shift = Point2D::zero();
+
+        for prop in &props {
+            match prop {
+                Prop::Shift(v2) => {
+                    sum_shift += v2.clone();
+                },
+                _ => {
+                    cleaned_props.push(prop.clone());
+                },
+            }
+        }
+        println!(">>>> sum_shift={:?}", sum_shift);
+        if sum_shift != Point2D::zero() {
+            cleaned_props.push(Prop::Shift(sum_shift));
+        }
+
+        let mut animator = Animator::create(&self.tween_id, &self.start_props, &cleaned_props);
         self.animators.push(animator);
         self
     }
@@ -253,7 +285,7 @@ impl Tween {
         None
     }
 
-#[allow(dead_code)]
+    #[allow(dead_code)]
     fn print_timeline(&self) {
         // const MAX_WIDTH = 80; // ascii width
         const LEAD_WIDTH: usize = 10;
@@ -286,7 +318,17 @@ impl Tween {
         // Create map of all manipulated Props in all animations
         for animator in &mut self.animators {
             for prop in &animator.end_state.props {
-                prop_map.insert(prop.prop_id(), prop.clone());
+                // Use the lookup function to determine if the prop is an offset prop like Shift
+                // If so, insert that into the prop_map instead.
+                let parent = prop.lookup_parent_prop();
+                match parent {
+                    Prop::None => {
+                        prop_map.insert(prop.prop_id(), prop.clone());
+                    },
+                    _ => {
+                        prop_map.insert(parent.prop_id(), parent);
+                    },
+                }
             }
         }
 
@@ -306,6 +348,29 @@ impl Tween {
         println!("[{}] -------------------------------------------------------------------------------", self.tween_id);
         for animator in &mut self.animators {
             let mut end_props: Vec<Prop> = Vec::new();
+
+            // Look for offset props that need a corresponding parent prop
+            // Because of the prop_map loading at the start of this function,
+            // the parent is guaranteed to exist in the begin_props
+            for prop in &animator.end_state.props {
+                let parent = prop.lookup_parent_prop();
+                match parent {
+                    Prop::Shift(offset) => {
+                        let mut iter = begin_props.iter_mut().filter(|x| x.prop_id() == parent.prop_id());
+                        if let Some(begin_prop) = &iter.next() {
+                            match begin_prop {
+                                Prop::Position(pos) => {
+                                    let sum_vec = pos.clone() + offset.clone();
+                                    end_props.push(Prop::Position(sum_vec));
+                                },
+                                _ => (),
+                            }
+                        }
+                    },
+                    _ => {
+                    },
+                }
+            }
 
             for prop in &begin_props {
                 let end_prop = animator.end_state.get_prop_value(prop.prop_id());

@@ -9,6 +9,8 @@ pub type ColorRGBA = Vector4<f32>;
 pub type Point2D = Vector2<f64>;
 pub type Frame2D = Vector2<f64>;
 pub type Bezier = Vector4<f64>;
+pub type ShiftX = Vector1<f64>;
+pub type ShiftY = Vector1<f64>;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Prop {
@@ -18,6 +20,7 @@ pub enum Prop {
     Position(Point2D),
     Rotate(FloatProp),
     Size(Frame2D),
+    Shift(Point2D),
 }
 
 impl Eq for Prop {}
@@ -32,8 +35,24 @@ impl Prop {
             Prop::Position(_) => 3,
             Prop::Rotate(_) => 4,
             Prop::Size(_) => 5,
+            Prop::Shift(_) => 6,
         }
     }
+
+    /// Unfortunate helper method for doing reverse lookup of a prop based on its prop_id()
+    /// Magic numbers FTW!
+    pub fn from_prop_id(id: u32) -> Prop {
+        match id {
+            1 => Prop::Alpha(FloatProp::zero()),
+            2 => Prop::Color(ColorRGB::zero()),
+            3 => Prop::Position(Point2D::zero()),
+            4 => Prop::Rotate(FloatProp::zero()),
+            5 => Prop::Size(Frame2D::zero()),
+            6 => Prop::Shift(Point2D::zero()),
+            _ => Prop::None,
+        }
+    }
+
     pub fn get_prop_list() -> Vec<Prop> {
         let mut results: Vec<Prop> = Vec::new();
         results.push(Prop::Alpha(FloatProp::zero()));
@@ -42,6 +61,24 @@ impl Prop {
         results.push(Prop::Rotate(FloatProp::zero()));
         results.push(Prop::Size(Frame2D::zero()));
         results
+    }
+
+    pub fn lookup_parent_prop(&self) -> Prop {
+        match self {
+            Prop::Shift(_) => Prop::Position(Point2D::zero()),
+            _ => Prop::None,
+        }
+    }
+
+    pub fn add_offset_prop(&mut self, offset: Prop) {
+        match offset {
+            Prop::Shift(pt) => {
+                if self.prop_id() == 3 {
+
+                }
+            },
+            _ => (),
+        }
     }
 
     // pub fn get_value(&self) -> Vector4<f64> {
