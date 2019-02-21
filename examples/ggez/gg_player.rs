@@ -12,6 +12,7 @@ use ggez::event::{self, MouseButton};
 use ggez::graphics::{self, Color};
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::input::{ mouse};
+use ggez::mint;
 
 use std::env;
 use std::path;
@@ -25,6 +26,8 @@ const BUTTON_GAP: f32 = 20.0;
 
 struct StageHelper {}
 
+#[allow(dead_code)]
+#[allow(unused_mut)]
 impl StageHelper {
     fn build_player_buttons(ctx: &mut Context) -> GameResult<Vec<ButtonView>> {
         let screen_w = ctx.conf.window_mode.width;
@@ -77,6 +80,8 @@ impl StageHelper {
         Ok(button)
     }
 
+    /// This is a simple Sequence timeline where 4 independent tweens play sequentially,
+    /// without any repeats.
     fn build_timeline_1() -> GameResult<(Timeline, Vec<ItemState>)> {
         let mut ypos = 50.0 as f32;
         let mut items: Vec<ItemState> = Vec::new();
@@ -90,8 +95,6 @@ impl StageHelper {
             let tween1 = Tween::with(item_id, &item1.layer)
                 .to(vec![position(400.0, ypos as f64), size(80.0, 80.0)])
                 .duration(0.5);
-
-                //.repeat(3, 0.25)
             ypos += 120.0;
             items.push(item1);
             tweens.push(tween1)
@@ -101,6 +104,33 @@ impl StageHelper {
             .align(TweenAlign::Sequence)
             ;
         Ok((timeline, items))
+    }
+
+    fn build_timeline_2() -> GameResult<(Timeline, Vec<ItemState>)> {
+        let mut items: Vec<ItemState> = Vec::new();
+        let mut tweens: Vec<Tween> = Vec::new();
+        let mut ypos = 50.0 as f32;
+
+        let id = 100;
+        let mut item2 = ItemState::new(id, Shape::Circle(mint::Point2{x: 20.0, y: ypos}, 40.0))?;
+        item2.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
+
+        let mut tween = Tween::with(id, &item2.layer)
+            .to(vec![position(400.0, ypos as f64), alpha(0.2)]).duration(1.0)
+            .to(vec![position(40.0, 40.0), alpha(1.0)]).duration(0.5)
+            .to(vec![position(300.0, 40.0), alpha(1.0)]).duration(0.5)
+            .to(vec![size(200.0, 200.0)]).duration(1.0)
+            .repeat(4, 0.25);
+        tweens.push(tween);
+
+        items.push(item2);
+
+        let timeline = Timeline::add(tweens)
+            // .stagger(0.2)
+            .align(TweenAlign::Sequence)
+            ;
+        Ok((timeline, items))
+
     }
 }
 
@@ -128,8 +158,10 @@ impl MainState {
         progress.set_progress_color(Color::from_rgb_u32(HexColors::Azure));
 
         let buttons = StageHelper::build_player_buttons(ctx)?;
+
         // Here you can choose which timeline and animations to run
-        let (timeline, items) = StageHelper::build_timeline_1()?;
+        // let (timeline, items) = StageHelper::build_timeline_1()?;
+        let (timeline, items) = StageHelper::build_timeline_2()?;
 
         let mut tweek = Tweek::new();
         tweek.add_timeline(timeline);
