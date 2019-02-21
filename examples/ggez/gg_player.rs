@@ -19,12 +19,56 @@ use std::path;
 use tweek::prelude::*;
 
 const SQUARE_ITEM_ID: usize = 100;
+const BAR_WIDTH: f32 = 500.0;
+const BUTTON_WIDTH: f32 = 60.0;
+const BUTTON_GAP: f32 = 20.0;
 
-struct StageHelper {
-
-}
+struct StageHelper {}
 
 impl StageHelper {
+    fn build_player_buttons(ctx: &mut Context) -> GameResult<Vec<ButtonView>> {
+        let screen_w = ctx.conf.window_mode.width;
+        let screen_h = ctx.conf.window_mode.height;
+
+        let _font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
+
+        let mut buttons: Vec<ButtonView> = Vec::new();
+        let mut xpos = (screen_w - BAR_WIDTH)/2.0;
+
+        let ypos = screen_h - 60.0;
+
+        // ---- Skip Back ---------------------
+        let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
+        let mut button = StageHelper::make_player_button(ctx, "/icons/md-skip-backward.png", frame)?;
+        button.set_onclick(move |_action, _state| {
+            // println!("Button onclick: action={:?}", action);
+
+        });
+        buttons.push(button);
+
+        // ---- Play ---------------------
+        xpos += BUTTON_WIDTH + BUTTON_GAP;
+        let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
+        let mut button = StageHelper::make_player_button(ctx, "/icons/ios-play.png", frame)?;
+        button.set_onclick(move |_action, _state| {
+            println!("Button onclick: action={:?}", _action);
+
+        });
+        buttons.push(button);
+
+        // ---- Skip Next ---------------------
+        xpos += BUTTON_WIDTH + BUTTON_GAP;
+        let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
+        let mut button = StageHelper::make_player_button(ctx, "/icons/md-skip-forward.png", frame)?;
+        button.set_onclick(move |_action, _state| {
+            // println!("Button onclick: action={:?}", action);
+
+        });
+        buttons.push(button);
+
+        Ok(buttons)
+    }
+
     fn make_player_button(ctx: &mut Context, file: &str, frame: graphics::Rect) -> GameResult<ButtonView> {
         let icon = graphics::Image::new(ctx, file.to_string())?;
         let mut button = ButtonView::new(frame).with_image(icon, 4.0);
@@ -59,6 +103,7 @@ impl StageHelper {
         Ok((timeline, items))
     }
 }
+
 struct MainState {
     tweek: Tweek,
     tk_state: TKState,
@@ -73,53 +118,16 @@ impl MainState {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
 
-        const BAR_WIDTH: f32 = 500.0;
-        const BUTTON_WIDTH: f32 = 60.0;
-        const BUTTON_GAP: f32 = 20.0;
-
-        let _font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
-
-        let mut buttons: Vec<ButtonView> = Vec::new();
-        let mut xpos = (screen_w - BAR_WIDTH)/2.0;
-
         let ypos = screen_h - 90.0;
+        let xpos = (screen_w - BAR_WIDTH)/2.0;
+
         // Create progress bar
         let frame = graphics::Rect::new(xpos, ypos, BAR_WIDTH, 4.0);
         let mut progress = ProgressBarView::new(frame);
         progress.set_track_color(Color::from_rgb_u32(HexColors::MediumSlateBlue));
         progress.set_progress_color(Color::from_rgb_u32(HexColors::Azure));
 
-        let ypos = screen_h - 60.0;
-
-        // ---- Skip Back ---------------------
-        let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
-        let mut button = StageHelper::make_player_button(ctx, "/icons/md-skip-backward.png", frame)?;
-        button.set_onclick(move |_action, _state| {
-            // println!("Button onclick: action={:?}", action);
-
-        });
-        buttons.push(button);
-
-        // ---- Play ---------------------
-        xpos += BUTTON_WIDTH + BUTTON_GAP;
-        let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
-        let mut button = StageHelper::make_player_button(ctx, "/icons/ios-play.png", frame)?;
-        button.set_onclick(move |_action, _state| {
-            println!("Button onclick: action={:?}", _action);
-
-        });
-        buttons.push(button);
-
-        // ---- Skip Next ---------------------
-        xpos += BUTTON_WIDTH + BUTTON_GAP;
-        let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
-        let mut button = StageHelper::make_player_button(ctx, "/icons/md-skip-forward.png", frame)?;
-        button.set_onclick(move |_action, _state| {
-            // println!("Button onclick: action={:?}", action);
-
-        });
-        buttons.push(button);
-
+        let buttons = StageHelper::build_player_buttons(ctx)?;
         // Here you can choose which timeline and animations to run
         let (timeline, items) = StageHelper::build_timeline_1()?;
 
