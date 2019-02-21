@@ -34,6 +34,8 @@ pub struct ItemState {
 }
 
 impl ItemState {
+
+    #[allow(dead_code)]
     pub fn new(id: usize, shape: Shape) -> GameResult<ItemState> {
         let rect = match shape {
             Shape::Rectangle(rect) => rect,

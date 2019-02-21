@@ -253,6 +253,7 @@ impl Tween {
         None
     }
 
+#[allow(dead_code)]
     fn print_timeline(&self) {
         // const MAX_WIDTH = 80; // ascii width
         const LEAD_WIDTH: usize = 10;

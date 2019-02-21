@@ -18,7 +18,6 @@ use std::path;
 
 use tweek::prelude::*;
 
-const SQUARE_ITEM_ID: usize = 100;
 
 struct MainState {
     items: Vec<ItemState>,
@@ -27,31 +26,36 @@ struct MainState {
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
-        // Add a rectangle
-        let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
-        let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
-        item1.layer.graphics.color = graphics::Color::from_rgb_u32(0x333333);
+        let screen_w = ctx.conf.window_mode.width;
+        let screen_h = ctx.conf.window_mode.height;
 
-        let mut tween1 = Tween::with(SQUARE_ITEM_ID, &item1.layer)
-            .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(1.0)
-            .repeat(7, 0.25)
-            .yoyo();
-
-        &tween1.play();
-        item1.tween = Some(tween1);
+        const BUTTON_WIDTH: f32 = 80.0;
 
         let font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
 
         let mut controls: Vec<GGButton> = Vec::new();
 
-        let frame = graphics::Rect::new(300.0, 300.0, 120.0, 50.0);
+        let mut ypos = screen_h;
+        let mut xpos = screen_w/2.0 - BUTTON_WIDTH - 20.0;
+
+        ypos -= 60.0;
+        // Create play button
+        let frame = graphics::Rect::new(xpos, ypos, 80.0, 36.0);
         let mut button = GGButton::new(frame).with_title("Play")
             .with_props(&vec![color(0xCD09AA)]);
         button.set_font(&font, &24.0, &graphics::Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&graphics::Color::from_rgb_u32(0x999999));
         button.set_hover_animation(vec![color(0xFF8920)], 0.1);
 
+        controls.push(button);
+
+        xpos = screen_w/2.0 + 20.0;
+
+        let icon = graphics::Image::new(ctx, "/icons/ios-play.png")?;
+
+        let frame = graphics::Rect::new(xpos, ypos, 80.0, 36.0);
+        let mut button = GGButton::new(frame).with_image(icon);
+        button.set_hover_animation(vec![color(HexColors::DarkGray)], 0.1);
         controls.push(button);
 
         let items: Vec<ItemState> = Vec::new();

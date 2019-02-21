@@ -11,101 +11,15 @@ use ggez::{Context, GameResult};
 use std::{collections::HashMap};
 
 use super::base::*;
+use super::views::*;
 
-
-pub enum MouseState {
-    None,
-    Hover,
-    Drag,
-    Click,
-}
-
-pub trait GGDisplayable {
-    fn update(&mut self) -> GameResult;
-    fn render(&mut self, ctx: &mut Context) -> GameResult;
-    fn render_inside(&mut self, _rect: &graphics::Rect, _ctx: &mut Context) -> GameResult {
-        Ok(())
-    }
-}
-
-pub trait TKResponder {
-    fn handle_mouse_at(&mut self, _x: f32, _y: f32) -> bool {
-        false
-    }
-    fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
-        false
-    }
-    fn handle_mouse_up(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
-        false
-    }
-}
-
-
-
-//-- GGLabel -----------------------------------------------------------------------
-
-pub struct GGLabel {
-    pub layer: GGLayer,
-    pub title: String,
-    pub text: graphics::Text,
-}
-
-impl GGLabel {
-    pub fn new(frame: &graphics::Rect, text: &str) -> Self {
-        let layer = GGLayer::new(
-            frame.clone(),
-            DrawParam::new().color(graphics::WHITE),
-        );
-
-        GGLabel {
-            layer: layer,
-            title: text.to_string(),
-            text: graphics::Text::new(text.to_string()),
-        }
-    }
-
-    pub fn set_font(&mut self, font: &graphics::Font, size: &f32) {
-        self.text = graphics::Text::new((self.title.clone(), font.clone(), size.clone()));
-    }
-
-    pub fn set_color(&mut self, color: &graphics::Color) {
-        self.layer.graphics.color = color.clone();
-    }
-}
-
-impl GGDisplayable for GGLabel {
-
-    fn update(&mut self) -> GameResult {
-        if let Some(tween) = &mut self.layer.animation {
-            tween.tick();
-            if let Some(update) = tween.update() {
-                self.layer.render_update(&update.props);
-                self.layer.render_update(&update.props);
-                self.layer.redraw = true;
-            }
-        }
-        Ok(())
-    }
-
-    fn render(&mut self, ctx: &mut Context) -> GameResult {
-        let _result = graphics::draw(ctx, &self.text, self.layer.graphics);
-        Ok(())
-    }
-
-    fn render_inside(&mut self, rect: &graphics::Rect, ctx: &mut Context) -> GameResult {
-        let (width, height) = self.text.dimensions(ctx);
-        let pt = mint::Point2{x: rect.x + (rect.w - width as f32)/2.0 , y: rect.y + (rect.h - height as f32)/2.0 };
-        // println!("inside={:?} // dest={:?}", rect,  pt);
-        let _result = graphics::draw(ctx, &self.text, self.layer.graphics.dest(pt));
-        Ok(())
-    }
-}
 
 //-- GGButton -----------------------------------------------------------------------
 
 pub struct GGButton {
     pub layer: GGLayer,
     pub label: Option<GGLabel>,
+    pub image: Option<GGImage>,
     pub defaults: HashMap<u32, Prop>,
     hover_animation: Option<UITransition>,
     mouse_state: MouseState,
@@ -119,6 +33,7 @@ impl GGButton {
         GGButton {
             layer: layer,
             label: None,
+            image: None,
             defaults: HashMap::new(),
             hover_animation: None,
             mouse_state: MouseState::None,
@@ -137,6 +52,15 @@ impl GGButton {
         let frame = graphics::Rect::new(0.0, 0.0, self.layer.frame.w, self.layer.frame.h);
         let label = GGLabel::new(&frame, text);
         self.label = Some(label);
+        self
+    }
+
+    pub fn with_image(mut self, image: graphics::Image) -> Self {
+        let rect = graphics::Rect::new(0.0, 0.0, self.layer.frame.h - 4.0, self.layer.frame.h - 4.0);
+        let fraction = rect.h / image.height() as f32;
+        let mut img = GGImage::new(rect, image);
+        img.scale = fraction;
+        self.image = Some(img);
         self
     }
 
@@ -190,9 +114,13 @@ impl GGDisplayable for GGButton {
             self.layer.frame,
             self.layer.graphics.color,
         )?;
+
         let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
         if let Some(label) = &mut self.label {
             label.render_inside(&self.layer.frame, ctx)?;
+        }
+        if let Some(image) = &mut self.image {
+            image.render_inside(&self.layer.frame, ctx)?;
         }
 
         Ok(())
@@ -253,6 +181,7 @@ impl TKResponder for GGButton {
         false
     }
 }
+
 
 //-- GGProgressBar -----------------------------------------------------------------------
 
@@ -320,4 +249,5 @@ impl GGDisplayable for GGProgressBar {
         Ok(())
     }
 }
+
 

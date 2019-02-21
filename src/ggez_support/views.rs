@@ -1,0 +1,139 @@
+/// GUI controls
+///
+///
+extern crate ggez;
+
+use crate::core::*;
+
+use ggez::graphics::{self, DrawParam};
+use ggez::mint::{Point2, Vector2};
+use ggez::{Context, GameResult};
+
+use super::base::*;
+
+pub trait GGDisplayable {
+    fn update(&mut self) -> GameResult;
+    fn render(&mut self, ctx: &mut Context) -> GameResult;
+    fn render_inside(&mut self, _rect: &graphics::Rect, _ctx: &mut Context) -> GameResult {
+        Ok(())
+    }
+}
+
+//-- Label -----------------------------------------------------------------------
+
+pub struct GGLabel {
+    pub layer: GGLayer,
+    pub title: String,
+    pub text: graphics::Text,
+}
+
+impl GGLabel {
+    pub fn new(frame: &graphics::Rect, text: &str) -> Self {
+        let layer = GGLayer::new(
+            frame.clone(),
+            DrawParam::new().color(graphics::WHITE),
+        );
+
+        GGLabel {
+            layer: layer,
+            title: text.to_string(),
+            text: graphics::Text::new(text.to_string()),
+        }
+    }
+
+    pub fn set_font(&mut self, font: &graphics::Font, size: &f32) {
+        self.text = graphics::Text::new((self.title.clone(), font.clone(), size.clone()));
+    }
+
+    pub fn set_color(&mut self, color: &graphics::Color) {
+        self.layer.graphics.color = color.clone();
+    }
+}
+
+impl GGDisplayable for GGLabel {
+
+    fn update(&mut self) -> GameResult {
+        if let Some(tween) = &mut self.layer.animation {
+            tween.tick();
+            if let Some(update) = tween.update() {
+                self.layer.render_update(&update.props);
+                self.layer.render_update(&update.props);
+                self.layer.redraw = true;
+            }
+        }
+        Ok(())
+    }
+
+    fn render(&mut self, ctx: &mut Context) -> GameResult {
+        let _result = graphics::draw(ctx, &self.text, self.layer.graphics);
+        Ok(())
+    }
+
+    fn render_inside(&mut self, rect: &graphics::Rect, ctx: &mut Context) -> GameResult {
+        let (width, height) = self.text.dimensions(ctx);
+        let pt = Point2{x: rect.x + (rect.w - width as f32)/2.0 , y: rect.y + (rect.h - height as f32)/2.0 };
+        // println!("inside={:?} // dest={:?}", rect,  pt);
+        let _result = graphics::draw(ctx, &self.text, self.layer.graphics.dest(pt));
+        Ok(())
+    }
+}
+
+//-- Image -----------------------------------------------------------------------
+
+pub struct GGImage {
+    pub layer: GGLayer,
+    pub scale: f32,
+    // pub mesh: Option<graphics::Mesh>,
+    pub image: graphics::Image,
+}
+
+impl GGImage {
+    pub fn new(frame: graphics::Rect, image: graphics::Image) -> Self {
+        let layer = GGLayer::new(frame, DrawParam::new());
+        GGImage {
+            layer: layer,
+            scale: 1.0,
+            image: image,
+        }
+    }
+}
+
+impl GGDisplayable for GGImage {
+    fn update(&mut self) -> GameResult {
+        if let Some(tween) = &mut self.layer.animation {
+            tween.tick();
+            if let Some(update) = tween.update() {
+                self.layer.render_update(&update.props);
+                self.layer.render_update(&update.props);
+                self.layer.redraw = true;
+            }
+        }
+        Ok(())
+    }
+    fn render(&mut self, ctx: &mut Context) -> GameResult {
+        let pt = Point2{x: self.layer.frame.x, y: self.layer.frame.y};
+        let drawparams = graphics::DrawParam::new()
+            .dest(pt)
+            .rotation(self.layer.graphics.rotation as f32)
+            .offset(Point2{x: 0.5, y: 0.5})
+            .color(self.layer.graphics.color);
+        let _result = graphics::draw(ctx, &self.image, drawparams);
+        Ok(())
+    }
+
+    fn render_inside(&mut self, rect: &graphics::Rect, ctx: &mut Context) -> GameResult {
+        // println!("parent={:?} inner={:?}", rect, self.layer.frame);
+        let pt = Point2{x: rect.x + rect.w/2.0 , y: rect.y + rect.h/2.0 };
+        // println!("pt={:?} scale={}", pt, self.scale);
+        let scale = Vector2{x: self.scale, y: self.scale};
+        let drawparams = graphics::DrawParam::new()
+            .dest(pt)
+            .scale(scale)
+            .rotation(self.layer.graphics.rotation as f32)
+            .offset(Point2{x: 0.5, y: 0.5})
+            .color(self.layer.graphics.color);
+        let _result = graphics::draw(ctx, &self.image, drawparams);
+        Ok(())
+    }
+
+}
