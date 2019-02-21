@@ -1,4 +1,4 @@
-/// GUI controls
+/// Basic views that conform to GGEZView, but do not implement TKResponder
 ///
 ///
 extern crate ggez;
@@ -11,7 +11,7 @@ use ggez::{Context, GameResult};
 
 use super::base::*;
 
-pub trait GGDisplayable {
+pub trait GGEZView {
     fn update(&mut self) -> GameResult;
     fn render(&mut self, ctx: &mut Context) -> GameResult;
     fn render_inside(&mut self, _rect: &graphics::Rect, _ctx: &mut Context) -> GameResult {
@@ -50,7 +50,7 @@ impl LabelView {
     }
 }
 
-impl GGDisplayable for LabelView {
+impl GGEZView for LabelView {
 
     fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.layer.animation {
@@ -98,7 +98,7 @@ impl ImageView {
     }
 }
 
-impl GGDisplayable for ImageView {
+impl GGEZView for ImageView {
     fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();

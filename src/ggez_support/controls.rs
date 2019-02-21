@@ -14,7 +14,7 @@ use super::base::*;
 use super::views::*;
 
 
-//-- GGButton -----------------------------------------------------------------------
+//-- Button -----------------------------------------------------------------------
 
 pub struct ButtonView {
     pub layer: GGLayer,
@@ -84,6 +84,15 @@ impl ButtonView {
     }
 
     pub fn set_hover_animation(&mut self, props: Vec<Prop>, seconds: f64) {
+        for prop in &props {
+            let start_prop = self.layer.get_prop(&prop);
+            match start_prop {
+                Prop::None => {},
+                _ => {
+                    &self.defaults.insert(start_prop.prop_id(), start_prop);
+                }
+            }
+        }
         let transition = UITransition::new(props, seconds);
         self.hover_animation = Some(transition);
     }
@@ -94,7 +103,7 @@ impl ButtonView {
 
 }
 
-impl GGDisplayable for ButtonView {
+impl GGEZView for ButtonView {
     fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
@@ -140,6 +149,7 @@ impl TKResponder for ButtonView {
                 // TODO: modify state or pass new information
                 (&mut *cb)(TKAction::Click, state);
             }
+            return true;
         }
         false
     }
@@ -149,7 +159,6 @@ impl TKResponder for ButtonView {
             match self.mouse_state {
                 MouseState::None => {
                     // change state to hover and start animations
-                    // if self.on_hover.len() > 0 {
                     self.mouse_state = MouseState::Hover;
 
                     if let Some(transition) = &self.hover_animation {
@@ -170,7 +179,7 @@ impl TKResponder for ButtonView {
         } else {
             match self.mouse_state {
                 MouseState::Hover => {
-                    println!("Mouse out at: x={} y={}", x, y);
+                    // println!("Mouse out at: x={} y={}", x, y);
                     self.layer.render_update(&self.get_defaults());
                     self.mouse_state = MouseState::None;
                     self.layer.animation = None;
@@ -222,7 +231,7 @@ impl ProgressBarView {
     }
 }
 
-impl GGDisplayable for ProgressBarView {
+impl GGEZView for ProgressBarView {
     fn update(&mut self) -> GameResult {
         Ok(())
     }

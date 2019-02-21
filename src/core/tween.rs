@@ -276,6 +276,10 @@ impl Tween {
 
     }
 
+    /// An awkward but necessary function to align all the start and end props in
+    /// all animators so that they have matching props in the same order.
+    /// This is necessary to support the chaining of to() functions to arbitrarily
+    /// create a sequence of animations in a single Tween
     fn fix_animators(&mut self) {
         let mut prop_map: HashMap<u32, Prop> = HashMap::new();
 
