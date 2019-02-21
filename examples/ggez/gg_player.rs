@@ -47,7 +47,7 @@ impl MainState {
         let frame = graphics::Rect::new(xpos, ypos, 80.0, 36.0);
         let mut button = GGButton::new(frame).with_title("Play")
             .with_props(&vec![color(HexColors::Lavender)]);
-        button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
+        button.set_font(&font, &14.0, &Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&Color::from_rgb_u32(0x999999));
         button.set_hover_animation(vec![color(0xFF8920)], 0.1);
         button.set_onclick(move |_action, _state| {

@@ -4,7 +4,6 @@ use std::{collections::HashMap};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-
 use super::property::*;
 use super::timeline::*;
 use super::tween::*;
@@ -45,6 +44,14 @@ pub enum TKAction {
     Hover,
 }
 
+pub enum TKRequest {
+    Play,
+    Replay,
+    Pause,
+    Reverse,
+    SkipForward,
+
+}
 
 pub struct TKState {
     pub time_scale: f64,

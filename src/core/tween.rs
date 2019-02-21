@@ -56,6 +56,7 @@ pub enum TweenState {
     Running,
     Idle,
     Cancelled,
+    Finishing,
     Completed,
 }
 
@@ -221,6 +222,24 @@ impl Tween {
     }
 
     pub fn update(&mut self) -> Option<UIState> {
+        match self.state {
+            TweenState::Running => {
+                for animator in &mut self.animators {
+                    let elapsed = self.started_at.elapsed().as_float_secs();
+                    if animator.start_time < elapsed && animator.end_time >= elapsed {
+                        let ui_state = animator.update(self.started_at, self.time_scale);
+                        return Some(ui_state);
+                    }
+                }
+            },
+            TweenState::Finishing => {
+                if let Some(animator) = self.animators.last_mut() {
+                    self.state = TweenState::Completed;
+                    return Some(animator.end_state.clone());
+                }
+            }
+            _ => ()
+        }
         if self.state == TweenState::Running {
             // For now, this assumes that animators do not overlap and are purely sequential
             for animator in &mut self.animators {
@@ -309,7 +328,7 @@ impl Playable for Tween {
 
     fn play(&mut self) {
         self.fix_animators();
-        self.print_timeline();
+        // self.print_timeline();
 
         self.started_at = Instant::now();
         self.state = TweenState::Running;
@@ -324,7 +343,7 @@ impl Playable for Tween {
                 if self.started_at.elapsed() > self.duration {
                     if self.repeat_count == 0 {
                         // If repeat_count is zero, tween is Completed.
-                        self.state = TweenState::Completed;
+                        self.state = TweenState::Finishing;
                         events.push(TKEvent::Completed(self.tween_id));
 
                     } else {
