@@ -47,8 +47,8 @@ impl GGTools {
         Ok(())
     }
 
-    pub fn build_play_button(ctx: &mut Context, frame: graphics::Rect) -> GameResult<GGButton> {
-        let mut button = GGButton::new(frame).with_title("Play")
+    pub fn build_play_button(ctx: &mut Context, frame: graphics::Rect) -> GameResult<ButtonView> {
+        let mut button = ButtonView::new(frame).with_title("Play")
             .with_props(&vec![color(0xCD09AA)]);
         let font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
 

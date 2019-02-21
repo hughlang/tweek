@@ -59,7 +59,7 @@ impl Animator {
 
         for (i, prop) in self.start_state.props.iter().enumerate() {
             if prop ==  &self.end_state.props[i] {
-                println!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);
+                // println!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);
                 props.push(prop.clone());
                 continue;
             }

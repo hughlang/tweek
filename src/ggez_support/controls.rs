@@ -16,10 +16,10 @@ use super::views::*;
 
 //-- GGButton -----------------------------------------------------------------------
 
-pub struct GGButton {
+pub struct ButtonView {
     pub layer: GGLayer,
-    pub label: Option<GGLabel>,
-    pub image: Option<GGImage>,
+    pub label: Option<LabelView>,
+    pub image: Option<ImageView>,
     pub defaults: HashMap<u32, Prop>,
     hover_animation: Option<UITransition>,
     mouse_state: MouseState,
@@ -27,10 +27,10 @@ pub struct GGButton {
 
 }
 
-impl GGButton {
+impl ButtonView {
     pub fn new(frame: graphics::Rect) -> Self {
         let layer = GGLayer::new(frame, DrawParam::new());
-        GGButton {
+        ButtonView {
             layer: layer,
             label: None,
             image: None,
@@ -50,15 +50,15 @@ impl GGButton {
 
     pub fn with_title(mut self, text: &str) -> Self {
         let frame = graphics::Rect::new(0.0, 0.0, self.layer.frame.w, self.layer.frame.h);
-        let label = GGLabel::new(&frame, text);
+        let label = LabelView::new(&frame, text);
         self.label = Some(label);
         self
     }
 
-    pub fn with_image(mut self, image: graphics::Image) -> Self {
-        let rect = graphics::Rect::new(0.0, 0.0, self.layer.frame.h - 4.0, self.layer.frame.h - 4.0);
+    pub fn with_image(mut self, image: graphics::Image, margin: f32) -> Self {
+        let rect = graphics::Rect::new(0.0, 0.0, self.layer.frame.h - margin, self.layer.frame.h - margin);
         let fraction = rect.h / image.height() as f32;
-        let mut img = GGImage::new(rect, image);
+        let mut img = ImageView::new(rect, image);
         img.scale = fraction;
         self.image = Some(img);
         self
@@ -94,7 +94,7 @@ impl GGButton {
 
 }
 
-impl GGDisplayable for GGButton {
+impl GGDisplayable for ButtonView {
     fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
@@ -128,7 +128,7 @@ impl GGDisplayable for GGButton {
 
 }
 
-impl TKResponder for GGButton {
+impl TKResponder for ButtonView {
 
     fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
         false
@@ -185,19 +185,19 @@ impl TKResponder for GGButton {
 
 //-- GGProgressBar -----------------------------------------------------------------------
 
-pub struct GGProgressBar {
+pub struct ProgressBarView {
     pub bg_layer: GGLayer,
     pub fg_layer: GGLayer,
     pub bg_image: Option<graphics::Mesh>,
     pub progress: f32,      // between 0.0 and 1.0
 }
 
-impl GGProgressBar {
+impl ProgressBarView {
     pub fn new(frame: graphics::Rect) -> Self {
         let layer1 = GGLayer::new(frame, DrawParam::new().color(graphics::BLACK));
         let layer2 = GGLayer::new(frame, DrawParam::new().color(graphics::WHITE));
 
-        GGProgressBar {
+        ProgressBarView {
             bg_layer: layer1,
             fg_layer: layer2,
             bg_image: None,
@@ -222,7 +222,7 @@ impl GGProgressBar {
     }
 }
 
-impl GGDisplayable for GGProgressBar {
+impl GGDisplayable for ProgressBarView {
     fn update(&mut self) -> GameResult {
         Ok(())
     }

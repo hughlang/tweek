@@ -21,20 +21,20 @@ pub trait GGDisplayable {
 
 //-- Label -----------------------------------------------------------------------
 
-pub struct GGLabel {
+pub struct LabelView {
     pub layer: GGLayer,
     pub title: String,
     pub text: graphics::Text,
 }
 
-impl GGLabel {
+impl LabelView {
     pub fn new(frame: &graphics::Rect, text: &str) -> Self {
         let layer = GGLayer::new(
             frame.clone(),
             DrawParam::new().color(graphics::WHITE),
         );
 
-        GGLabel {
+        LabelView {
             layer: layer,
             title: text.to_string(),
             text: graphics::Text::new(text.to_string()),
@@ -50,7 +50,7 @@ impl GGLabel {
     }
 }
 
-impl GGDisplayable for GGLabel {
+impl GGDisplayable for LabelView {
 
     fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.layer.animation {
@@ -80,17 +80,17 @@ impl GGDisplayable for GGLabel {
 
 //-- Image -----------------------------------------------------------------------
 
-pub struct GGImage {
+pub struct ImageView {
     pub layer: GGLayer,
     pub scale: f32,
     // pub mesh: Option<graphics::Mesh>,
     pub image: graphics::Image,
 }
 
-impl GGImage {
+impl ImageView {
     pub fn new(frame: graphics::Rect, image: graphics::Image) -> Self {
         let layer = GGLayer::new(frame, DrawParam::new());
-        GGImage {
+        ImageView {
             layer: layer,
             scale: 1.0,
             image: image,
@@ -98,7 +98,7 @@ impl GGImage {
     }
 }
 
-impl GGDisplayable for GGImage {
+impl GGDisplayable for ImageView {
     fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
@@ -122,9 +122,7 @@ impl GGDisplayable for GGImage {
     }
 
     fn render_inside(&mut self, rect: &graphics::Rect, ctx: &mut Context) -> GameResult {
-        // println!("parent={:?} inner={:?}", rect, self.layer.frame);
         let pt = Point2{x: rect.x + rect.w/2.0 , y: rect.y + rect.h/2.0 };
-        // println!("pt={:?} scale={}", pt, self.scale);
         let scale = Vector2{x: self.scale, y: self.scale};
         let drawparams = graphics::DrawParam::new()
             .dest(pt)

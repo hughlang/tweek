@@ -24,8 +24,8 @@ struct MainState {
     tweek: Tweek,
     tk_state: TKState,
     items: Vec<ItemState>,
-    buttons: Vec<GGButton>,
-    progress_bar: GGProgressBar,
+    buttons: Vec<ButtonView>,
+    progress_bar: ProgressBarView,
 }
 
 impl MainState {
@@ -37,7 +37,7 @@ impl MainState {
 
         let font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
 
-        let mut buttons: Vec<GGButton> = Vec::new();
+        let mut buttons: Vec<ButtonView> = Vec::new();
 
         let mut ypos = screen_h;
         let xpos = (screen_w - BAR_WIDTH)/2.0;
@@ -45,7 +45,7 @@ impl MainState {
         ypos -= 60.0;
         // Create play button
         let frame = graphics::Rect::new(xpos, ypos, 80.0, 36.0);
-        let mut button = GGButton::new(frame).with_title("Play")
+        let mut button = ButtonView::new(frame).with_title("Play")
             .with_props(&vec![color(HexColors::Lavender)]);
         button.set_font(&font, &14.0, &Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&Color::from_rgb_u32(0x999999));
@@ -59,7 +59,7 @@ impl MainState {
         ypos -= 20.0;
         // Create progress bar
         let frame = graphics::Rect::new(xpos, ypos, BAR_WIDTH, 4.0);
-        let mut progress = GGProgressBar::new(frame);
+        let mut progress = ProgressBarView::new(frame);
         progress.set_track_color(Color::from_rgb_u32(HexColors::MediumSlateBlue));
         progress.set_progress_color(Color::from_rgb_u32(HexColors::Azure));
 
