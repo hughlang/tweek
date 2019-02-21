@@ -20,49 +20,20 @@ use tweek::prelude::*;
 
 const SQUARE_ITEM_ID: usize = 100;
 
-struct MainState {
-    tweek: Tweek,
-    tk_state: TKState,
-    items: Vec<ItemState>,
-    buttons: Vec<ButtonView>,
-    progress_bar: ProgressBarView,
+struct StageHelper {
+
 }
 
-impl MainState {
-    fn new(ctx: &mut Context) -> GameResult<MainState> {
-        let screen_w = ctx.conf.window_mode.width;
-        let screen_h = ctx.conf.window_mode.height;
-
-        const BAR_WIDTH: f32 = 500.0;
-
-        let font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
-
-        let mut buttons: Vec<ButtonView> = Vec::new();
-
-        let mut ypos = screen_h;
-        let xpos = (screen_w - BAR_WIDTH)/2.0;
-
-        ypos -= 60.0;
-        // Create play button
-        let frame = graphics::Rect::new(xpos, ypos, 80.0, 36.0);
-        let mut button = ButtonView::new(frame).with_title("Play")
-            .with_props(&vec![color(HexColors::Lavender)]);
-        button.set_font(&font, &14.0, &Color::from_rgb_u32(0xFFFFFF));
-        button.set_color(&Color::from_rgb_u32(0x999999));
+impl StageHelper {
+    fn make_player_button(ctx: &mut Context, file: &str, frame: graphics::Rect) -> GameResult<ButtonView> {
+        let icon = graphics::Image::new(ctx, file.to_string())?;
+        let mut button = ButtonView::new(frame).with_image(icon, 4.0);
+        button.set_color(&graphics::Color::from_rgb_u32(0x999999));
         button.set_hover_animation(vec![color(0xFF8920)], 0.1);
-        button.set_onclick(move |_action, _state| {
-            // println!("Button onclick: action={:?}", action);
+        Ok(button)
+    }
 
-        });
-        buttons.push(button);
-
-        ypos -= 20.0;
-        // Create progress bar
-        let frame = graphics::Rect::new(xpos, ypos, BAR_WIDTH, 4.0);
-        let mut progress = ProgressBarView::new(frame);
-        progress.set_track_color(Color::from_rgb_u32(HexColors::MediumSlateBlue));
-        progress.set_progress_color(Color::from_rgb_u32(HexColors::Azure));
-
+    fn build_timeline_1() -> GameResult<(Timeline, Vec<ItemState>)> {
         let mut ypos = 50.0 as f32;
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
@@ -81,14 +52,78 @@ impl MainState {
             items.push(item1);
             tweens.push(tween1)
         }
-
-        let mut tweek = Tweek::new();
-
         let timeline = Timeline::add(tweens)
             // .stagger(0.2)
             .align(TweenAlign::Sequence)
             ;
+        Ok((timeline, items))
+    }
+}
+struct MainState {
+    tweek: Tweek,
+    tk_state: TKState,
+    items: Vec<ItemState>,
+    buttons: Vec<ButtonView>,
+    progress_bar: ProgressBarView,
+}
 
+
+impl MainState {
+    fn new(ctx: &mut Context) -> GameResult<MainState> {
+        let screen_w = ctx.conf.window_mode.width;
+        let screen_h = ctx.conf.window_mode.height;
+
+        const BAR_WIDTH: f32 = 500.0;
+        const BUTTON_WIDTH: f32 = 60.0;
+        const BUTTON_GAP: f32 = 20.0;
+
+        let _font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
+
+        let mut buttons: Vec<ButtonView> = Vec::new();
+        let mut xpos = (screen_w - BAR_WIDTH)/2.0;
+
+        let ypos = screen_h - 90.0;
+        // Create progress bar
+        let frame = graphics::Rect::new(xpos, ypos, BAR_WIDTH, 4.0);
+        let mut progress = ProgressBarView::new(frame);
+        progress.set_track_color(Color::from_rgb_u32(HexColors::MediumSlateBlue));
+        progress.set_progress_color(Color::from_rgb_u32(HexColors::Azure));
+
+        let ypos = screen_h - 60.0;
+
+        // ---- Skip Back ---------------------
+        let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
+        let mut button = StageHelper::make_player_button(ctx, "/icons/md-skip-backward.png", frame)?;
+        button.set_onclick(move |_action, _state| {
+            // println!("Button onclick: action={:?}", action);
+
+        });
+        buttons.push(button);
+
+        // ---- Play ---------------------
+        xpos += BUTTON_WIDTH + BUTTON_GAP;
+        let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
+        let mut button = StageHelper::make_player_button(ctx, "/icons/ios-play.png", frame)?;
+        button.set_onclick(move |_action, _state| {
+            println!("Button onclick: action={:?}", _action);
+
+        });
+        buttons.push(button);
+
+        // ---- Skip Next ---------------------
+        xpos += BUTTON_WIDTH + BUTTON_GAP;
+        let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
+        let mut button = StageHelper::make_player_button(ctx, "/icons/md-skip-forward.png", frame)?;
+        button.set_onclick(move |_action, _state| {
+            // println!("Button onclick: action={:?}", action);
+
+        });
+        buttons.push(button);
+
+        // Here you can choose which timeline and animations to run
+        let (timeline, items) = StageHelper::build_timeline_1()?;
+
+        let mut tweek = Tweek::new();
         tweek.add_timeline(timeline);
         &tweek.play();
 
@@ -103,6 +138,7 @@ impl MainState {
         };
         Ok(s)
     }
+
 }
 
 impl event::EventHandler for MainState {

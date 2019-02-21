@@ -103,7 +103,7 @@ impl ButtonView {
 
 }
 
-impl GGEZView for ButtonView {
+impl Displayable for ButtonView {
     fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
@@ -231,7 +231,7 @@ impl ProgressBarView {
     }
 }
 
-impl GGEZView for ProgressBarView {
+impl Displayable for ProgressBarView {
     fn update(&mut self) -> GameResult {
         Ok(())
     }

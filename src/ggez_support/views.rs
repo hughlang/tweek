@@ -1,4 +1,4 @@
-/// Basic views that conform to GGEZView, but do not implement TKResponder
+/// Basic views that conform to GGEZView, but are not required to implement TKResponder
 ///
 ///
 extern crate ggez;
@@ -11,10 +11,47 @@ use ggez::{Context, GameResult};
 
 use super::base::*;
 
-pub trait GGEZView {
+pub trait Displayable {
     fn update(&mut self) -> GameResult;
     fn render(&mut self, ctx: &mut Context) -> GameResult;
     fn render_inside(&mut self, _rect: &graphics::Rect, _ctx: &mut Context) -> GameResult {
+        Ok(())
+    }
+}
+
+// Not finished and currently unused
+pub struct BoxView {
+    pub layer: GGLayer,
+    pub subviews: Vec<Box<Displayable>>,  // TBD
+}
+
+impl BoxView {
+    pub fn new(frame: graphics::Rect) -> Self {
+        let layer = GGLayer::new(frame, DrawParam::new() );
+        BoxView {
+            layer: layer,
+            subviews: Vec::new(),
+        }
+    }
+}
+
+impl Displayable for BoxView {
+
+    fn update(&mut self) -> GameResult {
+        Ok(())
+    }
+
+    fn render(&mut self, ctx: &mut Context) -> GameResult {
+        let mesh = graphics::Mesh::new_rectangle(
+            ctx,
+            graphics::DrawMode::fill(),
+            self.layer.frame,
+            self.layer.graphics.color,
+        )?;
+        graphics::draw(ctx, &mesh, self.layer.graphics)?;
+
+        // TODO: Iterate through subviews and render_inside?
+
         Ok(())
     }
 }
@@ -50,7 +87,7 @@ impl LabelView {
     }
 }
 
-impl GGEZView for LabelView {
+impl Displayable for LabelView {
 
     fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.layer.animation {
@@ -98,7 +135,7 @@ impl ImageView {
     }
 }
 
-impl GGEZView for ImageView {
+impl Displayable for ImageView {
     fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();

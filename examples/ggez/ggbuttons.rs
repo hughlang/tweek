@@ -54,7 +54,6 @@ impl MainState {
 
         let frame = graphics::Rect::new(xpos, ypos, 80.0, 32.0);
         let mut button = ButtonView::new(frame).with_image(icon, 4.0);
-        button.set_hover_animation(vec![color(HexColors::DarkGray)], 0.1);
         button.set_color(&graphics::Color::from_rgb_u32(0x999999));
         button.set_hover_animation(vec![color(0xFF8920)], 0.1);
         controls.push(button);
