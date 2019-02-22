@@ -9,8 +9,6 @@ pub type ColorRGBA = Vector4<f32>;
 pub type Point2D = Vector2<f64>;
 pub type Frame2D = Vector2<f64>;
 pub type Bezier = Vector4<f64>;
-pub type ShiftX = Vector1<f64>;
-pub type ShiftY = Vector1<f64>;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Prop {
@@ -69,30 +67,6 @@ impl Prop {
             _ => Prop::None,
         }
     }
-
-    pub fn add_offset_prop(&mut self, offset: Prop) {
-        match offset {
-            Prop::Shift(pt) => {
-                if self.prop_id() == 3 {
-
-                }
-            },
-            _ => (),
-        }
-    }
-
-    // pub fn get_value(&self) -> Vector4<f64> {
-    //     let value: Vector4 = match self {
-    //         Prop::None => Vector4<f64>::zero(),
-    //         Prop::Alpha(v1) => {
-
-    //         },
-    //         Prop::Color(v4) => v4,
-    //         Prop::Position(v2) => v2,
-    //         Prop::Size(v2) => v2,
-    //     }
-    //     value
-    // }
 }
 
 #[derive(Default, Debug, Clone)]

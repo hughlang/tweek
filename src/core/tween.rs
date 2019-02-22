@@ -117,6 +117,10 @@ impl Tween {
         }
     }
 
+    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKState) + 'static {
+        self.callbacks.push(Box::new(cb));
+    }
+
     /// Function to initialize a Tween with the vector of Tweenables
     /// The starting state of all Props are stored
     pub fn with(id: usize, tweenable: &Tweenable) -> Self {
@@ -144,38 +148,6 @@ impl Tween {
             tween.start_props.push(prop);
         }
         tween
-    }
-
-
-
-    /// Function which reads the list of "to" props and finds the matching ones
-    /// already saved in self.start_props to make sure that start_props and
-    /// end_props have matching Prop types in the same order.
-    pub fn to(mut self, props:Vec<Prop>) -> Self {
-
-        // Some of the props may include offset types like Shift. These need to be separated
-        // from the basic props
-        let mut cleaned_props: Vec<Prop> = Vec::new();
-        let mut sum_shift = Point2D::zero();
-
-        for prop in &props {
-            match prop {
-                Prop::Shift(v2) => {
-                    sum_shift += v2.clone();
-                },
-                _ => {
-                    cleaned_props.push(prop.clone());
-                },
-            }
-        }
-        println!(">>>> sum_shift={:?}", sum_shift);
-        if sum_shift != Point2D::zero() {
-            cleaned_props.push(Prop::Shift(sum_shift));
-        }
-
-        let mut animator = Animator::create(&self.tween_id, &self.start_props, &cleaned_props);
-        self.animators.push(animator);
-        self
     }
 
     pub fn duration(mut self, secs: f64) -> Self {
@@ -233,10 +205,7 @@ impl Tween {
         self
     }
 
-    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKState) + 'static {
-        self.callbacks.push(Box::new(cb));
-    }
-
+    // TODO: move this to Playable
     pub fn total_time(&self) -> f64 {
         let mut time = 0.0 as f64;
         for animator in &self.animators {
@@ -285,28 +254,36 @@ impl Tween {
         None
     }
 
-    #[allow(dead_code)]
-    fn print_timeline(&self) {
-        // const MAX_WIDTH = 80; // ascii width
-        const LEAD_WIDTH: usize = 10;
-        let total_time = self.total_time();
-        let interval = 0.1 as f64;
-        println!("x={} interval={}", total_time, interval);
-        let width = LEAD_WIDTH + (total_time / interval).floor() as usize + self.animators.len();
-        println!("{}", "=".repeat(width));
-        for (idx, animator) in self.animators.iter().enumerate() {
-            let pos = (animator.start_time / interval) as usize;
-            let label = format!("[{: <10}]", idx);
-            let bar = format!("{}", "*".repeat((animator.seconds / interval) as usize));
-            println!("{}{}{}", label, " ".repeat(pos), bar);
+    /// Function which reads the list of "to" props and finds the matching ones
+    /// already saved in self.start_props to make sure that start_props and
+    /// end_props have matching Prop types in the same order.
+    pub fn to(mut self, props:Vec<Prop>) -> Self {
 
-            println!("{}", "-".repeat(width));
+        // Some of the props may include offset types like Shift. These need to be separated
+        // from the basic props
+        let mut cleaned_props: Vec<Prop> = Vec::new();
+        let mut sum_shift = Point2D::zero();
 
+        for prop in &props {
+            match prop {
+                Prop::Shift(v2) => {
+                    sum_shift += v2.clone();
+                },
+                _ => {
+                    cleaned_props.push(prop.clone());
+                },
+            }
         }
-        println!("{}", "=".repeat(width));
+        if sum_shift != Point2D::zero() {
+            println!(">>>> Add prop: sum_shift={:?}", sum_shift);
+            cleaned_props.push(Prop::Shift(sum_shift));
+        }
 
-
+        let animator = Animator::create(&self.tween_id, &self.start_props, &cleaned_props);
+        self.animators.push(animator);
+        self
     }
+
 
     /// An awkward but necessary function to align all the start and end props in
     /// all animators so that they have matching props in the same order.
@@ -353,22 +330,31 @@ impl Tween {
             // Because of the prop_map loading at the start of this function,
             // the parent is guaranteed to exist in the begin_props
             for prop in &animator.end_state.props {
-                let parent = prop.lookup_parent_prop();
-                match parent {
+                // println!(">>>> Evaluating end_state.prop={:?}", prop);
+                match prop {
                     Prop::Shift(offset) => {
-                        let mut iter = begin_props.iter_mut().filter(|x| x.prop_id() == parent.prop_id());
-                        if let Some(begin_prop) = &iter.next() {
-                            match begin_prop {
-                                Prop::Position(pos) => {
-                                    let sum_vec = pos.clone() + offset.clone();
-                                    end_props.push(Prop::Position(sum_vec));
-                                },
-                                _ => (),
+                    let parent = prop.lookup_parent_prop();
+                    match parent {
+                        Prop::Position(_) => {
+                            let mut iter = begin_props.iter_mut().filter(|x| x.prop_id() == parent.prop_id());
+                            if let Some(begin_prop) = &iter.next() {
+                                match begin_prop {
+                                    Prop::Position(pos) => {
+                                        let sum_vec = pos.clone() + offset.clone();
+                                        let sum_prop = Prop::Position(sum_vec);
+                                        println!(">>>> Inserting sum_prop={:?}", sum_prop);
+                                        end_props.push(sum_prop);
+                                    },
+                                    _ => (),
+                                }
                             }
-                        }
+                        },
+                        _ => {
+                        },
+                    }
+
                     },
-                    _ => {
-                    },
+                    _ => (),
                 }
             }
 

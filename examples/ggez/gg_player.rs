@@ -112,13 +112,13 @@ impl StageHelper {
         let mut ypos = 50.0 as f32;
 
         let id = 100;
-        let mut item2 = ItemState::new(id, Shape::Circle(mint::Point2{x: 20.0, y: ypos}, 40.0))?;
+        let mut item2 = ItemState::new(id, Shape::Circle(mint::Point2{x: 50.0, y: ypos}, 40.0))?;
         item2.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
 
         let mut tween = Tween::with(id, &item2.layer)
-            .to(vec![position(400.0, ypos as f64), alpha(0.2)]).duration(1.0)
-            .to(vec![position(40.0, 40.0), alpha(1.0)]).duration(0.5)
-            .to(vec![position(300.0, 40.0), alpha(1.0)]).duration(0.5)
+            .to(vec![shift_x(400.0), shift_x(200.0), alpha(0.2)]).duration(1.0)
+            .to(vec![shift_y(300.0), shift_x(-100.0), alpha(1.0)]).duration(0.5)
+            .to(vec![position(200.0, 200.0), alpha(1.0)]).duration(0.5)
             .to(vec![size(200.0, 200.0)]).duration(1.0)
             .repeat(4, 0.25);
         tweens.push(tween);
