@@ -111,19 +111,20 @@ impl StageHelper {
         let mut tweens: Vec<Tween> = Vec::new();
         let mut ypos = 50.0 as f32;
 
-        let id = 100;
-        let mut item2 = ItemState::new(id, Shape::Circle(mint::Point2{x: 50.0, y: ypos}, 40.0))?;
-        item2.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
+        let rect = graphics::Rect::new(50.0, ypos, 50.0, 50.0);
+        let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
+        item1.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
 
-        let mut tween = Tween::with(id, &item2.layer)
+        let mut tween = Tween::with(SQUARE_ITEM_ID, &item1.layer)
             .to(vec![shift_x(400.0), shift_x(200.0), alpha(0.2)]).duration(1.0)
             .to(vec![shift_y(300.0), shift_x(-100.0), alpha(1.0)]).duration(0.5)
             .to(vec![position(200.0, 200.0), alpha(1.0)]).duration(0.5)
             .to(vec![size(200.0, 200.0)]).duration(1.0)
-            .repeat(4, 0.25);
+            // .repeat(4, 0.25)
+            ;
         tweens.push(tween);
 
-        items.push(item2);
+        items.push(item1);
 
         let timeline = Timeline::add(tweens)
             // .stagger(0.2)
