@@ -236,7 +236,6 @@ impl Tween {
             TweenState::Running => {
                 let elapsed = self.started_at.elapsed().as_float_secs();
                 let total_seconds = self.duration.as_float_secs();
-                // println!("duration={:?} // elapsed={}", self.duration, elapsed);
                 for animator in &mut self.animators {
                     if self.time_scale > 0.0 {
                         if animator.start_time < elapsed && animator.end_time >= elapsed {
@@ -260,24 +259,16 @@ impl Tween {
                 if let Some(animator) = self.animators.last_mut() {
                     self.state = TweenState::Completed;
                     if self.time_scale >= 0.0 {
+                        println!("Finishing with end state props");
                         return Some(animator.end_state.clone());
                     } else {
+                        println!("Finishing with start state props");
                         return Some(animator.start_state.clone());
                     }
                 }
             }
             _ => ()
         }
-        // if self.state == TweenState::Running {
-        //     // For now, this assumes that animators do not overlap and are purely sequential
-        //     for animator in &mut self.animators {
-        //         let elapsed = self.started_at.elapsed().as_float_secs();
-        //         if animator.start_time < elapsed && animator.end_time >= elapsed {
-        //             let ui_state = animator.update(self.started_at, self.time_scale);
-        //             return Some(ui_state);
-        //         }
-        //     }
-        // }
         None
     }
 
@@ -372,19 +363,19 @@ impl Tween {
 
             }
 
-            // Now, the end_props should be matching list of against start_state.props.
-            // Set end_state.props with end_props
-            // At this point, this dataset will work fine, but it includes props that have not
-            // been mutated over time.
+            // Now, the end_props should be matching the list of start_state.props, so we can save that.
+            // And then overwrite begin_props with end_props for the next loop.
             animator.end_state.props = end_props.clone();
             begin_props = end_props.clone();
             // println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
         }
 
         // Step 2:
-        // Iterate through animators again and only include props that were mutated
+        // At this point, this dataset will work fine, but it includes props that have not
+        // been mutated over time.  So, this next step trims down the props list to only the
+        // props that have been mutated across all animators.
         for animator in &mut self.animators {
-            // TODO: Implement FromIterator or whatever to make this simple
+            // TODO: Implement FromIterator or whatever to make this less complex.
             let mut iter = animator.start_state.props.iter_mut().filter(|x| keep_prop_ids.contains(&x.prop_id()));
             let mut start_props: Vec<Prop> = Vec::new();
             while let Some(prop) = iter.next() {

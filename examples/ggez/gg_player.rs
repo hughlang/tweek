@@ -26,6 +26,10 @@ const BUTTON_GAP: f32 = 20.0;
 
 struct StageHelper {}
 
+
+/// The StageHelper generates most of the objects used in this demo. There are helper functions for creating
+/// the player buttons and progress bar. And there are helper functions that create different animation scenarios
+/// that you can test by editing the MainState code below StageHelper and picking the function you want to try.
 #[allow(dead_code)]
 #[allow(unused_mut)]
 impl StageHelper {
@@ -54,7 +58,7 @@ impl StageHelper {
         let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
         let mut button = StageHelper::make_player_button(ctx, "/icons/ios-play.png", frame)?;
         button.set_onclick(move |_action, tk| {
-            println!("Button onclick: action={:?}", _action);
+            // println!("Button onclick: action={:?}", _action);
             tk.requests.push(TKRequest::Play);
 
         });
@@ -96,14 +100,22 @@ impl StageHelper {
 
             let tween1 = Tween::with(item_id, &item1.layer)
                 .to(vec![position(400.0, ypos as f64), size(80.0, 80.0)])
-                .duration(0.5);
+                .duration(0.5)
+                .yoyo()
+                ;
             ypos += 120.0;
             items.push(item1);
             tweens.push(tween1)
         }
+
+        // Testing variations:
+        // * The stagger function tells the timeline to offset the start time of each tween by
+        // a fixed time (in seconds).
+        // * The align function can support Sequence playback of the tweens (one after the other),
+        // while the default behavior is to run them all simultaneously.
         let timeline = Timeline::add(tweens)
+            // .align(TweenAlign::Sequence)
             // .stagger(0.2)
-            .align(TweenAlign::Sequence)
             ;
         Ok((timeline, items))
     }
@@ -111,9 +123,6 @@ impl StageHelper {
     ///---- 2 ----------------------------------------------------------------------
     /// This is a timeline with a single tween that repeats. A repeat_count of 1 means it
     /// play twice.
-    /// Testing variations by un/commenting specific lines:
-    /// * Tween repeat (without yoyo) should repeat the number of times you specify
-    /// * Yoyo repeat should go back and forth smoothly based on repeat_count (default=1)
     fn build_timeline_2() -> GameResult<(Timeline, Vec<ItemState>)> {
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
@@ -123,6 +132,16 @@ impl StageHelper {
         let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
         item1.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
 
+        // FYI: the Tween props below show how you can dynamically build sequences of animations
+        // in a single tween by chaining together "to" function calls. It transparently
+        // creates new animators in the Tween.
+        // Also, this shows the usage of shift_x and shift_y, which are offset functions that
+        // manipulate the previous state. Just for fun, it shows that two shift_x props are
+        // handled fine by adding them together.
+        //
+        // Testing variations:
+        // * Tween repeat (without yoyo) should repeat the number of times you specify
+        // * Yoyo repeat should go back and forth smoothly based on repeat_count (default=1)
         let mut tween = Tween::with(SQUARE_ITEM_ID, &item1.layer)
             .to(vec![shift_x(400.0), shift_x(200.0), alpha(0.2)]).duration(1.0)
             .to(vec![shift_y(300.0), shift_x(-100.0), alpha(1.0)]).duration(0.5)
@@ -174,9 +193,11 @@ impl MainState {
 
         let buttons = StageHelper::build_player_buttons(ctx)?;
 
+        // ########################################################
         // Here you can choose which timeline and animations to run
-        // let (timeline, items) = StageHelper::build_timeline_1()?;
-        let (timeline, items) = StageHelper::build_timeline_2()?;
+        // ########################################################
+        let (timeline, items) = StageHelper::build_timeline_1()?;
+        // let (timeline, items) = StageHelper::build_timeline_2()?;
 
         let mut tweek = Tweek::new();
         tweek.add_timeline(timeline);
