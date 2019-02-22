@@ -3,7 +3,7 @@ extern crate ggez;
 extern crate uuid;
 
 use cgmath::*;
-use std::{collections::HashMap};
+use std::{collections::HashSet};
 use std::{time::{Duration,Instant}};
 use std::hash::{Hash, Hasher};
 use uuid::Uuid;
@@ -290,39 +290,11 @@ impl Tween {
     /// This is necessary to support the chaining of to() functions to arbitrarily
     /// create a sequence of animations in a single Tween
     fn fix_animators(&mut self) {
-        // let mut prop_map: HashMap<u32, Prop> = HashMap::new();
 
-        // // Create map of all manipulated Props in all animations
-        // for animator in &mut self.animators {
-        //     for prop in &animator.end_state.props {
-        //         // Use the lookup function to determine if the prop is an offset prop like Shift
-        //         // If so, insert that into the prop_map instead.
-        //         let parent = prop.lookup_parent_prop();
-        //         match parent {
-        //             Prop::None => {
-        //                 prop_map.insert(prop.prop_id(), prop.clone());
-        //             },
-        //             _ => {
-        //                 prop_map.insert(parent.prop_id(), parent);
-        //             },
-        //         }
-        //     }
-        // }
-
-        // let mut start_map: HashMap<u32, Prop> = HashMap::new();
-        // for prop in &self.start_props {
-        //     start_map.insert(prop.prop_id(), prop.clone());
-        // }
-        // let mut begin_props: Vec<Prop> = Vec::new();
-
-        // // Use prop_map as template to fill start_props with the filtered set of props
-        // for (id, _) in prop_map {
-        //     if let Some(last_prop) = start_map.get(&id) {
-        //         begin_props.push(last_prop.clone());
-        //     }
-        // }
+        let mut keep_prop_ids: HashSet<u32> = HashSet::new();
         let mut begin_props: Vec<Prop> = Vec::new();
         let mut end_props: Vec<Prop> = Vec::new();
+
         if let Some(first) = &self.animators.first_mut() {
             begin_props = first.start_state.props.clone();
         }
@@ -332,22 +304,24 @@ impl Tween {
             if !&end_props.is_empty() {
                 animator.start_state.props = end_props.clone();
             }
-
             &end_props.clear();
-            // Step 1: start_state.props should always have the full list of available props.
+
+            // Step 1:
+            // start_state.props should always have the full list of available props.
             // Use this list to populate end_props in this priority order:
             // a) Find exact match in end_state.props and insert into end_props
             // b) Find offset matches (like Shift) in end_state.props and insert into end_props
             // c) Copy unchanged prop from start_state.props to end_state.props
+
             for begin_prop in begin_props {
                 let mut iter = animator.end_state.props.iter_mut().filter(|x| x.prop_id() == begin_prop.prop_id());
                 if let Some(end_prop) = iter.next() {
                     end_props.push(end_prop.clone());
+                    keep_prop_ids.insert(begin_prop.prop_id());
                 } else {
                     let mut iter = animator.end_state.props.iter_mut()
                         .filter(|x| x.lookup_parent_prop().prop_id() == begin_prop.prop_id());
                     if let Some(end_prop) = iter.next() {
-                        // FIXME: This should calculate offset
                         match end_prop {
                             Prop::Shift(offset) => {
                                 // calculate offset from begin_prop
@@ -357,6 +331,7 @@ impl Tween {
                                         let sum_prop = Prop::Position(sum_vec);
                                         println!(">>>> Inserting sum_prop={:?}", sum_prop);
                                         end_props.push(sum_prop);
+                                        keep_prop_ids.insert(begin_prop.prop_id());
                                     },
                                     _ => (),
                                 }
@@ -372,62 +347,31 @@ impl Tween {
 
             // Now, the end_props should be matching list of against start_state.props.
             // Set end_state.props with end_props
-
-            // animator.start_state.props = begin_props.clone();
+            // At this point, this dataset will work fine, but it includes props that have not
+            // been mutated over time.
             animator.end_state.props = end_props.clone();
             begin_props = end_props.clone();
-            println!("STEP 1 >>>> start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
-
-
-            // // Look for offset props that need a corresponding parent prop
-            // // Because of the prop_map loading at the start of this function,
-            // // the parent is guaranteed to exist in the begin_props
-            // for prop in &animator.end_state.props {
-            //     // println!(">>>> Evaluating end_state.prop={:?}", prop);
-            //     match prop {
-            //         Prop::Shift(offset) => {
-            //         let parent = prop.lookup_parent_prop();
-            //         match parent {
-            //             Prop::Position(_) => {
-            //                 let mut iter = begin_props.iter_mut().filter(|x| x.prop_id() == parent.prop_id());
-            //                 if let Some(begin_prop) = &iter.next() {
-            //                     match begin_prop {
-            //                         Prop::Position(pos) => {
-            //                             let sum_vec = pos.clone() + offset.clone();
-            //                             let sum_prop = Prop::Position(sum_vec);
-            //                             println!(">>>> Inserting sum_prop={:?}", sum_prop);
-            //                             end_props.push(sum_prop);
-            //                         },
-            //                         _ => (),
-            //                     }
-            //                 }
-            //             },
-            //             _ => {
-            //             },
-            //         }
-
-            //         },
-            //         _ => (),
-            //     }
-            // }
-
-            // for prop in &begin_props {
-            //     let end_prop = animator.end_state.get_prop_value(prop.prop_id());
-            //     if end_prop != Prop::None {
-            //         end_props.push(end_prop);
-            //     } else {
-            //         if let Some(begin_prop) = start_map.get(&prop.prop_id()) {
-            //             end_props.push(begin_prop.clone());
-            //         }
-            //     }
-            // }
-
-            // // begin_props starts with the filtered set of props from self.start_props
-            // // and gets updated with the end_state.props at the end of each loop
-            // animator.start_state.props = begin_props.clone();
-            // animator.end_state.props = end_props.clone();
-            // begin_props = animator.end_state.props.clone();
             // println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
+        }
+
+        // Step 2:
+        // Iterate through animators again and only include props that were mutated
+        for animator in &mut self.animators {
+            // TODO: Implement FromIterator or whatever to make this simple
+            let mut iter = animator.start_state.props.iter_mut().filter(|x| keep_prop_ids.contains(&x.prop_id()));
+            let mut start_props: Vec<Prop> = Vec::new();
+            while let Some(prop) = iter.next() {
+                start_props.push(prop.clone());
+            }
+            animator.start_state.props = start_props;
+
+            let mut iter = animator.end_state.props.iter_mut().filter(|x| keep_prop_ids.contains(&x.prop_id()));
+            let mut end_props: Vec<Prop> = Vec::new();
+            while let Some(prop) = iter.next() {
+                end_props.push(prop.clone());
+            }
+            animator.end_state.props = end_props;
+            println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
         }
 
     }
