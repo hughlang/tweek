@@ -36,7 +36,7 @@ impl MainState {
 
         let mut tween1 = Tween::with(SQUARE_ITEM_ID, &item1.layer)
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(1.0).repeat(7, 0.25).yoyo();
+            .duration(1.0).repeat(1, 0.25).yoyo();
 
         &tween1.play();
         item1.tween = Some(tween1);
@@ -47,7 +47,7 @@ impl MainState {
 
         let mut tween2 = Tween::with(ROUND_ITEM_ID, &item2.layer)
             .to(vec![position(40.0, 400.0), color(0xFF8920)])
-            .duration(1.0).repeat(7, 0.0).yoyo();
+            .duration(1.0).repeat(2, 0.0).yoyo();
 
         &tween2.play();
         item2.tween = Some(tween2);

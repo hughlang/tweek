@@ -61,11 +61,11 @@ pub trait Tweenable {
 /// The TweenState represents the animation state machine.
 #[derive(PartialEq)]
 pub enum TweenState {
-    Pending,
-    Running,
-    Idle,
-    Cancelled,
-    Finishing,
+    Pending, // the initial state before play begins
+    Running, // when play starts
+    Idle,    // after play has completed and waiting for next instruction
+    Cancelled,  // not in use
+    Finishing,  // final state that allows one last update call to deliver tween end_state props
     Completed,
 }
 
@@ -181,7 +181,7 @@ impl Tween {
         self
     }
 
-    pub fn timing(mut self, ease: Ease) -> Self {
+    pub fn ease(mut self, ease: Ease) -> Self {
         if self.animators.len() > 0 {
             if let Some(animator) = self.animators.last_mut() {
                 animator.ease = ease;
@@ -206,6 +206,7 @@ impl Tween {
     }
 
     // TODO: move this to Playable
+    // TODO: self.duration should be accurate. Use that instead.
     pub fn total_time(&self) -> f64 {
         let mut time = 0.0 as f64;
         for animator in &self.animators {
@@ -289,7 +290,7 @@ impl Tween {
     /// all animators so that they have matching props in the same order.
     /// This is necessary to support the chaining of to() functions to arbitrarily
     /// create a sequence of animations in a single Tween
-    fn fix_animators(&mut self) {
+    fn sync_animators(&mut self) {
 
         let mut keep_prop_ids: HashSet<u32> = HashSet::new();
         let mut begin_props: Vec<Prop> = Vec::new();
@@ -381,7 +382,7 @@ impl Playable for Tween {
 
     fn play(&mut self) {
         println!("Play?");
-        self.fix_animators();
+        self.sync_animators();
         // self.print_timeline();
 
         self.started_at = Instant::now();
@@ -401,12 +402,14 @@ impl Playable for Tween {
                         events.push(TKEvent::Completed(self.tween_id));
 
                     } else {
-                        // If it positive or negative, continue repeating
+                        // If it positive or negative, continue repeating.
+                        // set state=Idle means wait for repeat_delay to finish
                         self.state = TweenState::Idle;
                     }
                 }
             },
             TweenState::Idle => {
+                // If repeat_delay > 0, tween should wait until time elapsed passes it
                 if self.started_at.elapsed() > self.duration + self.repeat_delay
                 {
                     if self.repeat_count > 0 {

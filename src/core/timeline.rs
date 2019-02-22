@@ -148,45 +148,47 @@ impl Playable for Timeline {
 	}
 
 	// Deprecate this to a no-op
+	#[allow(unused_mut)]
     fn tick(&mut self) -> Vec<TKEvent> {
+		println!("Timeline.tick is deprecated ###########################");
         let mut events: Vec<TKEvent> = Vec::new();
-		for (_, range) in &self.children {
-			let elapsed = self.tl_start.elapsed().as_float_secs();
-			if range.start <= elapsed && range.end > elapsed {
-				let mut tween = range.tween.borrow_mut();
-				match tween.state {
-					TweenState::Idle | TweenState::Pending => {
-						(&mut *tween).play();
-					},
-					_ => {
-						let mut ticks = (&mut *tween).tick();
-			            events.append(&mut ticks);
-					}
-				}
-			} else {
-				let mut tween = range.tween.borrow_mut();
-				let mut ticks = (&mut *tween).tick();
-				events.append(&mut ticks);
-			}
-		}
+		// for (_, range) in &self.children {
+		// 	let elapsed = self.tl_start.elapsed().as_float_secs();
+		// 	if range.start <= elapsed && range.end > elapsed {
+		// 		let mut tween = range.tween.borrow_mut();
+		// 		match tween.state {
+		// 			TweenState::Idle | TweenState::Pending => {
+		// 				(&mut *tween).play();
+		// 			},
+		// 			_ => {
+		// 				let mut ticks = (&mut *tween).tick();
+		// 	            events.append(&mut ticks);
+		// 			}
+		// 		}
+		// 	} else {
+		// 		let mut tween = range.tween.borrow_mut();
+		// 		let mut ticks = (&mut *tween).tick();
+		// 		events.append(&mut ticks);
+		// 	}
+		// }
 
-		// Now read the context for events
-		for event in &events {
-			match event {
-				TKEvent::Completed(id) => {
-					// Decide: repeat?
-					println!("Completed={}", id);
-					if let Some(_range) = &self.children.get(id) {
+		// // Now read the context for events
+		// for event in &events {
+		// 	match event {
+		// 		TKEvent::Completed(id) => {
+		// 			// Decide: repeat?
+		// 			println!("Completed={}", id);
+		// 			if let Some(_range) = &self.children.get(id) {
 
-						// self.reset();
-						// let mut tween = range.tween.borrow_mut();
-						// (&mut *tween).reset();
-					}
+		// 				// self.reset();
+		// 				// let mut tween = range.tween.borrow_mut();
+		// 				// (&mut *tween).reset();
+		// 			}
 
-				}
-				_ => (),
-			}
-		}
+		// 		}
+		// 		_ => (),
+		// 	}
+		// }
 		events
 	}
 
@@ -206,6 +208,7 @@ impl Playable for Timeline {
 	}
 
 	fn reset(&mut self) {
+		dbg!("RESET");
 		self.tl_start = Instant::now();
 		for (_, range) in &self.children {
 			let mut tween = range.tween.borrow_mut();
@@ -227,13 +230,16 @@ impl Playable for Timeline {
 impl TimelineAware for Timeline {
 	/// Purpose: Tell each child tween to run tick() method and provide
 	/// information updates to TKState
+	/// 1. Each tween handles its own repeats and will set its state to Idle just before repeating.
     fn update(&mut self, ctx: &mut TKState) {
 		for (_, range) in &self.children {
+			//
 			let elapsed = self.tl_start.elapsed().as_float_secs();
 			if range.start <= elapsed && range.end > elapsed {
 				let mut tween = range.tween.borrow_mut();
 				match tween.state {
 					TweenState::Idle | TweenState::Pending => {
+						dbg!("Timeline says Play");
 						(&mut *tween).play();
 					},
 					_ => {

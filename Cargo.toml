@@ -9,10 +9,6 @@ name = "tweek"
 path = "src/lib.rs"
 
 [[bin]]
-name = "ggrunner"
-path = "examples/ggez/ggrunner.rs"
-
-[[bin]]
 name = "ggmix"
 path = "examples/ggez/ggmix.rs"
 

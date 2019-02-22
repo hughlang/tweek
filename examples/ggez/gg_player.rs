@@ -80,6 +80,7 @@ impl StageHelper {
         Ok(button)
     }
 
+    //---- 1 ----------------------------------------------------------------------
     /// This is a simple Sequence timeline where 4 independent tweens play sequentially,
     /// without any repeats.
     fn build_timeline_1() -> GameResult<(Timeline, Vec<ItemState>)> {
@@ -106,6 +107,9 @@ impl StageHelper {
         Ok((timeline, items))
     }
 
+    ///---- 2 ----------------------------------------------------------------------
+    /// This is a timeline with a single tween that repeats. A repeat_count of 1 means it
+    /// play twice.
     fn build_timeline_2() -> GameResult<(Timeline, Vec<ItemState>)> {
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
@@ -120,14 +124,13 @@ impl StageHelper {
             .to(vec![shift_y(300.0), shift_x(-100.0), alpha(1.0)]).duration(0.5)
             .to(vec![position(200.0, 200.0), alpha(1.0)]).duration(0.5)
             .to(vec![size(200.0, 200.0)]).duration(1.0)
-            // .repeat(4, 0.25)
+            .repeat(1, 0.25)
             ;
         tweens.push(tween);
 
         items.push(item1);
 
         let timeline = Timeline::add(tweens)
-            // .stagger(0.2)
             .align(TweenAlign::Sequence)
             ;
         Ok((timeline, items))

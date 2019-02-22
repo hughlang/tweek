@@ -41,8 +41,8 @@ impl MainState {
 
         let mut tween1 = Tween::with(SQUARE_ITEM_ID, &item1.layer)
             .to(vec![position(400.0, 100.0), size(100.0, 100.0), alpha(0.2)])
-            .duration(1.0).timing(Ease::ElasticIn)
-            .repeat(7, 0.2)
+            .duration(1.0).ease(Ease::ElasticIn)
+            .repeat(1, 0.2)
             ;
 
         &tween1.play();

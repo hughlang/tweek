@@ -1,4 +1,4 @@
-# Tweek: A Tween Animation Kit for Rust
+# Tweek: A Simple Animation Kit for Rust
 
 What's a "Tween"? I can tell you it definitely isn't (this)[https://www.merriam-webster.com/dictionary/tween]. 
 
@@ -20,6 +20,12 @@ The ggez_support folder has a number of custom components which are mostly desig
 
 ## Developer Notes
 
-* Install rustfmt: https://github.com/rust-lang/rustfmt
-  * Run it with `cargo fmt`
 
+### Known Issues
+
+* MacOS
+  * A screen scaling and offset issue exists in ggez and only 1024x768 window size works accurately.
+	
+### Contributing
+
+More details to come.	
