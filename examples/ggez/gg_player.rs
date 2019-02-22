@@ -12,7 +12,7 @@ use ggez::event::{self, MouseButton};
 use ggez::graphics::{self, Color};
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::input::{ mouse};
-use ggez::mint;
+// use ggez::mint;
 
 use std::env;
 use std::path;
@@ -53,8 +53,9 @@ impl StageHelper {
         xpos += BUTTON_WIDTH + BUTTON_GAP;
         let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
         let mut button = StageHelper::make_player_button(ctx, "/icons/ios-play.png", frame)?;
-        button.set_onclick(move |_action, _state| {
+        button.set_onclick(move |_action, tk| {
             println!("Button onclick: action={:?}", _action);
+            tk.requests.push(TKRequest::Play);
 
         });
         buttons.push(button);
@@ -110,6 +111,9 @@ impl StageHelper {
     ///---- 2 ----------------------------------------------------------------------
     /// This is a timeline with a single tween that repeats. A repeat_count of 1 means it
     /// play twice.
+    /// Testing variations by un/commenting specific lines:
+    /// * Tween repeat (without yoyo) should repeat the number of times you specify
+    /// * Yoyo repeat should go back and forth smoothly based on repeat_count (default=1)
     fn build_timeline_2() -> GameResult<(Timeline, Vec<ItemState>)> {
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
@@ -125,7 +129,9 @@ impl StageHelper {
             .to(vec![position(200.0, 200.0), alpha(1.0)]).duration(0.5)
             .to(vec![size(200.0, 200.0)]).duration(1.0)
             .repeat(1, 0.25)
+            .yoyo()
             ;
+
         tweens.push(tween);
 
         items.push(item1);
@@ -138,6 +144,12 @@ impl StageHelper {
     }
 }
 
+/// ##########################################################################################
+/// MainState is where the stage setup occurs and the creation of the Tweek objects that will
+/// manage the animations. It also implements the EventHandler trait which is the run loop
+/// in ggez.
+/// ##########################################################################################
+
 struct MainState {
     tweek: Tweek,
     tk_state: TKState,
@@ -145,7 +157,6 @@ struct MainState {
     buttons: Vec<ButtonView>,
     progress_bar: ProgressBarView,
 }
-
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {

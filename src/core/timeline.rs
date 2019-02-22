@@ -43,7 +43,7 @@ pub struct Timeline {
     tl_start: Instant,
     pub repeat_count: u32,
     pub repeat_delay: Duration,
-	pub repeat_forever: bool,
+	pub loop_forever: bool,
 }
 
 impl Timeline {
@@ -54,7 +54,7 @@ impl Timeline {
 			tl_start: Instant::now(),
             repeat_count: 0,
             repeat_delay: Duration::from_secs(0),
-			repeat_forever: false,
+			loop_forever: false,
 		}
 	}
 
@@ -192,13 +192,6 @@ impl Playable for Timeline {
 		events
 	}
 
-    fn sync(&mut self, ctx: &mut TKState) {
-		for (_, range) in &self.children {
-			let mut tween = range.tween.borrow_mut();
-			(&mut *tween).sync(ctx);
-		}
-    }
-
     fn stop(&mut self) {
 
 	}
@@ -208,7 +201,6 @@ impl Playable for Timeline {
 	}
 
 	fn reset(&mut self) {
-		dbg!("RESET");
 		self.tl_start = Instant::now();
 		for (_, range) in &self.children {
 			let mut tween = range.tween.borrow_mut();
@@ -228,7 +220,8 @@ impl Playable for Timeline {
 
 #[allow(unused_variables)]
 impl TimelineAware for Timeline {
-	/// Purpose: Tell each child tween to run tick() method and provide
+	/// This is called by Tweek.update() which is continuously called from the run loop.
+	///
 	/// information updates to TKState
 	/// 1. Each tween handles its own repeats and will set its state to Idle just before repeating.
     fn update(&mut self, ctx: &mut TKState) {
@@ -238,8 +231,7 @@ impl TimelineAware for Timeline {
 			if range.start <= elapsed && range.end > elapsed {
 				let mut tween = range.tween.borrow_mut();
 				match tween.state {
-					TweenState::Idle | TweenState::Pending => {
-						dbg!("Timeline says Play");
+					TweenState::Pending => {
 						(&mut *tween).play();
 					},
 					_ => {

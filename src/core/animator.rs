@@ -1,7 +1,7 @@
 /// An Animator has start and end properties that can be rendered in an animation
 ///
 ///
-use std::{time::{Duration,Instant}};
+use std::{time::{Instant}};
 use cgmath::*;
 
 use super::property::*;
@@ -43,16 +43,22 @@ impl Animator {
         self
     }
 
+    /// Parameters:
+    /// >> playhead = the relative seconds that have elapsed for this animator within the tween. For a tween playing
+    /// in reverse with multiple animators, it is important to calculate this correctly against the overall timeline.
+    /// >> time_scale = The is 1.0 for forward playback at normal speed and -1.0 for reverse playback. Faster and slower
+    /// adjustment can be configured by increasing or decreasing this number.
     #[allow(unused_assignments)]
-    pub fn update(&self, started_at: Instant, time_scale: f64) -> UIState {
+    pub fn update(&self, playhead: f64, time_scale: f64) -> UIState {
         let mut props: Vec<Prop> = Vec::new();
-        let elapsed = started_at.elapsed() - Duration::from_float_secs(self.start_time);
+        // let mut elapsed = 0.0 as f64;
         let mut progress = 0.0 as f64;
-
         if time_scale > 0.0 {
-            progress = elapsed.as_float_secs() / self.seconds * time_scale;
+            // elapsed = started_at.elapsed().as_float_secs() - self.start_time;
+            progress = playhead / self.seconds * time_scale;
         } else {
-            progress =  1.0 - elapsed.as_float_secs() / self.seconds * time_scale.abs();
+            // elapsed = started_at.elapsed().as_float_secs();
+            progress =  1.0 - playhead / self.seconds * time_scale.abs();
         }
         let ratio = self.ease.clone().get_ratio(progress as f32);
         progress = ratio as f64;
@@ -67,7 +73,7 @@ impl Animator {
             // println!("Changing from={:?} to={:?} >>> interpolated={:?}", prop, &self.end_state.props[i], current);
 
             // println!("----------------------------------------------");
-            // println!("elapsed={} progress={} >>> interpolated={:?}", elapsed.as_float_secs(), progress, current);
+            // println!("elapsed={} progress={} >>> interpolated={:?}", elapsed, progress, current);
             props.push(current);
         }
         UIState::create(self.id, props)

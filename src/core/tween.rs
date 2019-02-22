@@ -88,8 +88,10 @@ pub struct Tween {
     pub started_at: Instant,
     pub duration: Duration,
     pub state: TweenState,
+    pub play_count: u32,
     pub repeat_count: i32, // -1 = forever. If > 0, decrement after each play until 0
     pub repeat_delay: Duration,
+	pub loop_forever: bool,
     pub time_scale: f64,
     pub anim_type: AnimType,
     start_props: Vec<Prop>,
@@ -107,8 +109,10 @@ impl Tween {
             started_at: Instant::now(),
             duration: Duration::from_secs(0),
             state: TweenState::Pending,
+            play_count: 0,
             repeat_count: 0,
             repeat_delay: Duration::from_secs(0),
+            loop_forever: false,
             time_scale: 1.0,
             anim_type: AnimType::Normal,
             start_props: Vec::new(),
@@ -201,6 +205,7 @@ impl Tween {
     /// Run the animation to the end and reverse direction
     pub fn yoyo(mut self) -> Self {
         self.anim_type = AnimType::Yoyo;
+        // TODO: if repeat_count is forever, this will force it to 1.
         if self.repeat_count < 1 { self.repeat_count = 1 }
         self
     }
@@ -213,6 +218,7 @@ impl Tween {
             time += animator.seconds;
         }
 
+        // If no limit, then only calculate one loop
         if self.repeat_count < 1 {
             return time + self.delay_s.as_float_secs();
         }
@@ -223,35 +229,55 @@ impl Tween {
         total
     }
 
+    /// When this is called from a parent Timeline, it needs...
+    /// When playing in reverse, the time_scale is < 0, so the playhead needs to be opposite
     pub fn update(&mut self) -> Option<UIState> {
         match self.state {
             TweenState::Running => {
+                let elapsed = self.started_at.elapsed().as_float_secs();
+                let total_seconds = self.duration.as_float_secs();
+                // println!("duration={:?} // elapsed={}", self.duration, elapsed);
                 for animator in &mut self.animators {
-                    let elapsed = self.started_at.elapsed().as_float_secs();
-                    if animator.start_time < elapsed && animator.end_time >= elapsed {
-                        let ui_state = animator.update(self.started_at, self.time_scale);
-                        return Some(ui_state);
+                    if self.time_scale > 0.0 {
+                        if animator.start_time < elapsed && animator.end_time >= elapsed {
+                            let playhead = elapsed - animator.start_time;
+                            let ui_state = animator.update(playhead, self.time_scale);
+                            return Some(ui_state);
+                        }
+                    } else {
+                        // Calculate elapsed in reverse direction by subtracting from total seconds
+                        let elapsed = total_seconds - elapsed;
+                        if animator.start_time < elapsed && animator.end_time >= elapsed {
+                            // Calculate playhead in reverse by subtracting elapsed from animator end_time
+                            let playhead = animator.end_time - elapsed;
+                            let ui_state = animator.update(playhead, self.time_scale);
+                            return Some(ui_state);
+                        }
                     }
                 }
             },
             TweenState::Finishing => {
                 if let Some(animator) = self.animators.last_mut() {
                     self.state = TweenState::Completed;
-                    return Some(animator.end_state.clone());
+                    if self.time_scale >= 0.0 {
+                        return Some(animator.end_state.clone());
+                    } else {
+                        return Some(animator.start_state.clone());
+                    }
                 }
             }
             _ => ()
         }
-        if self.state == TweenState::Running {
-            // For now, this assumes that animators do not overlap and are purely sequential
-            for animator in &mut self.animators {
-                let elapsed = self.started_at.elapsed().as_float_secs();
-                if animator.start_time < elapsed && animator.end_time >= elapsed {
-                    let ui_state = animator.update(self.started_at, self.time_scale);
-                    return Some(ui_state);
-                }
-            }
-        }
+        // if self.state == TweenState::Running {
+        //     // For now, this assumes that animators do not overlap and are purely sequential
+        //     for animator in &mut self.animators {
+        //         let elapsed = self.started_at.elapsed().as_float_secs();
+        //         if animator.start_time < elapsed && animator.end_time >= elapsed {
+        //             let ui_state = animator.update(self.started_at, self.time_scale);
+        //             return Some(ui_state);
+        //         }
+        //     }
+        // }
         None
     }
 
@@ -372,7 +398,7 @@ impl Tween {
                 end_props.push(prop.clone());
             }
             animator.end_state.props = end_props;
-            println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
+            println!("start: {:?} \nend   : {:?}", &animator.start_state.props, &animator.end_state.props);
         }
 
     }
@@ -382,7 +408,9 @@ impl Playable for Tween {
 
     fn play(&mut self) {
         println!("Play?");
-        self.sync_animators();
+        if self.state == TweenState::Pending {
+            self.sync_animators();
+        }
         // self.print_timeline();
 
         self.started_at = Instant::now();
@@ -396,13 +424,13 @@ impl Playable for Tween {
         match self.state {
             TweenState::Running => {
                 if self.started_at.elapsed() > self.duration {
-                    if self.repeat_count == 0 {
+                    self.play_count += 1;
+                    if self.play_count > self.repeat_count as u32 {
                         // If repeat_count is zero, tween is Completed.
                         self.state = TweenState::Finishing;
                         events.push(TKEvent::Completed(self.tween_id));
 
                     } else {
-                        // If it positive or negative, continue repeating.
                         // set state=Idle means wait for repeat_delay to finish
                         self.state = TweenState::Idle;
                     }
@@ -412,11 +440,12 @@ impl Playable for Tween {
                 // If repeat_delay > 0, tween should wait until time elapsed passes it
                 if self.started_at.elapsed() > self.duration + self.repeat_delay
                 {
-                    if self.repeat_count > 0 {
-                        self.repeat_count -= 1;
+                    if self.repeat_count < 0 {
                         self.reset();
-                    } else if self.repeat_count < 0 {
+                    } else if self.play_count <= self.repeat_count as u32 {
                         self.reset();
+                    } else {
+                        self.state = TweenState::Completed;
                     }
                 }
             },
@@ -429,10 +458,6 @@ impl Playable for Tween {
         return self.update();
     }
 
-    fn sync(&mut self, _ctx: &mut TKState) {
-
-    }
-
     fn stop(&mut self) {
 
     }
@@ -441,11 +466,13 @@ impl Playable for Tween {
 
     }
 
+    /// Reset is used to move the playhead back to the start and set state to Running
     fn reset(&mut self) {
         println!("Reset?");
 
         if self.anim_type == AnimType::Yoyo {
-            // Q: What is the logic here?
+            // If configured as yoyo animation, reverse the timescale so that the next play
+            // is in reverse.
             if self.time_scale > 0.0 {
                 self.time_scale *= -1.0;
             } else {

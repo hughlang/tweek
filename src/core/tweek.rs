@@ -19,7 +19,6 @@ pub trait Playable {
     fn stop(&mut self);
     fn pause(&mut self);
     fn reset(&mut self);
-    fn sync(&mut self, ctx: &mut TKState);
     // fn resume(&mut self);
     // fn seek(&mut self, pos: f64);
 }
@@ -58,6 +57,7 @@ pub struct TKState {
     pub elapsed_time: f64,
     pub total_time: f64,
     pub events: Vec<TKEvent>,
+    pub requests: Vec<TKRequest>,
     tween_store: HashMap<usize, TweenRef>,
 }
 
@@ -68,6 +68,7 @@ impl TKState {
             elapsed_time: 0.0,
             total_time: 0.0,
             events: Vec::new(),
+            requests: Vec::new(),
             tween_store: HashMap::new(),
         }
     }
@@ -206,13 +207,6 @@ impl Playable for Tweek {
         }
         None
     }
-
-    fn sync(&mut self, ctx: &mut TKState) {
-        for tl in &self.timelines {
-            let mut timeline = tl.borrow_mut();
-			(&mut *timeline).sync(ctx);
-        }
-    }
 }
 
 /// This is an experimental trait with the intention of passing around a mutable TKState
@@ -229,9 +223,26 @@ pub trait TimelineAware {
 impl TimelineAware for Tweek {
 
     fn update(&mut self, ctx: &mut TKState) {
-        for tl in &self.timelines {
-            let mut timeline = tl.borrow_mut();
-            (&mut *timeline).update(ctx);
+
+        if ctx.requests.is_empty() {
+            ctx.events.clear();
+            for tl in &self.timelines {
+                let mut timeline = tl.borrow_mut();
+                (&mut *timeline).update(ctx);
+            }
+        } else {
+            for request in &ctx.requests {
+                match request {
+                    TKRequest::Play => {
+                        for tl in &self.timelines {
+                            let mut timeline = tl.borrow_mut();
+                            (&mut *timeline).reset();
+                        }
+                    },
+                    _ => (),
+                }
+            }
+            &ctx.requests.clear();
         }
     }
 }
