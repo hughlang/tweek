@@ -66,10 +66,10 @@ impl Animator {
                 continue;
             }
             let current = Animator::interpolate(prop, &self.end_state.props[i], progress);
-            // println!("Changing from={:?} to={:?} >>> interpolated={:?}", prop, &self.end_state.props[i], current);
 
+            // Note: these are useful for debugging interpolation
             // println!("----------------------------------------------");
-            // println!("elapsed={} progress={} >>> interpolated={:?}", elapsed, progress, current);
+            // println!("Changing from={:?} to={:?} >>> interpolated={:?}", prop, &self.end_state.props[i], current);
             props.push(current);
         }
         UIState::create(self.id, props)

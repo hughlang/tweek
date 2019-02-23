@@ -91,31 +91,24 @@ impl ItemState {
         match self.shape {
             Shape::Rectangle(_) => {
                 let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.layer.frame, self.layer.graphics.color)?;
-                let drawparams = graphics::DrawParam::new()
-                    .rotation(self.layer.graphics.rotation as f32)
-                    .offset(mint::Point2{x: 0.5, y: 0.5});
-                let _result = graphics::draw(ctx, &mesh, drawparams);
+                let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
             },
             Shape::Circle(_, _) => {
                 let r = self.layer.frame.w / 2.0;
                 let pt = mint::Point2{x: self.layer.frame.x + r, y: self.layer.frame.y + r};
                 let mesh = graphics::Mesh::new_circle(ctx, graphics::DrawMode::fill(), pt, r, 0.2, self.layer.graphics.color)?;
-                let drawparams = graphics::DrawParam::new()
-                    .offset(mint::Point2{x: 0.5, y: 0.5})
-                    .color(self.layer.graphics.color)
-                    ;
-                let _result = graphics::draw(ctx, &mesh, drawparams);
+                let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
             },
             Shape::Image(_) => {
                 match &self.image {
                     Some(img) => {
                         let pt = mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y};
-                        let drawparams = graphics::DrawParam::new()
+                        let _drawparams = graphics::DrawParam::new()
                             .dest(pt)
                             .rotation(self.layer.graphics.rotation as f32)
                             .offset(mint::Point2{x: 0.5, y: 0.5})
                             .color(self.layer.graphics.color);
-                        let _result = graphics::draw(ctx, img, drawparams);
+                        let _result = graphics::draw(ctx, img, self.layer.graphics);
                     },
                     None => (),
                 }

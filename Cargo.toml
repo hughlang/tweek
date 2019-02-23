@@ -29,6 +29,10 @@ name = "ggease"
 path = "examples/ggez/ggease.rs"
 
 [[bin]]
+name = "gg_demos"
+path = "examples/ggez/gg_demos.rs"
+
+[[bin]]
 name = "gg_player"
 path = "examples/ggez/gg_player.rs"
 
