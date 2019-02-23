@@ -1,6 +1,5 @@
 /// Easing formulas courtesy of GreenSock AS3 TweenLite code
-///
-///
+/// See also: https://greensock.com/gsap-as, https://greensock.com/standard-license
 
 use std::f32::consts::PI;
 
@@ -11,39 +10,44 @@ const PI_2: f32 = PI * 2.0;
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Ease {
     Linear,
-    SineIn,       // yes
-    SineOut,      // yes
-    SineInOut,    // yes
-    ExpoIn,       // yes
-    ExpoOut,      // yes
-    ExpoInOut,    // yes
-    BackIn,       // yes
-    BackOut,      // yes
-    BackInOut,    // yes
-    BounceIn,     // yes
-    BounceOut,    // yes
-    BounceInOut,  // yes
-    ElasticIn,    // yes
-    ElasticOut,   // yes
-    ElasticInOut, // yes
-    QuadIn,       // power1
+    SineIn,
+    SineOut,
+    SineInOut,
+    ExpoIn,
+    ExpoOut,
+    ExpoInOut,
+    BackIn,
+    BackOut,
+    BackInOut,
+    BounceIn,
+    BounceOut,
+    BounceInOut,
+    ElasticIn,
+    ElasticOut,
+    ElasticInOut,
+    // ***** The following are not supported yet. *****
+    QuadIn,   // power1
     QuadOut,
     QuadInOut,
-    CubicIn, // power2
+    CubicIn,  // power2
     CubicOut,
     CubicInOut,
-    QuartIn, // power3 / quart
+    QuartIn,  // power3 / quart
     QuartOut,
     QuartInOut,
-    QuintIn, // power4 / strong
+    QuintIn,  // power4 / strong
     QuintOut,
     QuintInOut,
-    CircIn, // as3
+    CircIn,
     CircOut,
     CircInOut,
 }
 
-// #[ignore(unused_variables)]
+/// The following provides the mathematical formulas that provide different timing ratios
+/// for an animation. The progress parameter "p" represents the linear progress of a tween
+/// animation based on the time elapsed divided by the duration to get a number between
+/// 0.0 and 1.0. The functions below provide an adjusted ratio based on the timing formula
+/// that applies to each.
 impl Ease {
     pub fn get_ratio(self, p: f32) -> f32 {
         match self {

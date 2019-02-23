@@ -144,17 +144,17 @@ impl Tween {
         tween
     }
 
-    pub fn init(id: usize, props: Vec<Prop>) -> Self {
-        let mut tween = Tween::new();
-        tween.tween_id = id;
-
-        for prop in props {
-            tween.start_props.push(prop);
-        }
-        tween
-    }
-
+    /// The duration function can be chained after target Props have been added using
+    /// the to() function. If duration is not specified, the Animator struct defaults
+    /// to 1.0 seconds. Multiple animation segments in a single tween can be created by
+    /// calling the to() function more than once. In this scenario, you can also call
+    /// duration() after each to() call and this will set the duration for the last
+    /// animation created.
     pub fn duration(mut self, secs: f64) -> Self {
+        if self.animators.is_empty() {
+            println!("####### No animators created yet. Use the to() function first to add Props");
+            return self;
+        }
         // this gets recalculated on play() so the logic isn't too important
         if self.animators.len() > 0 {
             if let Some(animator) = self.animators.last_mut() {
@@ -174,6 +174,7 @@ impl Tween {
         self
     }
 
+    // Not used yet
     pub fn delay(mut self, _seconds: f64) -> Self {
         self.delay_s = Duration::from_float_secs(_seconds);
         self
@@ -202,7 +203,8 @@ impl Tween {
         self
     }
 
-    /// Run the animation to the end and reverse direction
+    /// Run the animation to the end and reverses direction.
+    /// Each playback in either direction counts as one play_count.
     pub fn yoyo(mut self) -> Self {
         self.anim_type = AnimType::Yoyo;
         // TODO: if repeat_count is forever, this will force it to 1.
@@ -211,7 +213,7 @@ impl Tween {
     }
 
     // TODO: move this to Playable
-    // TODO: self.duration should be accurate. Use that instead.
+    // TODO: self.duration should be accurate. Use that instead?
     pub fn total_time(&self) -> f64 {
         let mut time = 0.0 as f64;
         for animator in &self.animators {
@@ -459,7 +461,7 @@ impl Playable for Tween {
 
     /// Reset is used to move the playhead back to the start and set state to Running
     fn reset(&mut self) {
-        println!("Reset?");
+        println!("Reset called ==============");
 
         if self.anim_type == AnimType::Yoyo {
             // If configured as yoyo animation, reverse the timescale so that the next play

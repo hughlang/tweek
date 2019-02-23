@@ -1,5 +1,6 @@
-/// Experiments with buttons
-///
+/// This demo tries to showcase a large variety of Timeline animation scenarios and provides
+/// player controls to help you review the animations in detail. The other examples provided
+/// generally demonstrate simple Tween animations without a timeline.
 ///
 mod helper1;
 use helper1::*;
@@ -24,12 +25,18 @@ const BAR_WIDTH: f32 = 500.0;
 const BUTTON_WIDTH: f32 = 60.0;
 const BUTTON_GAP: f32 = 20.0;
 
-struct StageHelper {}
-
-
 /// The StageHelper generates most of the objects used in this demo. There are helper functions for creating
 /// the player buttons and progress bar. And there are helper functions that create different animation scenarios
 /// that you can test by editing the MainState code below StageHelper and picking the function you want to try.
+/// Notable differences from animating a standalone Tween:
+/// * Don't call tween.play().  Instead, call tweek.play() after adding one or more timelines to it.
+/// * Don't call tween.tick().  Instead, call tweek.update() in the run loop.
+/// * The player buttons are instances of ggez_support::ButtonView, which implement Displayable and thus have update()
+/// and render() functions. They are also wrappers for the Tweenable GGLayer, so they support internal Tween animations.
+/// They also implement TKResponder, so they support the update() method which allows a TKState
+/// object to be passed around and mutated.
+struct StageHelper {}
+
 #[allow(dead_code)]
 #[allow(unused_mut)]
 impl StageHelper {
@@ -88,7 +95,7 @@ impl StageHelper {
     //---- 1 ----------------------------------------------------------------------
     /// This is a simple Sequence timeline where 4 independent tweens play sequentially,
     /// without any repeats.
-    fn build_timeline_1() -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn build_timeline_1(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
         let mut ypos = 50.0 as f32;
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
@@ -115,7 +122,7 @@ impl StageHelper {
         // while the default behavior is to run them all simultaneously.
         let timeline = Timeline::add(tweens)
             // .align(TweenAlign::Sequence)
-            // .stagger(0.2)
+            .stagger(0.2)
             ;
         Ok((timeline, items))
     }
@@ -123,7 +130,7 @@ impl StageHelper {
     ///---- 2 ----------------------------------------------------------------------
     /// This is a timeline with a single tween that repeats. A repeat_count of 1 means it
     /// play twice.
-    fn build_timeline_2() -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn build_timeline_2(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
         let mut ypos = 50.0 as f32;
@@ -161,6 +168,63 @@ impl StageHelper {
         Ok((timeline, items))
 
     }
+
+    ///---- 3 ----------------------------------------------------------------------
+    /// play twice.
+    fn build_timeline_3(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+        let mut items: Vec<ItemState> = Vec::new();
+        let mut tweens: Vec<Tween> = Vec::new();
+        let mut ypos = 50.0 as f32;
+
+        const TEXT_ITEM_ID: usize = 10;
+        let font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
+        let text = graphics::Text::new(("Tweek Player", font, 48.0));
+
+        let rect = graphics::Rect::new(20.0, 20.0, 200.0, 40.0);
+        let mut item4 = ItemState::new(TEXT_ITEM_ID, Shape::Text(rect))?;
+        item4.text = Some(text);
+
+        let mut tween4 = Tween::with(TEXT_ITEM_ID, &item4.layer)
+            .to(vec![position(400.0, 20.0), alpha(0.2)])
+            .duration(3.0);
+        &tween4.play();
+        item4.tween = Some(tween4);
+
+
+        let rect = graphics::Rect::new(50.0, ypos, 50.0, 50.0);
+        let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
+        item1.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
+
+        // FYI: the Tween props below show how you can dynamically build sequences of animations
+        // in a single tween by chaining together "to" function calls. It transparently
+        // creates new animators in the Tween.
+        // Also, this shows the usage of shift_x and shift_y, which are offset functions that
+        // manipulate the previous state. Just for fun, it shows that two shift_x props are
+        // handled fine by adding them together.
+        //
+        // Testing variations:
+        // * Tween repeat (without yoyo) should repeat the number of times you specify
+        // * Yoyo repeat should go back and forth smoothly based on repeat_count (default=1)
+        let mut tween = Tween::with(SQUARE_ITEM_ID, &item1.layer)
+            .to(vec![shift_x(400.0), shift_x(200.0), alpha(0.2)]).duration(1.0)
+            .to(vec![shift_y(300.0), shift_x(-100.0), alpha(1.0)]).duration(0.5)
+            .to(vec![position(200.0, 200.0), alpha(1.0)]).duration(0.5)
+            .to(vec![size(200.0, 200.0)]).duration(1.0)
+            .repeat(1, 0.25)
+            .yoyo()
+            ;
+
+        tweens.push(tween);
+
+        items.push(item1);
+
+        let timeline = Timeline::add(tweens)
+            .align(TweenAlign::Sequence)
+            ;
+        Ok((timeline, items))
+
+    }
+
 }
 
 /// ##########################################################################################
@@ -196,8 +260,8 @@ impl MainState {
         // ########################################################
         // Here you can choose which timeline and animations to run
         // ########################################################
-        let (timeline, items) = StageHelper::build_timeline_1()?;
-        // let (timeline, items) = StageHelper::build_timeline_2()?;
+        let (timeline, items) = StageHelper::build_timeline_1(ctx)?;
+        // let (timeline, items) = StageHelper::build_timeline_2(ctx)?;
 
         let mut tweek = Tweek::new();
         tweek.add_timeline(timeline);
@@ -220,7 +284,11 @@ impl MainState {
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
 
+        // This should be called here at the beginning of each run loop. It is responsible for
+        // coordinating and all timeline and tween updates. The mutable TKState parameter is used to
+        // store and share events and requests among all of the structs that implement TimelineAware.
         self.tweek.update(&mut self.tk_state);
+
         let progress = self.tk_state.elapsed_time / self.tk_state.total_time;
         if progress <= 1.0 {
             self.progress_bar.set_progress(progress as f32);

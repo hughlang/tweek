@@ -21,18 +21,6 @@ pub enum MouseState {
     Click,
 }
 
-pub trait TKResponder {
-    fn handle_mouse_at(&mut self, _x: f32, _y: f32) -> bool {
-        false
-    }
-    fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
-        false
-    }
-    fn handle_mouse_up(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
-        false
-    }
-}
-
 // Unused
 pub enum GGShape {
     Circle(mint::Point2<f32>, f32),

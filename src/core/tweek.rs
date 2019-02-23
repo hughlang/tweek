@@ -82,18 +82,23 @@ impl TKState {
         None
     }
 
-    // pub fn get_tween(&self, id: &usize) -> Option<TweenRef> {
-        // if let Some(rc) = self.tween_store.get(id) {
-        //     Some(rc)
-        // }
-    //     None
-    // }
-
     pub fn register_tween(&mut self, tween: Tween) {
         self.tween_store.insert(tween.tween_id.clone(), Rc::new(RefCell::new(tween)));
     }
 }
 
+
+pub trait TKResponder {
+    fn handle_mouse_at(&mut self, _x: f32, _y: f32) -> bool {
+        false
+    }
+    fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
+        false
+    }
+    fn handle_mouse_up(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
+        false
+    }
+}
 
 
 //-- Main -----------------------------------------------------------------------

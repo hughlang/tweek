@@ -75,6 +75,9 @@ impl ItemState {
         Ok(())
     }
 
+    /// This is an experimental/temporary means of getting Tween updates.
+    /// The publishing of UIState updates may be handled by TKState in the
+    /// future.
     #[allow(dead_code)]
     pub fn try_update(&mut self, tweek: &mut Tweek) -> GameResult {
         if let Some(update) = tweek.get_update(&self.id) {

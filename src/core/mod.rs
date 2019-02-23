@@ -1,5 +1,3 @@
-// pub use self::easing::Property;
-
 pub use self::animator::*;
 pub use self::ease::*;
 pub use self::property::*;

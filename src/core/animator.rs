@@ -1,12 +1,10 @@
 /// An Animator has start and end properties that can be rendered in an animation
 ///
 ///
-use std::{time::{Instant}};
 use cgmath::*;
 
 use super::property::*;
 use super::ease::*;
-
 
 /// An Animator represents state change from one UIState to another UIState state
 pub struct Animator {
@@ -17,7 +15,6 @@ pub struct Animator {
     pub end_time: f64,
     pub seconds: f64,
     pub ease: Ease,
-    pub debug: bool,
 }
 
 impl Animator {
@@ -33,7 +30,6 @@ impl Animator {
             end_time: 0.0,
             seconds: 1.0,
             ease: Ease::Linear,
-            debug: false,
         }
     }
 
@@ -126,46 +122,3 @@ impl Animator {
         return result;
     }
 }
-
-// #####################################################################################
-
-
-// pub struct Animation {
-//     start_time: Instant,
-//     // end_time: Instant,
-//     duration: Duration,
-//     delay: Duration,
-//     elapsed: Duration,
-// 	// var state: AnimationState { get set }
-// 	// var duration: TimeInterval { get set }
-// 	// var delay: TimeInterval { get set }
-// 	// var timeScale: Double { get set }
-// 	// var progress: Double { get set }
-// 	// var totalProgress: Double { get set }
-
-// 	// var startTime: TimeInterval { get set }
-// 	// var endTime: TimeInterval { get }
-// 	// var totalDuration: TimeInterval { get }
-// 	// var totalTime: TimeInterval { get }
-// 	// var elapsed: TimeInterval { get }
-// 	// var time: TimeInterval { get }
-
-// 	// var timingFunction: TimingFunctionType { get }
-// 	// var spring: Spring? { get }
-
-// }
-
-// impl Animation {
-//     pub fn new() -> Self {
-//         Animation{
-//             start_time: Instant::now(),
-//             duration: Duration::from_secs(0),
-//             delay: Duration::from_secs(0),
-//             elapsed: Duration::from_secs(0),
-//         }
-//     }
-
-//     pub fn render() {
-
-//     }
-// }
