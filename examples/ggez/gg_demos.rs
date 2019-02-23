@@ -18,6 +18,9 @@ use std::path;
 use tweek::prelude::*;
 
 
+const NEXT_COMMAND: u32 = 1;
+const PREV_COMMAND: u32 = 2;
+
 struct DemoHelper {}
 
 #[allow(dead_code)]
@@ -42,9 +45,8 @@ impl DemoHelper {
         button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&graphics::Color::from_rgb_u32(HexColors::Tan));
         button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
-        button.set_onclick(move |_action, _state| {
-            // println!("Button onclick: action={:?}", action);
-
+        button.set_onclick(move |_action, tk| {
+            tk.commands.push(PREV_COMMAND);
         });
         buttons.push(button);
 
@@ -54,14 +56,15 @@ impl DemoHelper {
         button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&graphics::Color::from_rgb_u32(HexColors::Tan));
         button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
-        button.set_onclick(move |_action, _state| {
-            // println!("Button onclick: action={:?}", action);
-
+        button.set_onclick(move |_action, state| {
+            state.commands.push(NEXT_COMMAND);
         });
         buttons.push(button);
 
         Ok(buttons)
     }
+
+    /// This demo shows a collection of dots rotating around in a circle
     fn build_arc_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
@@ -98,6 +101,67 @@ impl DemoHelper {
         Ok((timeline, items))
     }
 
+    /// Rockets!!! Many rockets of different sizes arcing across the screen endlessly.
+    /// Random sizes and speed.
+    fn build_rocket_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+        let screen_w = ctx.conf.window_mode.width;
+        let screen_h = ctx.conf.window_mode.height;
+
+        let mut items: Vec<ItemState> = Vec::new();
+        let mut tweens: Vec<Tween> = Vec::new();
+
+        let rocket_count = 4;
+        // let scene_radius = 96.0;
+
+        let image = graphics::Image::new(ctx, "/rocket.png")?;
+        let base_h = *&image.height() as f32;
+        let base_w = *&image.width() as f32;
+
+        for i in 0..rocket_count {
+            let item_id = i + 10 as usize;
+            let scale = rand::random::<f32>();
+
+            let x = rand::random::<f32>() * screen_w;
+            let y = rand::random::<f32>() * screen_h;
+
+            let w = base_w * scale;
+            let h = base_h * scale;
+            let angle = 60.0 as f32;
+            let rect = graphics::Rect::new(x, y, w, h);
+            let mut item = ItemState::new(item_id, Shape::Image(rect))?;
+            item.image = Some(image.clone());
+            item.layer.graphics.offset = na::Point2::new(0.5, 0.5);
+            item.layer.graphics.rotation = angle.to_radians();
+
+            // let mut item1 = ItemState::new(item_id, Shape::Circle(mint::Point2{x: center_pt.x, y: center_pt.y - scene_radius}, dot_radius))?;
+            // item1.layer.graphics.color = graphics::Color::from_rgb_u32(HexColors::Red);
+            // let alpha = 1.0 - (i as f32 / dot_count as f32)/2.0;
+            // item1.layer.graphics.color.a = alpha;
+            // item1.layer.graphics.offset = na::Point2::new(center_pt.x, center_pt.y);
+
+            let tween = Tween::with(item_id, &item.layer)
+                .to(vec![shift_x(-40.0), shift_y(-600.0)])
+                .duration(1.8)
+                .ease(Ease::SineInOut)
+                // .repeat(-1, 0.8)
+                ;
+            items.push(item);
+            tweens.push(tween)
+        }
+
+        let timeline = Timeline::add(tweens)
+            .stagger(0.12)
+            ;
+        Ok((timeline, items))
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+enum Demo {
+    DotCircle,
+    Rocket,
+
+
 }
 
 struct MainState {
@@ -106,6 +170,8 @@ struct MainState {
     tk_state: TKState,
     items: Vec<ItemState>,
     buttons: Vec<ButtonView>,
+    demo_index: usize,
+    demo_list: Vec<Demo>,
 }
 
 impl MainState {
@@ -116,28 +182,87 @@ impl MainState {
         let buttons = DemoHelper::make_buttons(ctx)?;
         let gridmesh = GGTools::build_grid(ctx, screen_w, screen_h, 32.0, graphics::Color::from_rgb_u32(0xCCCCCC))?;
 
-        let (timeline, items) = DemoHelper::build_arc_demo(ctx)?;
+        let mut demo_list: Vec<Demo> = Vec::new();
+        demo_list.push(Demo::DotCircle);
+        demo_list.push(Demo::Rocket);
 
-        let mut tweek = Tweek::new();
-        tweek.add_timeline(timeline);
-        &tweek.play();
-
-        let tk_state = TKState::new();
-
-        let s = MainState {
+        let mut s = MainState {
             grid: gridmesh,
-            tweek: tweek,
-            tk_state: tk_state,
-            items: items,
+            tweek: Tweek::new(),
+            tk_state: TKState::new(),
+            items: Vec::new(),
             buttons: buttons,
+            demo_index: 0,
+            demo_list: demo_list,
         };
 
+        s.load_demo(ctx, &Demo::DotCircle)?;
         Ok(s)
+    }
+
+    fn load_demo(&mut self, ctx: &mut Context, demo: &Demo) -> GameResult {
+        match demo {
+            Demo::DotCircle => {
+
+                let (timeline, items) = DemoHelper::build_arc_demo(ctx)?;
+                let mut tweek = Tweek::new();
+                tweek.add_timeline(timeline);
+                &tweek.play();
+
+                let tk_state = TKState::new();
+                self.tk_state = tk_state;
+                self.tweek = tweek;
+                self.items = items;
+
+            },
+            Demo::Rocket => {
+                let (timeline, items) = DemoHelper::build_rocket_demo(ctx)?;
+                let mut tweek = Tweek::new();
+                tweek.add_timeline(timeline);
+                &tweek.play();
+
+                let tk_state = TKState::new();
+                self.tk_state = tk_state;
+                self.tweek = tweek;
+                self.items = items;
+            },
+            // _ => (),
+        }
+
+
+        Ok(())
     }
 }
 
 impl event::EventHandler for MainState {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult {
+    fn update(&mut self, ctx: &mut Context) -> GameResult {
+        if &self.tk_state.commands.len() > &0 {
+            // This is not a good way to do this. FIXME
+            let cmd = &self.tk_state.commands[0];
+            println!("New command: {}", cmd);
+            match *cmd {
+                NEXT_COMMAND => {
+                    self.demo_index += 1;
+                    if self.demo_index == self.demo_list.len() {
+                        self.demo_index = 0;
+                    }
+                    let next = &self.demo_list[self.demo_index].clone();
+                    &self.load_demo(ctx, next);
+                },
+                PREV_COMMAND => {
+                    if self.demo_index == 0 {
+                        self.demo_index = self.demo_list.len() - 1;
+                    } else {
+                        self.demo_index -= 1;
+                    }
+                    let next = &self.demo_list[self.demo_index].clone();
+                    &self.load_demo(ctx, next);
+                    return Ok(())
+                },
+                _ => (),
+            }
+            self.tk_state.commands.clear();
+        }
 
         self.tweek.update(&mut self.tk_state);
 
@@ -147,6 +272,7 @@ impl event::EventHandler for MainState {
         for button in &mut self.buttons {
             button.update()?;
         }
+
 
         Ok(())
     }

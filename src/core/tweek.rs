@@ -11,6 +11,7 @@ use super::tween::*;
 //-- Base -----------------------------------------------------------------------
 
 pub type TweenRef = Rc<RefCell<Tween>>;
+pub type UserCommand = u32;
 
 pub trait Playable {
     fn play(&mut self);
@@ -58,6 +59,8 @@ pub struct TKState {
     pub total_time: f64,
     pub events: Vec<TKEvent>,
     pub requests: Vec<TKRequest>,
+    /// user defined u32 values that can be used for any purpose.
+    pub commands: Vec<UserCommand>,
     tween_store: HashMap<usize, TweenRef>,
 }
 
@@ -69,6 +72,7 @@ impl TKState {
             total_time: 0.0,
             events: Vec::new(),
             requests: Vec::new(),
+            commands: Vec::new(),
             tween_store: HashMap::new(),
         }
     }

@@ -8,6 +8,7 @@
 extern crate cgmath;
 extern crate ggez;
 extern crate uuid;
+extern crate rand;
 
 // pub use crate::core::*;
 // pub use crate::ggez::*;
