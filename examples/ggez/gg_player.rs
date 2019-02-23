@@ -12,7 +12,7 @@ use ggez::conf;
 use ggez::event::{self, MouseButton};
 use ggez::graphics::{self, Color};
 use ggez::{Context, ContextBuilder, GameResult};
-use ggez::input::{ mouse};
+use ggez::input::{mouse};
 // use ggez::mint;
 
 use std::env;

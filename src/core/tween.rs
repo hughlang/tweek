@@ -461,7 +461,6 @@ impl Playable for Tween {
 
     /// Reset is used to move the playhead back to the start and set state to Running
     fn reset(&mut self) {
-        println!("Reset called ==============");
 
         if self.anim_type == AnimType::Yoyo {
             // If configured as yoyo animation, reverse the timescale so that the next play
