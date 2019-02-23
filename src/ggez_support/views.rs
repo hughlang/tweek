@@ -21,13 +21,13 @@ pub trait Displayable {
 
 // Not finished and currently unused
 pub struct BoxView {
-    pub layer: GGLayer,
+    pub layer: TweenLayer,
     pub subviews: Vec<Box<Displayable>>,  // TBD
 }
 
 impl BoxView {
     pub fn new(frame: graphics::Rect) -> Self {
-        let layer = GGLayer::new(frame, DrawParam::new() );
+        let layer = TweenLayer::new(frame, DrawParam::new() );
         BoxView {
             layer: layer,
             subviews: Vec::new(),
@@ -59,14 +59,14 @@ impl Displayable for BoxView {
 //-- Label -----------------------------------------------------------------------
 
 pub struct LabelView {
-    pub layer: GGLayer,
+    pub layer: TweenLayer,
     pub title: String,
     pub text: graphics::Text,
 }
 
 impl LabelView {
     pub fn new(frame: &graphics::Rect, text: &str) -> Self {
-        let layer = GGLayer::new(
+        let layer = TweenLayer::new(
             frame.clone(),
             DrawParam::new().color(graphics::WHITE),
         );
@@ -118,7 +118,7 @@ impl Displayable for LabelView {
 //-- Image -----------------------------------------------------------------------
 
 pub struct ImageView {
-    pub layer: GGLayer,
+    pub layer: TweenLayer,
     pub scale: f32,
     // pub mesh: Option<graphics::Mesh>,
     pub image: graphics::Image,
@@ -126,7 +126,7 @@ pub struct ImageView {
 
 impl ImageView {
     pub fn new(frame: graphics::Rect, image: graphics::Image) -> Self {
-        let layer = GGLayer::new(frame, DrawParam::new());
+        let layer = TweenLayer::new(frame, DrawParam::new());
         ImageView {
             layer: layer,
             scale: 1.0,

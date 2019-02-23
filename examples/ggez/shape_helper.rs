@@ -1,7 +1,7 @@
 /// This helper module is a convenience when writing and testing examples.
 ///
-/// mod helper1;
-/// use helper1::*;
+/// mod shape_helper;
+/// use shape_helper::*;
 ///
 
 extern crate ggez;
@@ -25,7 +25,7 @@ pub enum Shape {
 pub struct ItemState {
     pub id: usize,
     pub shape: Shape,
-    pub layer: GGLayer,
+    pub layer: TweenLayer,
     pub tween: Option<Tween>,
     pub image: Option<graphics::Image>,
     pub text: Option<graphics::Text>,
@@ -48,7 +48,7 @@ impl ItemState {
                 graphics::Rect::new(pt1.x, pt1.y, pt2.x, pt2.y)
             },
         };
-        let layer = GGLayer::new(rect, graphics::DrawParam::new());
+        let layer = TweenLayer::new(rect, graphics::DrawParam::new());
 
         Ok(ItemState {
             id: id,

@@ -17,7 +17,7 @@ use super::views::*;
 //-- Button -----------------------------------------------------------------------
 
 pub struct ButtonView {
-    pub layer: GGLayer,
+    pub layer: TweenLayer,
     pub label: Option<LabelView>,
     pub image: Option<ImageView>,
     pub defaults: HashMap<u32, Prop>,
@@ -29,7 +29,7 @@ pub struct ButtonView {
 
 impl ButtonView {
     pub fn new(frame: graphics::Rect) -> Self {
-        let layer = GGLayer::new(frame, DrawParam::new());
+        let layer = TweenLayer::new(frame, DrawParam::new());
         ButtonView {
             layer: layer,
             label: None,
@@ -195,16 +195,16 @@ impl TKResponder for ButtonView {
 //-- GGProgressBar -----------------------------------------------------------------------
 
 pub struct ProgressBarView {
-    pub bg_layer: GGLayer,
-    pub fg_layer: GGLayer,
+    pub bg_layer: TweenLayer,
+    pub fg_layer: TweenLayer,
     pub bg_image: Option<graphics::Mesh>,
     pub progress: f32,      // between 0.0 and 1.0
 }
 
 impl ProgressBarView {
     pub fn new(frame: graphics::Rect) -> Self {
-        let layer1 = GGLayer::new(frame, DrawParam::new().color(graphics::BLACK));
-        let layer2 = GGLayer::new(frame, DrawParam::new().color(graphics::WHITE));
+        let layer1 = TweenLayer::new(frame, DrawParam::new().color(graphics::BLACK));
+        let layer2 = TweenLayer::new(frame, DrawParam::new().color(graphics::WHITE));
 
         ProgressBarView {
             bg_layer: layer1,

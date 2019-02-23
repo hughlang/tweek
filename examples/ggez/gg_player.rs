@@ -2,8 +2,8 @@
 /// player controls to help you review the animations in detail. The other examples provided
 /// generally demonstrate simple Tween animations without a timeline.
 ///
-mod helper1;
-use helper1::*;
+mod shape_helper;
+use shape_helper::*;
 
 extern crate ggez;
 extern crate tweek;
@@ -95,7 +95,7 @@ impl StageHelper {
     //---- 1 ----------------------------------------------------------------------
     /// This is a simple Sequence timeline where 4 independent tweens play sequentially,
     /// without any repeats.
-    fn build_timeline_1(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn build_timeline_1(_ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
         let mut ypos = 50.0 as f32;
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
@@ -130,7 +130,7 @@ impl StageHelper {
     ///---- 2 ----------------------------------------------------------------------
     /// This is a timeline with a single tween that repeats. A repeat_count of 1 means it
     /// play twice.
-    fn build_timeline_2(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn build_timeline_2(_ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
         let mut ypos = 50.0 as f32;

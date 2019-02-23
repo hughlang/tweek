@@ -34,16 +34,16 @@ pub enum GGShape {
 
 
 /// This also implements Tweenable
-pub struct GGLayer {
+pub struct TweenLayer {
     pub frame: graphics::Rect,
     pub graphics: DrawParam,
     pub animation: Option<Tween>,
     pub redraw: bool,
 }
 
-impl GGLayer {
+impl TweenLayer {
     pub fn new(frame: graphics::Rect, graphics: DrawParam) -> Self {
-        GGLayer {
+        TweenLayer {
             frame: frame,
             graphics: graphics,
             animation: None,
@@ -54,7 +54,7 @@ impl GGLayer {
 
 /// This is a wrapper for the ggez properties that are tweenable. It is used as a convenient substitute
 /// for having to manage multiple tweenables per displayed asset.
-impl Tweenable for GGLayer {
+impl Tweenable for TweenLayer {
     fn apply(&mut self, prop: &Prop) {
         match prop {
             Prop::Alpha(val) => self.graphics.color.a = val[0] as f32,

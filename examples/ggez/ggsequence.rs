@@ -1,6 +1,6 @@
 //! The simplest possible example that does something.
-mod helper1;
-use helper1::*;
+mod shape_helper;
+use shape_helper::*;
 
 extern crate ggez;
 extern crate tweek;
