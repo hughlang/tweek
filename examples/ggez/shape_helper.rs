@@ -51,10 +51,10 @@ impl ItemState {
             Shape::Text(rect) => {
                 TweenLayer::new(rect, graphics::DrawParam::new())
             },
-            Shape::Line(pt1, pt2, width) => {
-                let rect = graphics::Rect::new(pt1.x, pt1.y, pt2.x, pt2.y);
+            Shape::Line(pt1, pt2, line_width) => {
+                let rect = graphics::Rect::new(pt1.x, pt1.y, 1.0, line_width);
                 let mut layer = TweenLayer::new(rect, graphics::DrawParam::new());
-                layer.stroke = width;
+                layer.stroke = line_width;
                 layer
             },
         };
@@ -100,9 +100,6 @@ impl ItemState {
         match self.shape {
             Shape::Rectangle(_) => {
                 let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.layer.frame, self.layer.graphics.color)?;
-                // let drawparams = graphics::DrawParam::new()
-                //     .rotation(self.layer.graphics.rotation as f32)
-                //     .offset(mint::Point2{x: 0.5, y: 0.5});
                 let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
             },
             Shape::Circle(_, _) => {
@@ -134,13 +131,13 @@ impl ItemState {
                     None => (),
                 }
             },
-            Shape::Line(pt1, _, width) => {
+            Shape::Line(_, _, _) => {
                 let points = vec![
                     mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y},
-                    mint::Point2{x: self.layer.frame.x + self.layer.frame.w, y: self.layer.frame.y + self.layer.frame.h},
+                    mint::Point2{x: self.layer.frame.x + self.layer.frame.w, y: self.layer.frame.y},
                 ];
                 let mesh = graphics::Mesh::new_line(ctx, &points, self.layer.stroke, self.layer.graphics.color)?;
-
+                let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
             }
         }
         Ok(())

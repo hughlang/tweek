@@ -161,29 +161,24 @@ impl DemoHelper {
 
         const STAGE_WIDTH: f32 = 600.0;
         const STAGE_HEIGHT: f32 = 400.0;
-        const LINE_WIDTH: f32 = 5.0;
-        const LINE_SPACE: f32 = 10.0;
-        let draw_area = Rect::new((screen_w - STAGE_WIDTH) / 2.0, 60.0, STAGE_WIDTH, STAGE_HEIGHT);
+        const BAR_HEIGHT: f32 = 20.0;
+        let draw_area = Rect::new((screen_w - STAGE_WIDTH) / 2.0, 100.0, STAGE_WIDTH, STAGE_HEIGHT);
         let line_count = 12;
 
         for i in 0..line_count {
             let item_id = i as usize;
-            let ypos = i as f32 * (LINE_WIDTH + LINE_SPACE);
+            let ypos = i as f32 * (BAR_HEIGHT + 10.0) + draw_area.top();
 
-            let mut item = ItemState::new(item_id,
-                Shape::Line(
-                    Point2{x: draw_area.left(), y: ypos},
-                    Point2{x: draw_area.left(), y: ypos},
-                    LINE_WIDTH)
-                )?;
-            item.layer.graphics.color = Color::from_rgb_u32(HexColors::Green);
+            let rect = Rect::new(draw_area.left(), ypos, 0.0, BAR_HEIGHT);
 
+            let mut item = ItemState::new(item_id, Shape::Rectangle(rect))?;
+            item.layer.graphics.color = Color::from_rgb_u32(HexColors::Orange);
 
             let tween = Tween::with(item_id, &item.layer)
-                .to(vec![size(draw_area.w as f64, LINE_WIDTH as f64)])
+                .to(vec![size(draw_area.w as f64, BAR_HEIGHT as f64)])
                 .duration(1.0)
-                // .ease(Ease::SineInOut)
-                // .repeat(-1, 0.8)
+                .ease(Ease::SineOut)
+                .repeat(8, 0.2).yoyo()
                 ;
             items.push(item);
             tweens.push(tween)
@@ -208,12 +203,12 @@ impl DemoHelper {
         const STAGE_HEIGHT: f32 = 400.0;
         const LINE_WIDTH: f32 = 5.0;
         const LINE_SPACE: f32 = 10.0;
-        let draw_area = Rect::new((screen_w - STAGE_WIDTH) / 2.0, 60.0, STAGE_WIDTH, STAGE_HEIGHT);
+        let draw_area = Rect::new((screen_w - STAGE_WIDTH) / 2.0, 100.0, STAGE_WIDTH, STAGE_HEIGHT);
         let line_count = 12;
 
         for i in 0..line_count {
             let item_id = i as usize;
-            let ypos = i as f32 * (LINE_WIDTH + LINE_SPACE);
+            let ypos = i as f32 * (LINE_WIDTH + LINE_SPACE) + draw_area.top();
 
             let mut item = ItemState::new(item_id,
                 Shape::Line(
@@ -226,9 +221,9 @@ impl DemoHelper {
 
             let tween = Tween::with(item_id, &item.layer)
                 .to(vec![size(draw_area.w as f64, LINE_WIDTH as f64)])
-                .duration(1.0)
+                .duration(2.0)
                 // .ease(Ease::SineInOut)
-                // .repeat(-1, 0.8)
+                .repeat(8, 0.8)
                 ;
             items.push(item);
             tweens.push(tween)
@@ -316,7 +311,7 @@ impl MainState {
         s.demo_list.push(Demo::Rocket);
 
         // Pick which demo to start with.
-        s.demo_index = 0;
+        s.demo_index = 1;
         let demo = s.demo_list[s.demo_index].clone();
         s.load_demo(ctx, &demo)?;
 
@@ -328,11 +323,14 @@ impl MainState {
     /// to call and replace the current timeline animation.
     fn load_demo(&mut self, ctx: &mut Context, demo: &Demo) -> GameResult {
         let (timeline, items) = match demo {
-            Demo::DotCircle => {
-                DemoHelper::build_arc_demo(ctx)?
+            Demo::Bars => {
+                DemoHelper::build_bars_demo(ctx)?
             },
             Demo::Lines => {
                 DemoHelper::build_lines_demo(ctx)?
+            },
+            Demo::DotCircle => {
+                DemoHelper::build_arc_demo(ctx)?
             },
             Demo::Rocket => {
                 DemoHelper::build_rocket_demo(ctx)?
