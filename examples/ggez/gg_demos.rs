@@ -1,4 +1,5 @@
-//! The simplest possible example that does something.
+/// All the demos belong here
+///
 mod shape_helper;
 use shape_helper::*;
 
@@ -236,6 +237,62 @@ impl DemoHelper {
         Ok((timeline, items))
     }
 
+    fn build_text_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+        let screen_w = ctx.conf.window_mode.width;
+        let screen_h = ctx.conf.window_mode.height;
+
+        let mut items: Vec<ItemState> = Vec::new();
+        let mut tweens: Vec<Tween> = Vec::new();
+
+        let med_size = 20.0;
+        let lines: Vec<(String, f32)> = vec![
+            (String::from("Tweek: An animation kit for Rust"), 40.0),
+            (String::from(" "), 40.0),
+            (String::from("The name 'Tweek' originates from the word 'Tween', a term sometimes used in digital animation."), med_size),
+            (String::from("Tweening can be more generally described as an interpolation system that calculates"), med_size),
+            (String::from("changes in visual characteristics of an object over a specified duration."), med_size),
+            (String::from("For example, the target position or size of an object can be specified and Tweek will provide"), med_size),
+            (String::from("the numeric changes that can be applied in the graphics engine of your choice."), med_size),
+        ];
+        let font = graphics::Font::new(ctx, "/Roboto-Bold.ttf")?;
+        let line_height = 50.0;
+        let content_height = lines.len() as f64 * line_height as f64;
+
+        for (i, line) in lines.iter().enumerate() {
+            let item_id = (i + 1000) as usize;
+            let text = graphics::Text::new((line.0.clone(), font, line.1.clone()));
+
+            // Use text dimensions to center text horizontally
+            let (width, height) = text.dimensions(ctx);
+            let xpos = (screen_w - width as f32)/2.0;
+            // Start the text offscreen below the bottom
+            let ypos = screen_h + (i as f32 * line_height);
+
+            let rect = graphics::Rect::new(xpos, ypos, width as f32, height as f32);
+            let mut item = ItemState::new(item_id, Shape::Text(rect))?;
+            item.text = Some(text);
+            item.layer.graphics.color = graphics::BLACK;
+
+            let move_y = (screen_h as f64 + content_height) * -1.0;
+            let mut tween = Tween::with(item_id, &item.layer)
+                .to(vec![shift_y(move_y)]).duration(12.0)
+                .repeat(5, 0.5)
+                ;
+
+            items.push(item);
+            tweens.push(tween);
+
+        }
+        // =====================================================
+        // Create items and tweens here and append results
+        // =====================================================
+
+        let timeline = Timeline::add(tweens)
+            // Add timeline configs here.
+            ;
+        Ok((timeline, items))
+    }
+
     /// ********************************************************************************
     /// This is a template for creating a new animation.
     /// Copy it and try out different animation techniques.
@@ -264,6 +321,7 @@ impl DemoHelper {
 enum Demo {
     Lines,
     Bars,
+    TextScroller,
     DotCircle,
     Rocket,
 
@@ -305,13 +363,14 @@ impl MainState {
         };
 
         // ===== If you are adding a new animation to try out, add it to the demo_list here. =====
+        s.demo_list.push(Demo::TextScroller);
         s.demo_list.push(Demo::Bars);
         s.demo_list.push(Demo::Lines);
         s.demo_list.push(Demo::DotCircle);
         s.demo_list.push(Demo::Rocket);
 
         // Pick which demo to start with.
-        s.demo_index = 1;
+        s.demo_index = 0;
         let demo = s.demo_list[s.demo_index].clone();
         s.load_demo(ctx, &demo)?;
 
@@ -328,6 +387,9 @@ impl MainState {
             },
             Demo::Lines => {
                 DemoHelper::build_lines_demo(ctx)?
+            },
+            Demo::TextScroller => {
+                DemoHelper::build_text_demo(ctx)?
             },
             Demo::DotCircle => {
                 DemoHelper::build_arc_demo(ctx)?

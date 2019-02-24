@@ -38,24 +38,4 @@ impl GGTools {
         Ok(gridmesh)
     }
 
-    /// At a minimum, a progress bar is two rectangles that show the timeline progress of
-    /// the current animations. It depends on TKState for information, I guess?
-    ///
-    #[allow(unused_variables)]
-    pub fn build_progress_bar(ctx: &mut Context, state: &mut TKState) -> GameResult {
-
-        Ok(())
-    }
-
-    pub fn build_play_button(ctx: &mut Context, frame: graphics::Rect) -> GameResult<ButtonView> {
-        let mut button = ButtonView::new(frame).with_title("Play")
-            .with_props(&vec![color(0xCD09AA)]);
-        let font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
-
-        button.set_font(&font, &24.0, &graphics::Color::from_rgb_u32(0xFFFFFF));
-        button.set_color(&graphics::Color::from_rgb_u32(0x999999));
-        button.set_hover_animation(vec![color(0xFF8920)], 0.1);
-
-        Ok(button)
-    }
 }

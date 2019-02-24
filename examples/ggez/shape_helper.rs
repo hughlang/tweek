@@ -78,7 +78,6 @@ impl ItemState {
             if let Some(update) = tween.get_update(&self.id) {
                 // println!("update props={:?}", update.props);
                 self.layer.render_update(&update.props);
-                self.layer.render_update(&update.props);
             }
         }
         Ok(())
@@ -126,7 +125,7 @@ impl ItemState {
                 match &self.text {
                     Some(txt) => {
                         let pt = mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y};
-                        let _result = graphics::draw(ctx, txt, (pt,));
+                        let _result = graphics::draw(ctx, txt, self.layer.graphics.dest(pt));
                     },
                     None => (),
                 }
