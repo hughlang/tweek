@@ -25,8 +25,11 @@ struct DemoHelper {}
 
 #[allow(dead_code)]
 #[allow(unused_mut)]
+#[allow(unused_variables)]
 impl DemoHelper {
 
+    /// This creates the Next and Previous buttons that make it easy to load and view animations.
+    /// The set_onclick method appends a u32 value that is evaluated in the run loop update() method.
     fn make_buttons(ctx: &mut Context) -> GameResult<Vec<ButtonView>> {
         const BUTTON_WIDTH: f32 = 90.0;
         const BUTTON_HEIGHT: f32 = 40.0;
@@ -111,7 +114,6 @@ impl DemoHelper {
         let mut tweens: Vec<Tween> = Vec::new();
 
         let rocket_count = 4;
-        // let scene_radius = 96.0;
 
         let image = graphics::Image::new(ctx, "/rocket.png")?;
         let base_h = *&image.height() as f32;
@@ -126,23 +128,18 @@ impl DemoHelper {
 
             let w = base_w * scale;
             let h = base_h * scale;
-            let angle = 60.0 as f32;
+            let angle = 300.0 as f32;
             let rect = graphics::Rect::new(x, y, w, h);
+            println!("new rocket={:?}", rect);
             let mut item = ItemState::new(item_id, Shape::Image(rect))?;
             item.image = Some(image.clone());
-            item.layer.graphics.offset = na::Point2::new(0.5, 0.5);
+            // item.layer.graphics.offset = na::Point2::new(0.5, 0.5);
             item.layer.graphics.rotation = angle.to_radians();
-
-            // let mut item1 = ItemState::new(item_id, Shape::Circle(mint::Point2{x: center_pt.x, y: center_pt.y - scene_radius}, dot_radius))?;
-            // item1.layer.graphics.color = graphics::Color::from_rgb_u32(HexColors::Red);
-            // let alpha = 1.0 - (i as f32 / dot_count as f32)/2.0;
-            // item1.layer.graphics.color.a = alpha;
-            // item1.layer.graphics.offset = na::Point2::new(center_pt.x, center_pt.y);
 
             let tween = Tween::with(item_id, &item.layer)
                 .to(vec![shift_x(-40.0), shift_y(-600.0)])
                 .duration(1.8)
-                .ease(Ease::SineInOut)
+                // .ease(Ease::SineInOut)
                 // .repeat(-1, 0.8)
                 ;
             items.push(item);
@@ -150,12 +147,33 @@ impl DemoHelper {
         }
 
         let timeline = Timeline::add(tweens)
-            .stagger(0.12)
+            // .stagger(0.12)
+            ;
+        Ok((timeline, items))
+    }
+
+    /// This is a template for creating a new animation.
+    /// Copy it and try out different animation techniques.
+    /// Add an entry to the Demo enum below to make it part of the Next/Previous cycle.
+    fn build_template(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+        let screen_w = ctx.conf.window_mode.width;
+        let screen_h = ctx.conf.window_mode.height;
+
+        let mut items: Vec<ItemState> = Vec::new();
+        let mut tweens: Vec<Tween> = Vec::new();
+
+        // =====================================================
+        // Create items and tweens here and append results
+        // =====================================================
+
+        let timeline = Timeline::add(tweens)
+            // Add timeline configs here.
             ;
         Ok((timeline, items))
     }
 }
 
+/// This enum is a list of all the loadable demo animations.
 #[derive(Copy, Clone, Debug)]
 enum Demo {
     DotCircle,
@@ -163,6 +181,12 @@ enum Demo {
 
 
 }
+
+/// ##########################################################################################
+/// MainState is where the stage setup occurs and the creation of the Tweek objects that will
+/// manage the animations. It also implements the EventHandler trait which is the run loop
+/// in ggez.
+/// ##########################################################################################
 
 struct MainState {
     grid: graphics::Mesh,
@@ -183,6 +207,8 @@ impl MainState {
         let gridmesh = GGTools::build_grid(ctx, screen_w, screen_h, 32.0, graphics::Color::from_rgb_u32(0xCCCCCC))?;
 
         let mut demo_list: Vec<Demo> = Vec::new();
+
+        // ========== If you are adding a new animation to try out, add it to the demo_list here.
         demo_list.push(Demo::DotCircle);
         demo_list.push(Demo::Rocket);
 
@@ -200,36 +226,25 @@ impl MainState {
         Ok(s)
     }
 
+    /// This method takes a Demo enum as a parameter to identify which DemoHelper function
+    /// to call and replace the current timeline animation with another one.
     fn load_demo(&mut self, ctx: &mut Context, demo: &Demo) -> GameResult {
-        match demo {
+        let (timeline, items) = match demo {
             Demo::DotCircle => {
-
-                let (timeline, items) = DemoHelper::build_arc_demo(ctx)?;
-                let mut tweek = Tweek::new();
-                tweek.add_timeline(timeline);
-                &tweek.play();
-
-                let tk_state = TKState::new();
-                self.tk_state = tk_state;
-                self.tweek = tweek;
-                self.items = items;
-
+                DemoHelper::build_arc_demo(ctx)?
             },
             Demo::Rocket => {
-                let (timeline, items) = DemoHelper::build_rocket_demo(ctx)?;
-                let mut tweek = Tweek::new();
-                tweek.add_timeline(timeline);
-                &tweek.play();
-
-                let tk_state = TKState::new();
-                self.tk_state = tk_state;
-                self.tweek = tweek;
-                self.items = items;
+                DemoHelper::build_rocket_demo(ctx)?
             },
-            // _ => (),
-        }
+        };
+        let mut tweek = Tweek::new();
+        tweek.add_timeline(timeline);
+        &tweek.play();
 
-
+        let tk_state = TKState::new();
+        self.tk_state = tk_state;
+        self.tweek = tweek;
+        self.items = items;
         Ok(())
     }
 }
@@ -239,7 +254,6 @@ impl event::EventHandler for MainState {
         if &self.tk_state.commands.len() > &0 {
             // This is not a good way to do this. FIXME
             let cmd = &self.tk_state.commands[0];
-            println!("New command: {}", cmd);
             match *cmd {
                 NEXT_COMMAND => {
                     self.demo_index += 1;
@@ -248,6 +262,7 @@ impl event::EventHandler for MainState {
                     }
                     let next = &self.demo_list[self.demo_index].clone();
                     &self.load_demo(ctx, next);
+                    return Ok(())
                 },
                 PREV_COMMAND => {
                     if self.demo_index == 0 {
@@ -328,7 +343,6 @@ impl event::EventHandler for MainState {
             } else {
                 mouse::set_cursor_type(ctx, mouse::MouseCursor::Default);
             }
-            // control.render(ctx)?;
         }
 
     }

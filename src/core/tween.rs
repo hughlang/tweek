@@ -391,7 +391,7 @@ impl Tween {
                 end_props.push(prop.clone());
             }
             animator.end_state.props = end_props;
-            println!("start: {:?} \nend   : {:?}", &animator.start_state.props, &animator.end_state.props);
+            println!("start: {:?} \nend  : {:?}", &animator.start_state.props, &animator.end_state.props);
         }
 
     }
