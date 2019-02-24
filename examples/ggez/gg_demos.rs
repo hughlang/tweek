@@ -8,8 +8,8 @@ extern crate tweek;
 use ggez::conf;
 use ggez::event::{self, MouseButton};
 use ggez::input::{mouse};
-use ggez::graphics::{self, DrawParam, Color};
-use ggez::mint::{self};
+use ggez::graphics::{self, Rect, DrawParam, Color};
+use ggez::mint::{self, Point2};
 use ggez::nalgebra as na;
 use ggez::{Context, ContextBuilder, GameResult};
 
@@ -43,10 +43,10 @@ impl DemoHelper {
         let ypos = 30.0;
 
         // ---- Previous ---------------------
-        let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, BUTTON_HEIGHT);
+        let frame = Rect::new(xpos, ypos, BUTTON_WIDTH, BUTTON_HEIGHT);
         let mut button = ButtonView::new(frame).with_title("Previous");
         button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
-        button.set_color(&graphics::Color::from_rgb_u32(HexColors::Tan));
+        button.set_color(&Color::from_rgb_u32(HexColors::Tan));
         button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
         button.set_onclick(move |_action, tk| {
             tk.commands.push(PREV_COMMAND);
@@ -54,10 +54,10 @@ impl DemoHelper {
         buttons.push(button);
 
         // ---- Next ---------------------
-        let frame = graphics::Rect::new(screen_w - BUTTON_WIDTH - 30.0, ypos, BUTTON_WIDTH, BUTTON_HEIGHT);
+        let frame = Rect::new(screen_w - BUTTON_WIDTH - 30.0, ypos, BUTTON_WIDTH, BUTTON_HEIGHT);
         let mut button = ButtonView::new(frame).with_title("Next");
         button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
-        button.set_color(&graphics::Color::from_rgb_u32(HexColors::Tan));
+        button.set_color(&Color::from_rgb_u32(HexColors::Tan));
         button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
         button.set_onclick(move |_action, state| {
             state.commands.push(NEXT_COMMAND);
@@ -83,7 +83,7 @@ impl DemoHelper {
             let item_id = i + 10 as usize;
 
             let mut item1 = ItemState::new(item_id, Shape::Circle(mint::Point2{x: center_pt.x, y: center_pt.y - scene_radius}, dot_radius))?;
-            item1.layer.graphics.color = graphics::Color::from_rgb_u32(HexColors::Red);
+            item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
             let alpha = 1.0 - (i as f32 / dot_count as f32)/2.0;
             item1.layer.graphics.color.a = alpha;
             item1.layer.graphics.offset = na::Point2::new(center_pt.x, center_pt.y);
@@ -129,7 +129,7 @@ impl DemoHelper {
             let w = base_w * scale;
             let h = base_h * scale;
             let angle = 300.0 as f32;
-            let rect = graphics::Rect::new(x, y, w, h);
+            let rect = Rect::new(x, y, w, h);
             println!("new rocket={:?}", rect);
             let mut item = ItemState::new(item_id, Shape::Image(rect))?;
             item.image = Some(image.clone());
@@ -152,10 +152,100 @@ impl DemoHelper {
         Ok((timeline, items))
     }
 
+    fn build_bars_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+        let screen_w = ctx.conf.window_mode.width;
+        let screen_h = ctx.conf.window_mode.height;
+
+        let mut items: Vec<ItemState> = Vec::new();
+        let mut tweens: Vec<Tween> = Vec::new();
+
+        const STAGE_WIDTH: f32 = 600.0;
+        const STAGE_HEIGHT: f32 = 400.0;
+        const LINE_WIDTH: f32 = 5.0;
+        const LINE_SPACE: f32 = 10.0;
+        let draw_area = Rect::new((screen_w - STAGE_WIDTH) / 2.0, 60.0, STAGE_WIDTH, STAGE_HEIGHT);
+        let line_count = 12;
+
+        for i in 0..line_count {
+            let item_id = i as usize;
+            let ypos = i as f32 * (LINE_WIDTH + LINE_SPACE);
+
+            let mut item = ItemState::new(item_id,
+                Shape::Line(
+                    Point2{x: draw_area.left(), y: ypos},
+                    Point2{x: draw_area.left(), y: ypos},
+                    LINE_WIDTH)
+                )?;
+            item.layer.graphics.color = Color::from_rgb_u32(HexColors::Green);
+
+
+            let tween = Tween::with(item_id, &item.layer)
+                .to(vec![size(draw_area.w as f64, LINE_WIDTH as f64)])
+                .duration(1.0)
+                // .ease(Ease::SineInOut)
+                // .repeat(-1, 0.8)
+                ;
+            items.push(item);
+            tweens.push(tween)
+        }
+
+
+        let timeline = Timeline::add(tweens)
+            .stagger(0.1)
+            ;
+        Ok((timeline, items))
+    }
+
+    /// Draw a bunch of lines horizontally with animation
+    fn build_lines_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+        let screen_w = ctx.conf.window_mode.width;
+        let screen_h = ctx.conf.window_mode.height;
+
+        let mut items: Vec<ItemState> = Vec::new();
+        let mut tweens: Vec<Tween> = Vec::new();
+
+        const STAGE_WIDTH: f32 = 600.0;
+        const STAGE_HEIGHT: f32 = 400.0;
+        const LINE_WIDTH: f32 = 5.0;
+        const LINE_SPACE: f32 = 10.0;
+        let draw_area = Rect::new((screen_w - STAGE_WIDTH) / 2.0, 60.0, STAGE_WIDTH, STAGE_HEIGHT);
+        let line_count = 12;
+
+        for i in 0..line_count {
+            let item_id = i as usize;
+            let ypos = i as f32 * (LINE_WIDTH + LINE_SPACE);
+
+            let mut item = ItemState::new(item_id,
+                Shape::Line(
+                    Point2{x: draw_area.left(), y: ypos},
+                    Point2{x: draw_area.left(), y: ypos},
+                    LINE_WIDTH)
+                )?;
+            item.layer.graphics.color = Color::from_rgb_u32(HexColors::Green);
+
+
+            let tween = Tween::with(item_id, &item.layer)
+                .to(vec![size(draw_area.w as f64, LINE_WIDTH as f64)])
+                .duration(1.0)
+                // .ease(Ease::SineInOut)
+                // .repeat(-1, 0.8)
+                ;
+            items.push(item);
+            tweens.push(tween)
+        }
+
+
+        let timeline = Timeline::add(tweens)
+            .stagger(0.1)
+            ;
+        Ok((timeline, items))
+    }
+
+    /// ********************************************************************************
     /// This is a template for creating a new animation.
     /// Copy it and try out different animation techniques.
     /// Add an entry to the Demo enum below to make it part of the Next/Previous cycle.
-    fn build_template(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn empty_template(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
 
@@ -171,11 +261,14 @@ impl DemoHelper {
             ;
         Ok((timeline, items))
     }
+
 }
 
 /// This enum is a list of all the loadable demo animations.
 #[derive(Copy, Clone, Debug)]
 enum Demo {
+    Lines,
+    Bars,
     DotCircle,
     Rocket,
 
@@ -204,13 +297,7 @@ impl MainState {
         let screen_h = ctx.conf.window_mode.height;
 
         let buttons = DemoHelper::make_buttons(ctx)?;
-        let gridmesh = GGTools::build_grid(ctx, screen_w, screen_h, 32.0, graphics::Color::from_rgb_u32(0xCCCCCC))?;
-
-        let mut demo_list: Vec<Demo> = Vec::new();
-
-        // ========== If you are adding a new animation to try out, add it to the demo_list here.
-        demo_list.push(Demo::DotCircle);
-        demo_list.push(Demo::Rocket);
+        let gridmesh = GGTools::build_grid(ctx, screen_w, screen_h, 32.0, Color::from_rgb_u32(0xCCCCCC))?;
 
         let mut s = MainState {
             grid: gridmesh,
@@ -219,22 +306,39 @@ impl MainState {
             items: Vec::new(),
             buttons: buttons,
             demo_index: 0,
-            demo_list: demo_list,
+            demo_list: Vec::new(),
         };
 
-        s.load_demo(ctx, &Demo::DotCircle)?;
+        // ===== If you are adding a new animation to try out, add it to the demo_list here. =====
+        s.demo_list.push(Demo::Bars);
+        s.demo_list.push(Demo::Lines);
+        s.demo_list.push(Demo::DotCircle);
+        s.demo_list.push(Demo::Rocket);
+
+        // Pick which demo to start with.
+        s.demo_index = 0;
+        let demo = s.demo_list[s.demo_index].clone();
+        s.load_demo(ctx, &demo)?;
+
         Ok(s)
     }
 
+    #[allow(unreachable_patterns)]
     /// This method takes a Demo enum as a parameter to identify which DemoHelper function
-    /// to call and replace the current timeline animation with another one.
+    /// to call and replace the current timeline animation.
     fn load_demo(&mut self, ctx: &mut Context, demo: &Demo) -> GameResult {
         let (timeline, items) = match demo {
             Demo::DotCircle => {
                 DemoHelper::build_arc_demo(ctx)?
             },
+            Demo::Lines => {
+                DemoHelper::build_lines_demo(ctx)?
+            },
             Demo::Rocket => {
                 DemoHelper::build_rocket_demo(ctx)?
+            },
+            _ => {
+                DemoHelper::empty_template(ctx)?
             },
         };
         let mut tweek = Tweek::new();

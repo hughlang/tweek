@@ -18,7 +18,8 @@ pub enum Prop {
     Position(Point2D),
     Rotate(FloatProp),
     Size(Frame2D),
-    Shift(Point2D),
+    Shift(Point2D), // offset the position by the specified x and y values
+    Resize(Frame2D), // offset the size by the specified w and h values
 }
 
 impl Eq for Prop {}
@@ -34,10 +35,13 @@ impl Prop {
             Prop::Rotate(_) => 4,
             Prop::Size(_) => 5,
             Prop::Shift(_) => 6,
+            Prop::Resize(_) => 7,
         }
     }
 
     /// Unfortunate helper method for doing reverse lookup of a prop based on its prop_id()
+    /// All of the internal values are zero vectors so this is only useful for lookups and
+    /// matching when inspecting Props
     /// Magic numbers FTW!
     pub fn from_prop_id(id: u32) -> Prop {
         match id {
@@ -47,10 +51,14 @@ impl Prop {
             4 => Prop::Rotate(FloatProp::zero()),
             5 => Prop::Size(Frame2D::zero()),
             6 => Prop::Shift(Point2D::zero()),
+            7 => Prop::Resize(Frame2D::zero()),
             _ => Prop::None,
         }
     }
 
+    /// This builds a list of the core enums that are not offsets (i.e., Shift, Resize)
+    /// All of the internal values are zero vectors so this is only useful for iterating
+    /// the list of possible Props that need to be inspected.
     pub fn get_prop_list() -> Vec<Prop> {
         let mut results: Vec<Prop> = Vec::new();
         results.push(Prop::Alpha(FloatProp::zero()));

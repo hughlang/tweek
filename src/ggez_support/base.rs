@@ -38,6 +38,7 @@ pub struct TweenLayer {
     pub frame: graphics::Rect,
     pub graphics: DrawParam,
     pub animation: Option<Tween>,
+    pub stroke: f32,
     pub redraw: bool,
 }
 
@@ -47,6 +48,7 @@ impl TweenLayer {
             frame: frame,
             graphics: graphics,
             animation: None,
+            stroke: 0.0,
             redraw: false,
         }
     }

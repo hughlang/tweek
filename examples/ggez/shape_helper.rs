@@ -1,8 +1,7 @@
-/// This helper module is a convenience when writing and testing examples.
-///
-/// mod shape_helper;
-/// use shape_helper::*;
-///
+/// This module is used throughout the examples and serves as a basic and generic system for rendering
+/// shapes on screen. However, it isn't comprehensive and certain compromises are made to reduce
+/// complexity. For example, it does not support Line graphics as borders for shapes. Only the Line
+/// shape uses DrawMode::Stroke. Someday, it may get migrated into the ggez_support module.
 
 extern crate ggez;
 extern crate tweek;
@@ -19,7 +18,8 @@ pub enum Shape {
     Rectangle(graphics::Rect),
     Image(graphics::Rect),
     Text(graphics::Rect),
-    Line(mint::Point2<f32>, mint::Point2<f32>),
+    /// Parameters are start point, end point, and line width
+    Line(mint::Point2<f32>, mint::Point2<f32>, f32),
 }
 
 pub struct ItemState {
@@ -37,18 +37,27 @@ impl ItemState {
 
     #[allow(dead_code)]
     pub fn new(id: usize, shape: Shape) -> GameResult<ItemState> {
-        let rect = match shape {
-            Shape::Rectangle(rect) => rect,
-            Shape::Circle(pt, r) => {
-                graphics::Rect::new(pt.x - r, pt.y - r, r * 2.0, r * 2.0)
+        let layer = match shape {
+            Shape::Rectangle(rect) => {
+                TweenLayer::new(rect, graphics::DrawParam::new())
             },
-            Shape::Image(rect) => rect,
-            Shape::Text(rect) => rect,
-            Shape::Line(pt1, pt2) => {
-                graphics::Rect::new(pt1.x, pt1.y, pt2.x, pt2.y)
+            Shape::Circle(pt, r) => {
+                let rect = graphics::Rect::new(pt.x - r, pt.y - r, r * 2.0, r * 2.0);
+                TweenLayer::new(rect, graphics::DrawParam::new())
+            },
+            Shape::Image(rect) => {
+                TweenLayer::new(rect, graphics::DrawParam::new())
+            },
+            Shape::Text(rect) => {
+                TweenLayer::new(rect, graphics::DrawParam::new())
+            },
+            Shape::Line(pt1, pt2, width) => {
+                let rect = graphics::Rect::new(pt1.x, pt1.y, pt2.x, pt2.y);
+                let mut layer = TweenLayer::new(rect, graphics::DrawParam::new());
+                layer.stroke = width;
+                layer
             },
         };
-        let layer = TweenLayer::new(rect, graphics::DrawParam::new());
 
         Ok(ItemState {
             id: id,
@@ -125,7 +134,12 @@ impl ItemState {
                     None => (),
                 }
             },
-            Shape::Line(_, _) => {
+            Shape::Line(pt1, _, width) => {
+                let points = vec![
+                    mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y},
+                    mint::Point2{x: self.layer.frame.x + self.layer.frame.w, y: self.layer.frame.y + self.layer.frame.h},
+                ];
+                let mesh = graphics::Mesh::new_line(ctx, &points, self.layer.stroke, self.layer.graphics.color)?;
 
             }
         }

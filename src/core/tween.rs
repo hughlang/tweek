@@ -31,6 +31,11 @@ pub fn size(w: f64, h: f64) -> Prop {
     Prop::Size(Frame2D::new(w, h))
 }
 
+/// Not ready. Don't use yet.
+pub fn resize(w: f64, h: f64) -> Prop {
+    Prop::Resize(Frame2D::new(w, h))
+}
+
 pub fn alpha(v: f64) -> Prop {
     Prop::Alpha(FloatProp::new(v))
 }
