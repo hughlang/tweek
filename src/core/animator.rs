@@ -8,7 +8,7 @@ use super::ease::*;
 
 /// An Animator represents state change from one UIState to another UIState state
 pub struct Animator {
-    pub id: f32,
+    pub id: (usize, usize),
     pub start_state: UIState,
     pub end_state: UIState,
     pub start_time: f64,
@@ -19,7 +19,7 @@ pub struct Animator {
 }
 
 impl Animator {
-    pub fn create(id: &f32, props1: &Vec<Prop>, props2: &Vec<Prop>) -> Self {
+    pub fn create(id: &(usize, usize), props1: &Vec<Prop>, props2: &Vec<Prop>) -> Self {
         let tween_id = id.clone();
         let start_state = UIState::create(tween_id, props1.clone());
         let end_state = UIState::create(tween_id, props2.clone());
