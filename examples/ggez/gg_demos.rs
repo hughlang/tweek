@@ -415,10 +415,6 @@ impl MainState {
         Ok(())
     }
 
-    fn _get_text_items(&self) -> Vec<ItemState> {
-        let iter = self.items.iter().filter(|x| x.text.is_some() ).collect::<Vec<_>>();
-        Vec::new()
-    }
 }
 
 impl event::EventHandler for MainState {

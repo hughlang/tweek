@@ -79,13 +79,13 @@ impl Prop {
 
 #[derive(Default, Debug, Clone)]
 pub struct UIState {
-    pub id: f32,
+    pub id: (usize, usize),
     pub props: Vec<Prop>,
     pub progress: f64,
 }
 
 impl UIState {
-    pub fn create(_id: f32, _props: Vec<Prop>) -> Self {
+    pub fn create(_id: (usize, usize), _props: Vec<Prop>) -> Self {
         UIState {
             id: _id,
             props: _props,

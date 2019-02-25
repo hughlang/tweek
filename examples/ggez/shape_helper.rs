@@ -51,7 +51,7 @@ impl ItemState {
             Shape::Text(rect) => {
                 TweenLayer::new(rect, graphics::DrawParam::new())
             },
-            Shape::Line(pt1, pt2, line_width) => {
+            Shape::Line(pt1, _pt2, line_width) => {
                 let rect = graphics::Rect::new(pt1.x, pt1.y, 1.0, line_width);
                 let mut layer = TweenLayer::new(rect, graphics::DrawParam::new());
                 layer.stroke = line_width;

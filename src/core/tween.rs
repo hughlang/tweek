@@ -306,7 +306,7 @@ impl Tween {
         // Create an artificial unique id to assign to the animator. It isn't very important if there's a
         // tiny float error like 100.1 vs 100.1000001 right now. Need to evaluate later.
         let state_id: f32 = self.tween_id as f32 + (self.animators.len() as f32 / 10.0);
-        let mut animator = Animator::create(&state_id, &self.start_props, &cleaned_props);
+        let mut animator = Animator::create(&(self.tween_id, self.animators.len()), &self.start_props, &cleaned_props);
         animator.debug = self.debug;
         self.animators.push(animator);
         self
