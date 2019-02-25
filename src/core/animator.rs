@@ -8,6 +8,8 @@ use super::ease::*;
 
 /// An Animator represents state change from one UIState to another UIState state
 pub struct Animator {
+    /// The id is a weird composite of the parent tween_id and the position within the animators vector.
+    /// Not important yet, but it's better to have a grouping differentiator in the future.
     pub id: (usize, usize),
     pub start_state: UIState,
     pub end_state: UIState,
@@ -72,7 +74,7 @@ impl Animator {
             // Note: these are useful for debugging interpolation
             // println!("----------------------------------------------");
             if self.debug {
-                println!("Changing from={:?} to={:?} >>> interpolated={:?}", prop, &self.end_state.props[i], current);
+                println!("[{}.{}] from={:?} to={:?} >>> now={:?}", self.id.0, self.id.1, prop, &self.end_state.props[i], current);
             }
             props.push(current);
         }

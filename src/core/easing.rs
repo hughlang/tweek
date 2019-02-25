@@ -1,3 +1,7 @@
+/// This file is not currently being used and is not included in the crate. Some aspects of it may be useful later,
+/// so it has not been removed yet.
+///
+
 use super::property::*;
 
 #[derive(Debug, PartialEq, Eq, Clone)]

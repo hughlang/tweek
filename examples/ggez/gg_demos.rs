@@ -68,6 +68,21 @@ impl DemoHelper {
         Ok(buttons)
     }
 
+    /// Create a unit vector representing the
+    /// given angle (in radians)
+    fn vec_from_angle(angle: f32) -> mint::Vector2<f32> {
+        let vx = angle.sin();
+        let vy = angle.cos();
+        mint::Vector2{ x: vx, y: vy }
+    }
+
+    // nalgebra version
+    // fn vec_from_angle(angle: f32) -> na::Vector2<f32> {
+    //     let vx = angle.sin();
+    //     let vy = angle.cos();
+    //     na::Vector2::new(vx, vy)
+    // }
+
     /// This demo shows a collection of dots rotating around in a circle
     fn build_arc_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
         let screen_w = ctx.conf.window_mode.width;
@@ -366,10 +381,10 @@ impl MainState {
         };
 
         // ===== If you are adding a new animation to try out, add it to the demo_list here. =====
-        s.demo_list.push(Demo::TextScroller);
         s.demo_list.push(Demo::Bars);
         s.demo_list.push(Demo::Lines);
         s.demo_list.push(Demo::DotCircle);
+        s.demo_list.push(Demo::TextScroller);
         s.demo_list.push(Demo::Rocket);
 
         // Pick which demo to start with.
