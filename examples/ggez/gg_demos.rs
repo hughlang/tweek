@@ -237,6 +237,10 @@ impl DemoHelper {
         Ok((timeline, items))
     }
 
+    /// This demo scrolls lines of text from the bottom of the screen to the top, kind of like movie credits.
+    /// It performs terribly in debug mode (11 fps), but achieves over 120 fps in release mode.
+    /// A future optimization would be to use ggez graphics::draw_queued_text in the draw() function.
+    /// Also consider combining all of the text into a mesh somehow.
     fn build_text_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
@@ -283,9 +287,6 @@ impl DemoHelper {
             tweens.push(tween);
 
         }
-        // =====================================================
-        // Create items and tweens here and append results
-        // =====================================================
 
         let timeline = Timeline::add(tweens)
             // Add timeline configs here.
@@ -336,6 +337,7 @@ enum Demo {
 
 struct MainState {
     grid: graphics::Mesh,
+    frames: usize,
     tweek: Tweek,
     tk_state: TKState,
     items: Vec<ItemState>,
@@ -354,6 +356,7 @@ impl MainState {
 
         let mut s = MainState {
             grid: gridmesh,
+            frames: 0,
             tweek: Tweek::new(),
             tk_state: TKState::new(),
             items: Vec::new(),
@@ -411,6 +414,11 @@ impl MainState {
         self.items = items;
         Ok(())
     }
+
+    fn _get_text_items(&self) -> Vec<ItemState> {
+        let iter = self.items.iter().filter(|x| x.text.is_some() ).collect::<Vec<_>>();
+        Vec::new()
+    }
 }
 
 impl event::EventHandler for MainState {
@@ -466,10 +474,18 @@ impl event::EventHandler for MainState {
         self.tweek.update(&mut self.tk_state);
 
         for item in &mut self.items {
+            // if let Some(text) = item.text {
+            //     graphics::queue_text(ctx, &text, item.layer.graphics, None);
+            // }
             item.render(ctx)?;
         }
 
         graphics::present(ctx)?;
+
+        self.frames += 1;
+        if (self.frames % 20) == 0 {
+            println!("FPS: {}", ggez::timer::fps(ctx));
+        }
 
         // timer::yield_now();
         Ok(())

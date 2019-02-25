@@ -8,17 +8,18 @@ use super::ease::*;
 
 /// An Animator represents state change from one UIState to another UIState state
 pub struct Animator {
-    pub id: usize,
+    pub id: f32,
     pub start_state: UIState,
     pub end_state: UIState,
     pub start_time: f64,
     pub end_time: f64,
     pub seconds: f64,
     pub ease: Ease,
+    pub debug: bool,
 }
 
 impl Animator {
-    pub fn create(id: &usize, props1: &Vec<Prop>, props2: &Vec<Prop>) -> Self {
+    pub fn create(id: &f32, props1: &Vec<Prop>, props2: &Vec<Prop>) -> Self {
         let tween_id = id.clone();
         let start_state = UIState::create(tween_id, props1.clone());
         let end_state = UIState::create(tween_id, props2.clone());
@@ -30,6 +31,7 @@ impl Animator {
             end_time: 0.0,
             seconds: 1.0,
             ease: Ease::Linear,
+            debug: false,
         }
     }
 
@@ -69,7 +71,9 @@ impl Animator {
 
             // Note: these are useful for debugging interpolation
             // println!("----------------------------------------------");
-            // println!("Changing from={:?} to={:?} >>> interpolated={:?}", prop, &self.end_state.props[i], current);
+            if self.debug {
+                println!("Changing from={:?} to={:?} >>> interpolated={:?}", prop, &self.end_state.props[i], current);
+            }
             props.push(current);
         }
         UIState::create(self.id, props)
@@ -90,14 +94,12 @@ impl Animator {
             },
             Prop::Color(m1) => {
                 let m2 = unwrap_to!(target => Prop::Color);
-                // println!("m1={:?} m2={:?}", m1, m2);
                 let out = m1.lerp(*m2, scale as f32);
                 // println!("Interpolated to: r={} g={} b={}", out[0], out[1], out[2]);
                 Prop::Color(out)
             },
             Prop::Position(m1) => {
                 let m2 = unwrap_to!(target => Prop::Position);
-                // println!("m1={:?} m2={:?}", m1, m2);
                 let out = m1.lerp(*m2, scale);
                 // println!("Interpolated to: x={} y={}", out[0], out[1]);
                 Prop::Position(out)

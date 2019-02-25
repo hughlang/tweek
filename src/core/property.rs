@@ -42,7 +42,7 @@ impl Prop {
     /// Unfortunate helper method for doing reverse lookup of a prop based on its prop_id()
     /// All of the internal values are zero vectors so this is only useful for lookups and
     /// matching when inspecting Props
-    /// Magic numbers FTW!
+     /// Magic numbers FTW!
     pub fn from_prop_id(id: u32) -> Prop {
         match id {
             1 => Prop::Alpha(FloatProp::zero()),
@@ -79,13 +79,13 @@ impl Prop {
 
 #[derive(Default, Debug, Clone)]
 pub struct UIState {
-    pub id: usize,
+    pub id: f32,
     pub props: Vec<Prop>,
     pub progress: f64,
 }
 
 impl UIState {
-    pub fn create(_id: usize, _props: Vec<Prop>) -> Self {
+    pub fn create(_id: f32, _props: Vec<Prop>) -> Self {
         UIState {
             id: _id,
             props: _props,

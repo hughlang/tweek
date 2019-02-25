@@ -111,12 +111,7 @@ impl ItemState {
                 match &self.image {
                     Some(img) => {
                         let pt = mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y};
-                        let _drawparams = graphics::DrawParam::new()
-                            .dest(pt)
-                            .rotation(self.layer.graphics.rotation as f32)
-                            .offset(mint::Point2{x: 0.5, y: 0.5})
-                            .color(self.layer.graphics.color);
-                        let _result = graphics::draw(ctx, img, self.layer.graphics);
+                        let _result = graphics::draw(ctx, img, self.layer.graphics.dest(pt));
                     },
                     None => (),
                 }

@@ -25,6 +25,18 @@ pub trait Playable {
 }
 
 
+/// This is an experimental trait with the intention of passing around a mutable TKState
+/// which other code can use. TKState has a shared tween_store where all tweens are registered.
+/// Some ideas
+/// * allow other code to add callback functions that execute when specific events happen?
+///
+pub trait TimelineAware {
+    // fn tk_play(&mut self, ctx: &mut TKState);
+    fn update(&mut self, ctx: &mut TKState);
+
+}
+
+
 #[derive(Copy, Clone, Debug)]
 pub enum TKEvent {
     None,
@@ -217,18 +229,6 @@ impl Playable for Tweek {
         None
     }
 }
-
-/// This is an experimental trait with the intention of passing around a mutable TKState
-/// which other code can use. TKState has a shared tween_store where all tweens are registered.
-/// Some ideas
-/// * allow other code to add callback functions that execute when specific events happen?
-///
-pub trait TimelineAware {
-    // fn tk_play(&mut self, ctx: &mut TKState);
-    fn update(&mut self, ctx: &mut TKState);
-
-}
-
 impl TimelineAware for Tweek {
 
     fn update(&mut self, ctx: &mut TKState) {
@@ -255,3 +255,4 @@ impl TimelineAware for Tweek {
         }
     }
 }
+

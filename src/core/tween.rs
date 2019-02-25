@@ -99,6 +99,7 @@ pub struct Tween {
 	pub loop_forever: bool,
     pub time_scale: f64,
     pub anim_type: AnimType,
+    pub debug: bool,
     start_props: Vec<Prop>,
     animators: Vec<Animator>,
     callbacks: Vec<Box<FnMut(TKEvent, &mut TKState) + 'static>>, // Don't need this.
@@ -120,6 +121,7 @@ impl Tween {
             loop_forever: false,
             time_scale: 1.0,
             anim_type: AnimType::Normal,
+            debug: false,
             start_props: Vec::new(),
             animators: Vec::new(),
             callbacks: Vec::new(),
@@ -266,10 +268,8 @@ impl Tween {
                 if let Some(animator) = self.animators.last_mut() {
                     self.state = TweenState::Completed;
                     if self.time_scale >= 0.0 {
-                        println!("Finishing with end state props");
                         return Some(animator.end_state.clone());
                     } else {
-                        println!("Finishing with start state props");
                         return Some(animator.start_state.clone());
                     }
                 }
@@ -303,8 +303,11 @@ impl Tween {
             println!(">>>> Add prop: sum_shift={:?}", sum_shift);
             cleaned_props.push(Prop::Shift(sum_shift));
         }
-
-        let animator = Animator::create(&self.tween_id, &self.start_props, &cleaned_props);
+        // Create an artificial unique id to assign to the animator. It isn't very important if there's a
+        // tiny float error like 100.1 vs 100.1000001 right now. Need to evaluate later.
+        let state_id: f32 = self.tween_id as f32 + (self.animators.len() as f32 / 10.0);
+        let mut animator = Animator::create(&state_id, &self.start_props, &cleaned_props);
+        animator.debug = self.debug;
         self.animators.push(animator);
         self
     }
@@ -374,7 +377,10 @@ impl Tween {
             // And then overwrite begin_props with end_props for the next loop.
             animator.end_state.props = end_props.clone();
             begin_props = end_props.clone();
-            // println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
+
+            if self.debug {
+                println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);
+            }
         }
 
         // Step 2:
@@ -501,6 +507,8 @@ impl Eq for Tween {}
 
 impl Drop for Tween {
     fn drop(&mut self) {
-        println!("Dropping: {}", self.tween_id);
+        if self.debug {
+            println!("Dropping: {}", self.tween_id);
+        }
     }
 }

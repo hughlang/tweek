@@ -4,6 +4,16 @@ This is my attempt to write a Tween animation library for Rust. What's a "Tween"
 
 
 
+## Support for GGEZ
+
+
+### Tweenable wrapper
+
+
+
+### UI Components and Widgets
+
+The ggez_support folder has a number of custom components which are mostly designed to help with the examples. However, they also show how far you can go in building custom UIs with Tweek using GGEZ.
 
 
 
@@ -12,12 +22,13 @@ This is my attempt to write a Tween animation library for Rust. What's a "Tween"
 
 
 * cargo run --bin ggmix
-* cargo run --bin ggsequence
+* cargo run --bin ggease
+* cargo run --bin gg_player
 
+### Performance
 
-## UI Components and Widgets
+* In release mode, frame rate is over 120 fps. In debug mode, it is close to 60 fps, unless you are animating text.
 
-The ggez_support folder has a number of custom components which are mostly designed to help with the examples. However, they also show how far you can go in building custom UIs with Tweek using GGEZ.
 
 
 ## Developer Notes
