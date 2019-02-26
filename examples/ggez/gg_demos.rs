@@ -84,10 +84,10 @@ impl DemoHelper {
     // }
 
     /// This demo shows a collection of dots rotating around in a circle
-    fn build_arc_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn build_dots_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
-        let center_pt = mint::Point2{ x: screen_w/2.0, y: screen_h / 2.0 };
+        let center_pt = mint::Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
 
@@ -116,6 +116,57 @@ impl DemoHelper {
 
         let timeline = Timeline::add(tweens)
             .stagger(0.12)
+            ;
+        Ok((timeline, items))
+    }
+
+    /// Draw lines and rotate from center
+    fn build_lines_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+        let screen_w = ctx.conf.window_mode.width;
+        let screen_h = ctx.conf.window_mode.height;
+        let center_pt = mint::Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
+
+        let mut items: Vec<ItemState> = Vec::new();
+        let mut tweens: Vec<Tween> = Vec::new();
+
+        const LINE_WIDTH: f32 = 5.0;
+        let line_count = 3;
+        let line_length = 300.0;
+
+        for i in 0..line_count {
+            let item_id = i as usize;
+            let xpos = center_pt.x - line_length / 2.0;
+            let ypos = center_pt.y;
+
+            let mut item = ItemState::new(item_id,
+                Shape::Line(
+                    Point2{x: xpos, y: ypos},
+                    Point2{x: xpos + line_length, y: ypos},
+                    LINE_WIDTH)
+                )?;
+
+            item.layer.graphics.color = Color::from_rgb_u32(0xCD5C5C);
+            item.layer.graphics.offset = na::Point2::new(center_pt.x, center_pt.y);
+
+            // make angle evenly distributed
+            let delta = 360.0 / line_count as f32;
+            let angle = i as f32 * (delta / 2.0);
+            item.layer.graphics.rotation = angle.to_radians();
+
+            let mut tween = Tween::with(item_id, &item.layer)
+                .to(vec![rotate((angle + delta).into()), color(0x556B2F)]).duration(1.0)
+                .to(vec![rotate((angle + delta).into()), color(0x7FFFD4)]).duration(1.0)
+                .to(vec![rotate((angle + delta).into()), color(0xCD5C5C)]).duration(1.0)
+                .repeat(5, 0.0)
+                ;
+            tween.debug = true;
+            items.push(item);
+            tweens.push(tween)
+        }
+
+
+        let timeline = Timeline::add(tweens)
+            // .stagger(0.25)
             ;
         Ok((timeline, items))
     }
@@ -168,6 +219,7 @@ impl DemoHelper {
         Ok((timeline, items))
     }
 
+
     fn build_bars_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
@@ -190,57 +242,13 @@ impl DemoHelper {
             let mut item = ItemState::new(item_id, Shape::Rectangle(rect))?;
             item.layer.graphics.color = Color::from_rgb_u32(HexColors::Orange);
 
-            let tween = Tween::with(item_id, &item.layer)
+            let mut tween = Tween::with(item_id, &item.layer)
                 .to(vec![size(draw_area.w as f64, BAR_HEIGHT as f64)])
                 .duration(1.0)
                 .ease(Ease::SineOut)
                 .repeat(8, 0.2).yoyo()
                 ;
-            items.push(item);
-            tweens.push(tween)
-        }
-
-
-        let timeline = Timeline::add(tweens)
-            .stagger(0.1)
-            ;
-        Ok((timeline, items))
-    }
-
-    /// Draw a bunch of lines horizontally with animation
-    fn build_lines_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
-        let screen_w = ctx.conf.window_mode.width;
-        let screen_h = ctx.conf.window_mode.height;
-
-        let mut items: Vec<ItemState> = Vec::new();
-        let mut tweens: Vec<Tween> = Vec::new();
-
-        const STAGE_WIDTH: f32 = 600.0;
-        const STAGE_HEIGHT: f32 = 400.0;
-        const LINE_WIDTH: f32 = 5.0;
-        const LINE_SPACE: f32 = 10.0;
-        let draw_area = Rect::new((screen_w - STAGE_WIDTH) / 2.0, 100.0, STAGE_WIDTH, STAGE_HEIGHT);
-        let line_count = 12;
-
-        for i in 0..line_count {
-            let item_id = i as usize;
-            let ypos = i as f32 * (LINE_WIDTH + LINE_SPACE) + draw_area.top();
-
-            let mut item = ItemState::new(item_id,
-                Shape::Line(
-                    Point2{x: draw_area.left(), y: ypos},
-                    Point2{x: draw_area.left(), y: ypos},
-                    LINE_WIDTH)
-                )?;
-            item.layer.graphics.color = Color::from_rgb_u32(HexColors::Green);
-
-
-            let tween = Tween::with(item_id, &item.layer)
-                .to(vec![size(draw_area.w as f64, LINE_WIDTH as f64)])
-                .duration(2.0)
-                // .ease(Ease::SineInOut)
-                .repeat(8, 0.8)
-                ;
+            tween.debug = true;
             items.push(item);
             tweens.push(tween)
         }
@@ -359,6 +367,7 @@ struct MainState {
     buttons: Vec<ButtonView>,
     demo_index: usize,
     demo_list: Vec<Demo>,
+    debug: bool,
 }
 
 impl MainState {
@@ -378,11 +387,12 @@ impl MainState {
             buttons: buttons,
             demo_index: 0,
             demo_list: Vec::new(),
+            debug: false,
         };
 
         // ===== If you are adding a new animation to try out, add it to the demo_list here. =====
-        s.demo_list.push(Demo::Bars);
         s.demo_list.push(Demo::Lines);
+        s.demo_list.push(Demo::Bars);
         s.demo_list.push(Demo::DotCircle);
         s.demo_list.push(Demo::TextScroller);
         s.demo_list.push(Demo::Rocket);
@@ -410,7 +420,7 @@ impl MainState {
                 DemoHelper::build_text_demo(ctx)?
             },
             Demo::DotCircle => {
-                DemoHelper::build_arc_demo(ctx)?
+                DemoHelper::build_dots_demo(ctx)?
             },
             Demo::Rocket => {
                 DemoHelper::build_rocket_demo(ctx)?
@@ -477,7 +487,17 @@ impl event::EventHandler for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::clear(ctx, graphics::WHITE);
+
+        // To hide the grid, comment out this line.
         graphics::draw(ctx, &self.grid, DrawParam::default())?;
+
+        if self.debug {
+            self.frames += 1;
+            if (self.frames % 20) == 0 {
+                println!("FPS: {}", ggez::timer::fps(ctx));
+            }
+        }
+
         for button in &mut self.buttons {
             button.render(ctx)?;
         }
@@ -492,11 +512,6 @@ impl event::EventHandler for MainState {
         }
 
         graphics::present(ctx)?;
-
-        self.frames += 1;
-        if (self.frames % 20) == 0 {
-            println!("FPS: {}", ggez::timer::fps(ctx));
-        }
 
         // timer::yield_now();
         Ok(())

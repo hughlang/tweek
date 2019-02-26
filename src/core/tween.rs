@@ -15,8 +15,14 @@ use super::tweek::*;
 
 //-- Helpers -----------------------------------------------------------------------
 
+
+
 pub fn position(x: f64, y: f64) -> Prop {
     Prop::Position(Point2D::new(x, y))
+}
+
+pub fn shift(x: f64, y: f64) -> Prop {
+    Prop::Shift(Point2D::new(x, y))
 }
 
 pub fn shift_x(x: f64) -> Prop {
@@ -303,11 +309,8 @@ impl Tween {
             println!(">>>> Add prop: sum_shift={:?}", sum_shift);
             cleaned_props.push(Prop::Shift(sum_shift));
         }
-        // Create an artificial unique id to assign to the animator. It isn't very important if there's a
-        // tiny float error like 100.1 vs 100.1000001 right now. Need to evaluate later.
-        let state_id: f32 = self.tween_id as f32 + (self.animators.len() as f32 / 10.0);
-        let mut animator = Animator::create(&(self.tween_id, self.animators.len()), &self.start_props, &cleaned_props);
-        animator.debug = self.debug;
+
+        let animator = Animator::create(&(self.tween_id, self.animators.len()), &self.start_props, &cleaned_props);
         self.animators.push(animator);
         self
     }
@@ -377,6 +380,7 @@ impl Tween {
             // And then overwrite begin_props with end_props for the next loop.
             animator.end_state.props = end_props.clone();
             begin_props = end_props.clone();
+            animator.debug = self.debug;
 
             if self.debug {
                 println!("start={:?} \nend={:?}", &animator.start_state.props, &animator.end_state.props);

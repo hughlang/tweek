@@ -51,8 +51,8 @@ impl ItemState {
             Shape::Text(rect) => {
                 TweenLayer::new(rect, graphics::DrawParam::new())
             },
-            Shape::Line(pt1, _pt2, line_width) => {
-                let rect = graphics::Rect::new(pt1.x, pt1.y, 1.0, line_width);
+            Shape::Line(pt1, pt2, line_width) => {
+                let rect = graphics::Rect::new(pt1.x, pt1.y, (pt2.x - pt1.x).abs(), (pt2.y - pt1.y).abs());
                 let mut layer = TweenLayer::new(rect, graphics::DrawParam::new());
                 layer.stroke = line_width;
                 layer
@@ -130,6 +130,7 @@ impl ItemState {
                     mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y},
                     mint::Point2{x: self.layer.frame.x + self.layer.frame.w, y: self.layer.frame.y},
                 ];
+                // println!("pt1={:?} // pt2={:?}", points[0], points[1]);
                 let mesh = graphics::Mesh::new_line(ctx, &points, self.layer.stroke, self.layer.graphics.color)?;
                 let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
             }
