@@ -15,11 +15,11 @@ use tweek::prelude::*;
 #[allow(dead_code)]
 pub enum Shape {
     Circle(mint::Point2<f32>, f32),
-    Rectangle(graphics::Rect),
     Image(graphics::Rect),
-    Text(graphics::Rect),
     /// Parameters are start point, end point, and line width
     Line(mint::Point2<f32>, mint::Point2<f32>, f32),
+    Rectangle(graphics::Rect),
+    Text(graphics::Rect),
 }
 
 pub struct ItemState {
@@ -97,10 +97,6 @@ impl ItemState {
     #[allow(dead_code)]
     pub fn render(&mut self, ctx: &mut Context) -> GameResult {
         match self.shape {
-            Shape::Rectangle(_) => {
-                let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.layer.frame, self.layer.graphics.color)?;
-                let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
-            },
             Shape::Circle(_, _) => {
                 let r = self.layer.frame.w / 2.0;
                 let pt = mint::Point2{x: self.layer.frame.x + r, y: self.layer.frame.y + r};
@@ -110,17 +106,11 @@ impl ItemState {
             Shape::Image(_) => {
                 match &self.image {
                     Some(img) => {
+                        let scale_w = self.layer.frame.w / img.width() as f32;
+                        let scale_h = self.layer.frame.h / img.height() as f32;
+                        let scale = mint::Vector2{x: scale_w, y: scale_h};
                         let pt = mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y};
-                        let _result = graphics::draw(ctx, img, self.layer.graphics.dest(pt));
-                    },
-                    None => (),
-                }
-            },
-            Shape::Text(_) => {
-                match &self.text {
-                    Some(txt) => {
-                        let pt = mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y};
-                        let _result = graphics::draw(ctx, txt, self.layer.graphics.dest(pt));
+                        let _result = graphics::draw(ctx, img, self.layer.graphics.dest(pt).scale(scale));
                     },
                     None => (),
                 }
@@ -134,6 +124,19 @@ impl ItemState {
                 let mesh = graphics::Mesh::new_line(ctx, &points, self.layer.stroke, self.layer.graphics.color)?;
                 let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
             }
+            Shape::Rectangle(_) => {
+                let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.layer.frame, self.layer.graphics.color)?;
+                let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
+            },
+            Shape::Text(_) => {
+                match &self.text {
+                    Some(txt) => {
+                        let pt = mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y};
+                        let _result = graphics::draw(ctx, txt, self.layer.graphics.dest(pt));
+                    },
+                    None => (),
+                }
+            },
         }
         Ok(())
     }

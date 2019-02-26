@@ -216,6 +216,11 @@ impl Tween {
         self
     }
 
+    pub fn debug(mut self) -> Self {
+        self.debug = true;
+        self
+    }
+
     /// Run the animation to the end and reverses direction.
     /// Each playback in either direction counts as one play_count.
     pub fn yoyo(mut self) -> Self {

@@ -129,7 +129,7 @@ impl DemoHelper {
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
 
-        const LINE_WIDTH: f32 = 5.0;
+        const LINE_WIDTH: f32 = 9.0;
         let line_count = 3;
         let line_length = 300.0;
 
@@ -148,26 +148,25 @@ impl DemoHelper {
             item.layer.graphics.color = Color::from_rgb_u32(0xCD5C5C);
             item.layer.graphics.offset = na::Point2::new(center_pt.x, center_pt.y);
 
-            // make angle evenly distributed
+            // The plan was to make angle evenly distributed, but there seems to be a bug
             let delta = 360.0 / line_count as f32;
             let angle = i as f32 * (delta / 2.0);
             item.layer.graphics.rotation = angle.to_radians();
-
+            let target = (120.0 + angle) as f64;
+            let time = 2.0 as f64;
             let mut tween = Tween::with(item_id, &item.layer)
-                .to(vec![rotate((angle + delta).into()), color(0x556B2F)]).duration(1.0)
-                .to(vec![rotate((angle + delta).into()), color(0x7FFFD4)]).duration(1.0)
-                .to(vec![rotate((angle + delta).into()), color(0xCD5C5C)]).duration(1.0)
-                .repeat(5, 0.0)
+                .to(vec![rotate(target), color(0x556B2F)]).duration(time)
+                .to(vec![rotate(target * 2.0), color(0x7FFFD4)]).duration(time)
+                .to(vec![rotate(target * 3.0), color(0xCD5C5C)]).duration(time)
+                .repeat(-1, 0.0)
+                .yoyo()
                 ;
             tween.debug = true;
             items.push(item);
             tweens.push(tween)
         }
 
-
-        let timeline = Timeline::add(tweens)
-            // .stagger(0.25)
-            ;
+        let timeline = Timeline::add(tweens);
         Ok((timeline, items))
     }
 
@@ -180,7 +179,7 @@ impl DemoHelper {
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
 
-        let rocket_count = 4;
+        let rocket_count = 8;
 
         let image = graphics::Image::new(ctx, "/rocket.png")?;
         let base_h = *&image.height() as f32;
@@ -190,12 +189,12 @@ impl DemoHelper {
             let item_id = i + 10 as usize;
             let scale = rand::random::<f32>();
 
-            let x = rand::random::<f32>() * screen_w;
-            let y = rand::random::<f32>() * screen_h;
+            let x = base_w * scale * -1.0;
+            let y = rand::random::<f32>() * screen_h * 0.8 + 50.0;
 
             let w = base_w * scale;
             let h = base_h * scale;
-            let angle = 300.0 as f32;
+            let angle = 0.0 as f32;
             let rect = Rect::new(x, y, w, h);
             println!("new rocket={:?}", rect);
             let mut item = ItemState::new(item_id, Shape::Image(rect))?;
@@ -204,10 +203,11 @@ impl DemoHelper {
             item.layer.graphics.rotation = angle.to_radians();
 
             let tween = Tween::with(item_id, &item.layer)
-                .to(vec![shift_x(-40.0), shift_y(-600.0)])
+                .to(vec![shift_x((screen_w + w).into())])
                 .duration(1.8)
-                // .ease(Ease::SineInOut)
-                // .repeat(-1, 0.8)
+                .ease(Ease::SineInOut)
+                .repeat(-1, 0.8)
+                // .debug()
                 ;
             items.push(item);
             tweens.push(tween)
@@ -389,6 +389,9 @@ impl MainState {
             demo_list: Vec::new(),
             debug: false,
         };
+
+        // s.debug = true;
+
 
         // ===== If you are adding a new animation to try out, add it to the demo_list here. =====
         s.demo_list.push(Demo::Lines);

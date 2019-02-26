@@ -145,6 +145,7 @@ impl Displayable for ImageView {
         }
         Ok(())
     }
+
     fn render(&mut self, ctx: &mut Context) -> GameResult {
         let pt = Point2{x: self.layer.frame.x, y: self.layer.frame.y};
         let drawparams = graphics::DrawParam::new()
