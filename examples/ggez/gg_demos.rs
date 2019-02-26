@@ -11,13 +11,11 @@ use ggez::event::{self, MouseButton};
 use ggez::input::{mouse};
 use ggez::graphics::{self, Rect, DrawParam, Color};
 use ggez::mint::{self, Point2};
-use ggez::nalgebra as na;
 use ggez::{Context, ContextBuilder, GameResult};
 
 use std::env;
 use std::path;
 use tweek::prelude::*;
-
 
 const NEXT_COMMAND: u32 = 1;
 const PREV_COMMAND: u32 = 2;
@@ -102,7 +100,7 @@ impl DemoHelper {
             item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
             let alpha = 1.0 - (i as f32 / dot_count as f32)/2.0;
             item1.layer.graphics.color.a = alpha;
-            item1.layer.graphics.offset = na::Point2::new(center_pt.x, center_pt.y);
+            item1.layer.graphics.offset = mint::Point2{ x: center_pt.x, y: center_pt.y };
 
             let tween1 = Tween::with(item_id, &item1.layer)
                 .to(vec![rotate(360.0)])
@@ -121,7 +119,7 @@ impl DemoHelper {
     }
 
     /// Draw lines and rotate from center
-    fn build_lines_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn build_spin_lines_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
         let center_pt = mint::Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
@@ -146,7 +144,7 @@ impl DemoHelper {
                 )?;
 
             item.layer.graphics.color = Color::from_rgb_u32(0xCD5C5C);
-            item.layer.graphics.offset = na::Point2::new(center_pt.x, center_pt.y);
+            item.layer.graphics.offset = mint::Point2{ x: center_pt.x, y: center_pt.y };
 
             // The plan was to make angle evenly distributed, but there seems to be a bug
             let delta = 360.0 / line_count as f32;
@@ -161,7 +159,7 @@ impl DemoHelper {
                 .repeat(-1, 0.0)
                 .yoyo()
                 ;
-            tween.debug = true;
+            // tween.debug = true;
             items.push(item);
             tweens.push(tween)
         }
@@ -242,13 +240,13 @@ impl DemoHelper {
             let mut item = ItemState::new(item_id, Shape::Rectangle(rect))?;
             item.layer.graphics.color = Color::from_rgb_u32(HexColors::Orange);
 
-            let mut tween = Tween::with(item_id, &item.layer)
+            let tween = Tween::with(item_id, &item.layer)
                 .to(vec![size(draw_area.w as f64, BAR_HEIGHT as f64)])
                 .duration(1.0)
                 .ease(Ease::SineOut)
                 .repeat(8, 0.2).yoyo()
+                // .debug()
                 ;
-            tween.debug = true;
             items.push(item);
             tweens.push(tween)
         }
@@ -367,7 +365,7 @@ struct MainState {
     buttons: Vec<ButtonView>,
     demo_index: usize,
     demo_list: Vec<Demo>,
-    debug: bool,
+    show_fps: bool,
 }
 
 impl MainState {
@@ -387,11 +385,10 @@ impl MainState {
             buttons: buttons,
             demo_index: 0,
             demo_list: Vec::new(),
-            debug: false,
+            show_fps: false,
         };
 
-        // s.debug = true;
-
+        // s.show_fps = true;
 
         // ===== If you are adding a new animation to try out, add it to the demo_list here. =====
         s.demo_list.push(Demo::Lines);
@@ -417,7 +414,7 @@ impl MainState {
                 DemoHelper::build_bars_demo(ctx)?
             },
             Demo::Lines => {
-                DemoHelper::build_lines_demo(ctx)?
+                DemoHelper::build_spin_lines_demo(ctx)?
             },
             Demo::TextScroller => {
                 DemoHelper::build_text_demo(ctx)?
@@ -478,7 +475,7 @@ impl event::EventHandler for MainState {
         self.tweek.update(&mut self.tk_state);
 
         for item in &mut self.items {
-            item.try_update(&mut self.tweek)?;
+            item.timeline_update(&mut self.tweek)?;
         }
         for button in &mut self.buttons {
             button.update()?;
@@ -494,7 +491,7 @@ impl event::EventHandler for MainState {
         // To hide the grid, comment out this line.
         graphics::draw(ctx, &self.grid, DrawParam::default())?;
 
-        if self.debug {
+        if self.show_fps {
             self.frames += 1;
             if (self.frames % 20) == 0 {
                 println!("FPS: {}", ggez::timer::fps(ctx));

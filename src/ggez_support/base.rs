@@ -11,27 +11,7 @@ use crate::core::*;
 use ggez::graphics::{self, DrawParam};
 use ggez::mint;
 
-
-//-- Base -----------------------------------------------------------------------
-
-pub enum MouseState {
-    None,
-    Hover,
-    Drag,
-    Click,
-}
-
-// Unused
-pub enum GGShape {
-    Circle(mint::Point2<f32>, f32),
-    Rectangle(graphics::Rect),
-    Image(graphics::Rect),
-    Text(graphics::Rect),
-    Line(mint::Point2<f32>, mint::Point2<f32>),
-}
-
 //-- Main -----------------------------------------------------------------------
-
 
 /// This also implements Tweenable
 pub struct TweenLayer {
@@ -93,9 +73,4 @@ impl Tweenable for TweenLayer {
         }
     }
 }
-
-
-
-
-//-- Support -----------------------------------------------------------------------
 

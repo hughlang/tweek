@@ -93,7 +93,7 @@ impl Displayable for LabelView {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {
-                self.layer.render_update(&update.props);
+                self.layer.apply_updates(&update.props);
                 self.layer.redraw = true;
             }
         }
@@ -139,7 +139,7 @@ impl Displayable for ImageView {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {
-                self.layer.render_update(&update.props);
+                self.layer.apply_updates(&update.props);
                 self.layer.redraw = true;
             }
         }

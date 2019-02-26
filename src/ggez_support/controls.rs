@@ -13,6 +13,14 @@ use std::{collections::HashMap};
 use super::base::*;
 use super::views::*;
 
+//-- Base -----------------------------------------------------------------------
+
+pub enum MouseState {
+    None,
+    Hover,
+    Drag,
+    Click,
+}
 
 //-- Button -----------------------------------------------------------------------
 
@@ -23,6 +31,7 @@ pub struct ButtonView {
     pub defaults: HashMap<u32, Prop>,
     hover_animation: Option<UITransition>,
     mouse_state: MouseState,
+    // TODO: get rid of TKAction?
     onclick: Option<Box<FnMut(TKAction, &mut TKState) + 'static>>,
 
 }
@@ -41,6 +50,8 @@ impl ButtonView {
         }
     }
 
+    // Probably not needed since the original props for the object are captured in the set_hover_animation method
+    // and any similar ones in the future.
     pub fn with_props(mut self, props: &Vec<Prop>) -> Self {
         for prop in props {
             self.defaults.insert(prop.prop_id(), prop.clone());
@@ -108,7 +119,7 @@ impl Displayable for ButtonView {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {
-                self.layer.render_update(&update.props);
+                self.layer.apply_updates(&update.props);
                 self.layer.redraw = true;
             }
         }
@@ -168,7 +179,7 @@ impl TKResponder for ButtonView {
                             &tween.play();
                             self.layer.animation = Some(tween);
                         } else {
-                            self.layer.render_update(&transition.props.clone());
+                            self.layer.apply_updates(&transition.props.clone());
                         }
                     }
                 },
@@ -179,7 +190,7 @@ impl TKResponder for ButtonView {
             match self.mouse_state {
                 MouseState::Hover => {
                     // println!("Mouse out at: x={} y={}", x, y);
-                    self.layer.render_update(&self.get_defaults());
+                    self.layer.apply_updates(&self.get_defaults());
                     self.mouse_state = MouseState::None;
                     self.layer.animation = None;
                 },

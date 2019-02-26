@@ -15,8 +15,6 @@ use super::tweek::*;
 
 //-- Helpers -----------------------------------------------------------------------
 
-
-
 pub fn position(x: f64, y: f64) -> Prop {
     Prop::Position(Point2D::new(x, y))
 }
@@ -62,7 +60,7 @@ pub fn rotate(degrees: f64) -> Prop {
 pub trait Tweenable {
     fn get_prop(&self, prop: &Prop) -> Prop;
     fn apply(&mut self, prop: &Prop);
-    fn render_update(&mut self, props: &Vec<Prop>) {
+    fn apply_updates(&mut self, props: &Vec<Prop>) {
         for prop in props {
             self.apply(prop);
         }
@@ -216,6 +214,9 @@ impl Tween {
         self
     }
 
+    /// The debug option enables more println logging to the console.
+    /// Currently it's too verbose, since each Animator instance will print ALL interpolation data.
+    /// May consider adding configurable debug levels in the future.
     pub fn debug(mut self) -> Self {
         self.debug = true;
         self

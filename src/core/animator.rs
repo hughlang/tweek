@@ -54,10 +54,8 @@ impl Animator {
         // let mut elapsed = 0.0 as f64;
         let mut progress = 0.0 as f64;
         if time_scale > 0.0 {
-            // elapsed = started_at.elapsed().as_float_secs() - self.start_time;
             progress = playhead / self.seconds * time_scale;
         } else {
-            // elapsed = started_at.elapsed().as_float_secs();
             progress =  1.0 - playhead / self.seconds * time_scale.abs();
         }
         let ratio = self.ease.clone().get_ratio(progress as f32);
@@ -71,10 +69,8 @@ impl Animator {
             }
             let current = Animator::interpolate(prop, &self.end_state.props[i], progress);
 
-            // Note: these are useful for debugging interpolation
-
             if self.debug {
-                println!("[{}.{}] from={:?} to={:?} >>> now={:?}", self.id.0, self.id.1, prop, &self.end_state.props[i], current);
+                // println!("[{}.{}] from={:?} to={:?} >>> now={:?}", self.id.0, self.id.1, prop, &self.end_state.props[i], current);
             }
             props.push(current);
         }
@@ -83,7 +79,6 @@ impl Animator {
 
     /// Given two Props of same type, calculate the interpolated state
     fn interpolate(initial: &Prop, target: &Prop, scale: f64) -> Prop {
-        // println!("Interpolate from={:?} to={:?} scale={} ", initial, target, scale);
         if initial.prop_id() != target.prop_id() { return initial.clone() }
 
         let result = match initial {

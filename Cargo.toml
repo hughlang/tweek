@@ -21,10 +21,6 @@ name = "ggtransform"
 path = "examples/ggez/ggtransform.rs"
 
 [[bin]]
-name = "ggbuttons"
-path = "examples/ggez/ggbuttons.rs"
-
-[[bin]]
 name = "ggease"
 path = "examples/ggez/ggease.rs"
 
@@ -36,16 +32,10 @@ path = "examples/ggez/gg_demos.rs"
 name = "gg_player"
 path = "examples/ggez/gg_player.rs"
 
-[features]
-default = []
-wasm = []
-
 [dependencies]
 cgmath = "0.17.0"
 rand = "0.6"
 uuid = { version = "0.7", features = ["v4"] }
 unwrap_to = "0.1.0"
-ggez = { git = "https://github.com/hughlang/ggez.git" }
-# ggez = { path = "../ggez-fork" }
-# ggez = "0.5.0"
-
+ggez = "0.5.0-rc.1"
+# ggez = { git = "https://github.com/ggez/ggez.git" }

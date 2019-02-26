@@ -15,11 +15,7 @@ use std::env;
 use std::path;
 use tweek::prelude::*;
 
-
 const SQUARE_ITEM_ID: usize = 100;
-// const ROUND_ITEM_ID: usize = 101;
-// const IMAGE_ITEM_ID: usize = 102;
-// const TEXT_ITEM_ID: usize = 103;
 
 struct MainState {
     gridmesh: graphics::Mesh,
@@ -52,9 +48,7 @@ impl MainState {
 
         let mut items: Vec<ItemState> = Vec::new();
         items.push(item1);
-        // items.push(item2);
-        // items.push(item3);
-        // items.push(item4);
+
         let frames = 0 as usize;
         let s = MainState {
             gridmesh,

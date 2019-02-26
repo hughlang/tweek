@@ -295,7 +295,7 @@ impl event::EventHandler for MainState {
         }
 
         for item in &mut self.items {
-            item.try_update(&mut self.tweek)?;
+            item.timeline_update(&mut self.tweek)?;
         }
 
         for control in &mut self.buttons {

@@ -54,8 +54,8 @@ impl ggez::event::EventHandler for MainState {
 fn main() -> GameResult {
     let cb = ContextBuilder::new("tween0", "tweenkit")
         .window_setup(conf::WindowSetup::default().title("Screen size test"))
-        // .window_mode(conf::WindowMode::default().dimensions(1024.0, 768.0).hidpi(true));
-        .window_mode(conf::WindowMode::default().dimensions(800.0, 600.0).hidpi(true));
+        .window_mode(conf::WindowMode::default().dimensions(1024.0, 768.0).hidpi(true));
+        // .window_mode(conf::WindowMode::default().dimensions(800.0, 600.0).hidpi(true));
 
     let (ctx, events_loop) = &mut cb.build()?;
 

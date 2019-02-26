@@ -2,6 +2,7 @@
 /// shapes on screen. However, it isn't comprehensive and certain compromises are made to reduce
 /// complexity. For example, it does not support Line graphics as borders for shapes. Only the Line
 /// shape uses DrawMode::Stroke. Someday, it may get migrated into the ggez_support module.
+/// Also, there are still many bugs.
 
 extern crate ggez;
 extern crate tweek;
@@ -29,8 +30,6 @@ pub struct ItemState {
     pub tween: Option<Tween>,
     pub image: Option<graphics::Image>,
     pub text: Option<graphics::Text>,
-    pub should_update: bool,
-    pub should_render: bool,
 }
 
 impl ItemState {
@@ -66,8 +65,6 @@ impl ItemState {
             tween: None,
             image: None,
             text: None,
-            should_update: true,
-            should_render: true,
         })
     }
 
@@ -77,7 +74,7 @@ impl ItemState {
             tween.tick();
             if let Some(update) = tween.get_update(&self.id) {
                 // println!("update props={:?}", update.props);
-                self.layer.render_update(&update.props);
+                self.layer.apply_updates(&update.props);
             }
         }
         Ok(())
@@ -87,9 +84,9 @@ impl ItemState {
     /// The publishing of UIState updates may be handled by TKState in the
     /// future.
     #[allow(dead_code)]
-    pub fn try_update(&mut self, tweek: &mut Tweek) -> GameResult {
+    pub fn timeline_update(&mut self, tweek: &mut Tweek) -> GameResult {
         if let Some(update) = tweek.get_update(&self.id) {
-            self.layer.render_update(&update.props);
+            self.layer.apply_updates(&update.props);
         }
         Ok(())
     }
