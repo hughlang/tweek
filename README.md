@@ -9,6 +9,24 @@ Hence, this project aspires to deliver the same level of power and simplicity to
 
 However, the end game is quite clear to me. Rust is currently the language of choice when targeting WebAssembly (aka, Wasm) and Wasm-enabled browsers. Specifically, I'm talking about pure WebGL graphics and not a hybrid solution that requires HTML. When this is achieved, it will be possible to deliver the rich animations that work in nearly all browsers and bring back the "write once, run anywhere" vision. 
 
+## Basic Usage
+This is a sample of a simple animation that increases the size of rectangle graphic over time with a SineOut easing speed. It also repeats and has a yoyo effect. 
+
+```
+    let rect = Rect::new(xpos, ypos, 0.0, 20.0);
+
+    let mut item = ItemState::new(item_id, Shape::Rectangle(rect))?;
+    item.layer.graphics.color = Color::from_rgb_u32(HexColors::Orange);
+
+    let tween = Tween::with(item_id, &item.layer)
+        .to(vec![size(target_width as f64, 20.0)])
+        .duration(1.0)
+        .ease(Ease::SineOut)
+        .repeat(8, 0.2).yoyo()
+        ;
+```
+
+The best place to experiment with animations is in the gg_demos.rs example file, which showcases several animation scenarios. 
 
 ## Compatibility and Integration
 Tweek is designed to be a crate library that is used in conjunction with other Rust graphics libraries and game engines. The first supported platform is the excellent [GGEZ game engine](https://ggez.rs/), which is both advanced and mature, even though it is still being developed.
