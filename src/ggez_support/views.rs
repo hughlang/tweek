@@ -9,49 +9,12 @@ use ggez::graphics::{self, DrawParam};
 use ggez::mint::{Point2, Vector2};
 use ggez::{Context, GameResult};
 
-use super::base::*;
+use super::layer::*;
 
 pub trait Displayable {
     fn update(&mut self) -> GameResult;
     fn render(&mut self, ctx: &mut Context) -> GameResult;
     fn render_inside(&mut self, _rect: &graphics::Rect, _ctx: &mut Context) -> GameResult {
-        Ok(())
-    }
-}
-
-// Not finished and currently unused
-pub struct BoxView {
-    pub layer: TweenLayer,
-    pub subviews: Vec<Box<Displayable>>,  // TBD
-}
-
-impl BoxView {
-    pub fn new(frame: graphics::Rect) -> Self {
-        let layer = TweenLayer::new(frame, DrawParam::new() );
-        BoxView {
-            layer: layer,
-            subviews: Vec::new(),
-        }
-    }
-}
-
-impl Displayable for BoxView {
-
-    fn update(&mut self) -> GameResult {
-        Ok(())
-    }
-
-    fn render(&mut self, ctx: &mut Context) -> GameResult {
-        let mesh = graphics::Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::fill(),
-            self.layer.frame,
-            self.layer.graphics.color,
-        )?;
-        graphics::draw(ctx, &mesh, self.layer.graphics)?;
-
-        // TODO: Iterate through subviews and render_inside?
-
         Ok(())
     }
 }

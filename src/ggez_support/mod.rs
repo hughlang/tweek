@@ -1,7 +1,7 @@
-pub use self::base::*;
+pub use self::layer::*;
 pub use self::controls::*;
 pub use self::views::*;
 
-mod base;
+mod layer;
 mod controls;
 mod views;

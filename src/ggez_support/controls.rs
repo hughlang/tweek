@@ -10,7 +10,7 @@ use ggez::mint;
 use ggez::{Context, GameResult};
 use std::{collections::HashMap};
 
-use super::base::*;
+use super::layer::*;
 use super::views::*;
 
 //-- Base -----------------------------------------------------------------------
