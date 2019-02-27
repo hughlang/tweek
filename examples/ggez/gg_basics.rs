@@ -106,6 +106,28 @@ impl DemoHelper {
         Ok(vec![item3])
     }
 
+    fn test_rectangle_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
+        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
+
+        let rect = Rect::new(draw_area.x, draw_area.y, 20.0, 20.0);
+
+        let item_id = 1;
+        let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
+        item1.layer.graphics.color = Color::from_rgb_u32(HexColors::HotPink);
+
+        let mut tween1 = Tween::with(item_id, &item1.layer)
+            .to(vec![resize(draw_area.w as f64, 0.0)])
+            .duration(1.0)
+            .ease(Ease::SineIn)
+            // .repeat(8, 0.2)
+            .debug()
+            ;
+
+        &tween1.play();
+        item1.tween = Some(tween1);
+        Ok(vec![item1])
+    }
+
     /// ********************************************************************************
     /// This is a template for creating a new animation.
     /// Copy it and try out different animation techniques.
@@ -127,6 +149,7 @@ enum Demo {
     Square1,
     Circle1,
     Image1,
+    Rectangle1,
 }
 
 /// ##########################################################################################
@@ -172,9 +195,10 @@ impl MainState {
         s.demo_list.push(Demo::Square1);
         s.demo_list.push(Demo::Circle1);
         s.demo_list.push(Demo::Image1);
+        s.demo_list.push(Demo::Rectangle1);
 
         // Pick which demo to start with.
-        s.demo_index = 2;
+        s.demo_index = 3;
         let demo = s.demo_list[s.demo_index].clone();
         s.load_demo(ctx, &demo)?;
 
@@ -190,6 +214,7 @@ impl MainState {
             Demo::Square1 => DemoHelper::test_square_1(ctx)?,
             Demo::Circle1 => DemoHelper::test_circle_1(ctx)?,
             Demo::Image1 => DemoHelper::test_image_1(ctx)?,
+            Demo::Rectangle1 => DemoHelper::test_rectangle_1(ctx)?,
             _ => DemoHelper::empty_template(ctx)?,
         };
         self.items = items;

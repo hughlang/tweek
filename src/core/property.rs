@@ -69,9 +69,11 @@ impl Prop {
         results
     }
 
+    /// Somewhat hacky, but useful helper method that defines which Props have parent props
     pub fn lookup_parent_prop(&self) -> Prop {
         match self {
             Prop::Shift(_) => Prop::Position(Point2D::zero()),
+            Prop::Resize(_) => Prop::Size(Frame2D::zero()),
             _ => Prop::None,
         }
     }

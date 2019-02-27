@@ -5,7 +5,7 @@
 
 #[macro_use] extern crate unwrap_to;
 
-extern crate cgmath;
+#[macro_use] extern crate cgmath;
 extern crate ggez;
 extern crate uuid;
 extern crate rand;
