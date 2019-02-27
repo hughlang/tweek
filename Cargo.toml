@@ -21,8 +21,8 @@ name = "ggtransform"
 path = "examples/ggez/ggtransform.rs"
 
 [[bin]]
-name = "ggease"
-path = "examples/ggez/ggease.rs"
+name = "basics"
+path = "examples/ggez/basics.rs"
 
 [[bin]]
 name = "gg_demos"

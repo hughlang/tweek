@@ -1,4 +1,5 @@
-/// All the demos belong here
+/// This is a collection of timeline demos that you can browse using the next and previous buttons.
+/// As timeline demos, tweens are added to a Timeline and Tweek is used to coordinate updates.
 ///
 mod shape_helper;
 use shape_helper::*;
@@ -73,13 +74,6 @@ impl DemoHelper {
         let vy = angle.cos();
         mint::Vector2{ x: vx, y: vy }
     }
-
-    // nalgebra version
-    // fn vec_from_angle(angle: f32) -> na::Vector2<f32> {
-    //     let vx = angle.sin();
-    //     let vy = angle.cos();
-    //     na::Vector2::new(vx, vy)
-    // }
 
     /// This demo shows a collection of dots rotating around in a circle
     fn build_dots_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
@@ -374,7 +368,7 @@ impl MainState {
         let screen_h = ctx.conf.window_mode.height;
 
         let buttons = DemoHelper::make_buttons(ctx)?;
-        let gridmesh = GGTools::build_grid(ctx, screen_w, screen_h, 32.0, Color::from_rgb_u32(0xCCCCCC))?;
+        let gridmesh = GGTools::build_grid(ctx, screen_w, screen_h, 16.0, Color::from_rgb_u32(0xCCCCCC))?;
 
         let mut s = MainState {
             grid: gridmesh,
@@ -502,8 +496,6 @@ impl event::EventHandler for MainState {
             button.render(ctx)?;
         }
 
-        self.tweek.update(&mut self.tk_state);
-
         for item in &mut self.items {
             // if let Some(text) = item.text {
             //     graphics::queue_text(ctx, &text, item.layer.graphics, None);
@@ -565,14 +557,14 @@ pub fn main() -> GameResult {
     };
 
     let cb = ContextBuilder::new("tween0", "tweenkit")
-        .window_setup(conf::WindowSetup::default().title("Tween test"))
-        .window_mode(conf::WindowMode::default().dimensions(1024.0, 768.0).hidpi(false))
+        .window_setup(conf::WindowSetup::default().title("Tweek Demos"))
+        .window_mode(conf::WindowMode::default().dimensions(1024.0, 768.0).hidpi(true))
         .add_resource_path(resource_dir);
 
 
     let (ctx, events_loop) = &mut cb.build()?;
 
-    println!("HIDPI: {}", graphics::os_hidpi_factor(ctx));
+    // println!("HIDPI: {}", graphics::os_hidpi_factor(ctx));
 
     let game = &mut MainState::new(ctx)?;
     event::run(ctx, events_loop, game)

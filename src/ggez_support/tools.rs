@@ -9,11 +9,6 @@ use crate::core::*;
 use ggez::graphics::{self, Color};
 use ggez::mint::Point2;
 use ggez::{Context, GameResult};
-// use std::{collections::HashMap};
-
-#[allow(unused_imports)]
-use super::base::*;
-use super::controls::*;
 
 pub struct GGTools {
 
