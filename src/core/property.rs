@@ -42,7 +42,7 @@ impl Prop {
     /// Unfortunate helper method for doing reverse lookup of a prop based on its prop_id()
     /// All of the internal values are zero vectors so this is only useful for lookups and
     /// matching when inspecting Props
-     /// Magic numbers FTW!
+    /// Magic numbers FTW!
     pub fn from_prop_id(id: u32) -> Prop {
         match id {
             1 => Prop::Alpha(FloatProp::zero()),
@@ -84,6 +84,7 @@ pub struct UIState {
     pub id: (usize, usize),
     pub props: Vec<Prop>,
     pub progress: f64,
+    pub offset: Option<Point2D>,
 }
 
 impl UIState {
@@ -92,6 +93,7 @@ impl UIState {
             id: _id,
             props: _props,
             progress: 0.0,
+            offset: None,
         }
     }
 
@@ -104,10 +106,11 @@ impl UIState {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct UITransition {
     pub props: Vec<Prop>,
     pub seconds: f64,
+    pub center_at: Point2D,
 }
 
 impl UITransition {
@@ -115,20 +118,31 @@ impl UITransition {
         UITransition {
             props,
             seconds,
+            center_at: Point2D::zero(),
         }
     }
 }
 
 
-#[derive(Copy, Clone)]
-pub enum PropType {
-    Int,
-    Float,
-    Point,
-    Rect,
-}
-
-
 // #####################################################################################
 
+/*
+trait Cartesian<T: PartialEq> {
+    fn x(&self) -> &T;
+    fn y(&self) -> &T;
+}
+
+impl<T> Cartesian<T> for Vector2<T> where T: PartialEq {
+    fn x(&self) -> &T {
+        &self.x
+    }
+    fn y(&self) -> &T {
+        &self.y
+    }
+}
+
+fn cartesian_cmp<T>(lhs: T, rhs: T) -> bool where T: Cartesian<T> + PartialEq {
+    lhs.x() == rhs.x() && lhs.y() == rhs.y()
+}
+*/
 

@@ -37,7 +37,7 @@ pub fn size(w: f64, h: f64) -> Prop {
 
 /// This method increases or decreases the size of the object by the specified amounts.
 /// Hence, it is an offset Prop like Prop::Shift
-pub fn resize(w: f64, h: f64) -> Prop {
+pub fn resize_by(w: f64, h: f64) -> Prop {
     Prop::Resize(Frame2D::new(w, h))
 }
 
@@ -133,21 +133,6 @@ impl Tween {
         }
     }
 
-    // Usage:
-    // tween2.add_callback(move |e, ctx| {
-    //     // This does nothing yet
-    //     println!("OG callback: event={:?}", e);
-    //     match e {
-    //         TKEvent::Completed(_id) => {
-    //             ctx.events.push(e);
-    //         },
-    //         _ => (),
-    //     }
-    // });
-    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKState) + 'static {
-        self.callbacks.push(Box::new(cb));
-    }
-
     /// Function to initialize a Tween with the vector of Tweenables
     /// The starting state of all Props are stored
     pub fn with(id: usize, tweenable: &Tweenable) -> Self {
@@ -218,6 +203,15 @@ impl Tween {
         self
     }
 
+    pub fn anchor(mut self, x: f64, y: f64) -> Self {
+        if self.animators.len() > 0 {
+            if let Some(animator) = self.animators.last_mut() {
+                animator.offset = Some(Point2D::new(x , y));
+            }
+        }
+        self
+    }
+
     /// Set time_scale which modifies the speed of the animation,
     /// where 1.0 is considered normal time
     pub fn speed(mut self, scale: f64) -> Self {
@@ -241,6 +235,21 @@ impl Tween {
         // TODO: if repeat_count is forever, this will force it to 1.
         if self.repeat_count < 1 { self.repeat_count = 1 }
         self
+    }
+
+    // Usage:
+    // tween2.add_callback(move |e, ctx| {
+    //     // This does nothing yet
+    //     println!("OG callback: event={:?}", e);
+    //     match e {
+    //         TKEvent::Completed(_id) => {
+    //             ctx.events.push(e);
+    //         },
+    //         _ => (),
+    //     }
+    // });
+    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKState) + 'static {
+        self.callbacks.push(Box::new(cb));
     }
 
     // TODO: move this to Playable
@@ -327,17 +336,16 @@ impl Tween {
                 },
             }
         }
-        println!("sum_resize={:?}", sum_resize);
-        if sum_shift.x > 0.0 || sum_shift.y > 0.0 {
+        if sum_shift != Point2D::zero() {
             if self.debug {
                 println!(">>>> Add prop: sum_shift={:?}", sum_shift);
             }
             cleaned_props.push(Prop::Shift(sum_shift));
         }
-        if sum_resize.x > 0.0 || sum_resize.y > 0.0 {
-            // if self.debug {
+        if sum_resize != Frame2D::zero() {
+            if self.debug {
                 println!(">>>> Add prop: sum_resize={:?}", sum_resize);
-            // }
+            }
             cleaned_props.push(Prop::Resize(sum_resize));
         }
 

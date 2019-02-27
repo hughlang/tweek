@@ -17,6 +17,7 @@ pub struct Animator {
     pub end_time: f64,
     pub seconds: f64,
     pub ease: Ease,
+    pub offset: Option<Point2D>,
     pub debug: bool,
 }
 
@@ -33,6 +34,7 @@ impl Animator {
             end_time: 0.0,
             seconds: 1.0,
             ease: Ease::Linear,
+            offset: None,
             debug: false,
         }
     }
@@ -74,7 +76,9 @@ impl Animator {
             }
             props.push(current);
         }
-        UIState::create(self.id, props)
+        let mut state = UIState::create(self.id, props);
+        state.offset = self.offset;
+        state
     }
 
     /// Given two Props of same type, calculate the interpolated state

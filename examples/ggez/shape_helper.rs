@@ -153,8 +153,11 @@ impl Item {
         if let Some(tween) = &mut self.tween {
             tween.tick();
             if let Some(update) = tween.get_update(&self.id) {
-                // println!("update props={:?}", update.props);
                 self.layer.apply_updates(&update.props);
+                if let Some(offset) = update.offset {
+                    println!("{:?}", offset);
+                    self.layer.graphics.offset = Point2{x: offset.x as f32, y: offset.y as f32};
+                }
             }
         }
         Ok(())

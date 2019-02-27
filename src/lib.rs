@@ -4,8 +4,7 @@
 #![feature(duration_float)]
 
 #[macro_use] extern crate unwrap_to;
-
-#[macro_use] extern crate cgmath;
+extern crate cgmath;
 extern crate ggez;
 extern crate uuid;
 extern crate rand;

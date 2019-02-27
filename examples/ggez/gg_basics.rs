@@ -109,18 +109,20 @@ impl DemoHelper {
     fn test_rectangle_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
-        let rect = Rect::new(draw_area.x, draw_area.y, 20.0, 20.0);
+        let rect = Rect::new(draw_area.x + 40.0, draw_area.y + 40.0, 20.0, 20.0);
 
         let item_id = 1;
         let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::HotPink);
 
         let mut tween1 = Tween::with(item_id, &item1.layer)
-            .to(vec![resize(draw_area.w as f64, 0.0)])
-            .duration(1.0)
+            .to(vec![size(800.0, 20.0)]).duration(1.0).anchor(1.0, 0.0)
+            .to(vec![size(20.0, 20.0)]).duration(1.0)
+            .to(vec![size(20.0, draw_area.h as f64)]).duration(1.0)
+
             .ease(Ease::SineIn)
-            // .repeat(8, 0.2)
-            .debug()
+            .repeat(8, 0.2)
+            // .debug()
             ;
 
         &tween1.play();
