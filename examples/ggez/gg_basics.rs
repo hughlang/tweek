@@ -19,10 +19,8 @@ use std::env;
 use std::path;
 use tweek::prelude::*;
 
-const NEXT_COMMAND: u32 = 1;
-const PREV_COMMAND: u32 = 2;
-const STAGE_WIDTH: f32 = 940.0;
-const STAGE_HEIGHT: f32 = 560.0;
+const STAGE_WIDTH: f32 = 900.0;
+const STAGE_HEIGHT: f32 = 500.0;
 
 struct DemoHelper {}
 
@@ -30,68 +28,27 @@ struct DemoHelper {}
 #[allow(unused_mut)]
 #[allow(unused_variables)]
 impl DemoHelper {
-    /// This creates the Next and Previous buttons that make it easy to load and view animations.
-    /// The set_onclick method appends a u32 value that is evaluated in the run loop update() method.
-    fn make_buttons(ctx: &mut Context) -> GameResult<Vec<ButtonView>> {
-        const BUTTON_WIDTH: f32 = 90.0;
-        const BUTTON_HEIGHT: f32 = 40.0;
-        let screen_w = ctx.conf.window_mode.width;
 
-        let font = graphics::Font::new(ctx, "/Roboto-Bold.ttf")?;
-
-        let mut buttons: Vec<ButtonView> = Vec::new();
-        let xpos = 30.0;
-        let ypos = 30.0;
-
-        // ---- Previous ---------------------
-        let frame = Rect::new(xpos, ypos, BUTTON_WIDTH, BUTTON_HEIGHT);
-        let mut button = ButtonView::new(frame).with_title("Previous");
-        button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
-        button.set_color(&Color::from_rgb_u32(HexColors::Tan));
-        button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
-        button.set_onclick(move |_action, tk| {
-            tk.commands.push(PREV_COMMAND);
-        });
-        buttons.push(button);
-
-        // ---- Next ---------------------
-        let frame = Rect::new(
-            screen_w - BUTTON_WIDTH - 30.0,
-            ypos,
-            BUTTON_WIDTH,
-            BUTTON_HEIGHT,
-        );
-        let mut button = ButtonView::new(frame).with_title("Next");
-        button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
-        button.set_color(&Color::from_rgb_u32(HexColors::Tan));
-        button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
-        button.set_onclick(move |_action, state| {
-            state.commands.push(NEXT_COMMAND);
-        });
-        buttons.push(button);
-
-        Ok(buttons)
-    }
-
-    fn basic_size_1(ctx: &mut Context) -> GameResult<(Vec<ItemState>)> {
+    fn test_square_1(ctx: &mut Context) -> GameResult<(Vec<ItemState>)> {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
         let draw_area = Rect::new(
             (screen_w - STAGE_WIDTH) / 2.0,
-            100.0,
+            120.0,
             STAGE_WIDTH,
             STAGE_HEIGHT,
         );
 
-        let rect = Rect::new(draw_area.x, draw_area.y, 80.0, 80.0);
+        let rect = Rect::new(draw_area.x, 200.0, 80.0, 80.0);
 
         let item_id = 1;
         let mut item1 = ItemState::new(item_id, Shape::Rectangle(rect))?;
-        item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Orange);
+        item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
 
         let mut tween1 = Tween::with(item_id, &item1.layer)
-            .duration(1.8)
-            .ease(Ease::SineInOut)
+            .to(vec![position(840.0, 200.0), size(120.0, 120.0), color(HexColors::Gold)])
+            .duration(1.0)
+            .ease(Ease::SineIn)
             .repeat(8, 0.2);
 
         &tween1.play();
@@ -110,19 +67,6 @@ impl DemoHelper {
         // =====================================================
         // Create item and tween here
         // =====================================================
-
-        // let item_id = 1;
-        // let mut item1 = ItemState::new(item_id, Shape::Rectangle(rect))?;
-        // item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Orange);
-
-        // let tween1 = Tween::with(item_id, &item1.layer)
-        //     .duration(1.8)
-        //     .ease(Ease::SineInOut)
-        //     .repeat(8, 0.2)
-        //     ;
-
-        // &tween1.play();
-        // item1.tween = Some(tween1);
 
         Ok(vec![])
     }
@@ -156,9 +100,9 @@ impl MainState {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
 
-        let buttons = DemoHelper::make_buttons(ctx)?;
+        let buttons = ShapeHelper::make_next_prev_buttons(ctx)?;
         let gridmesh =
-            GGTools::build_grid(ctx, screen_w, screen_h, 16.0, Color::from_rgb_u32(0xCCCCCC))?;
+            ShapeHelper::build_grid(ctx, screen_w, screen_h, 16.0, Color::from_rgb_u32(0xCCCCCC))?;
 
         let mut s = MainState {
             grid: gridmesh,
@@ -189,7 +133,7 @@ impl MainState {
     /// to call and replace the current timeline animation.
     fn load_demo(&mut self, ctx: &mut Context, demo: &Demo) -> GameResult {
         let items = match demo {
-            Demo::Size1 => DemoHelper::basic_size_1(ctx)?,
+            Demo::Size1 => DemoHelper::test_square_1(ctx)?,
             _ => DemoHelper::empty_template(ctx)?,
         };
         self.items = items;

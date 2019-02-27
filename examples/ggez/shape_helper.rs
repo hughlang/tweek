@@ -7,9 +7,9 @@
 extern crate ggez;
 extern crate tweek;
 
-use ggez::graphics;
+use ggez::graphics::{self, Rect, Color};
 use ggez::{Context, GameResult};
-use ggez::mint;
+use ggez::mint::{self, Point2};
 
 use tweek::prelude::*;
 
@@ -23,6 +23,80 @@ pub enum Shape {
     Text(graphics::Rect),
 }
 
+#[allow(dead_code)]
+pub const NEXT_COMMAND: u32 = 1;
+#[allow(dead_code)]
+pub const PREV_COMMAND: u32 = 2;
+
+pub struct ShapeHelper {
+}
+
+#[allow(dead_code)]
+#[allow(unused_variables)]
+impl ShapeHelper {
+
+    pub fn build_grid(ctx: &mut Context, width: f32, height: f32, interval: f32, color: Color) -> GameResult<graphics::Mesh> {
+        let mut builder = graphics::MeshBuilder::new();
+
+        let mut xpos = 0.0;
+        while xpos < width {
+            builder.line(&[Point2{x: xpos, y: 0.0}, Point2{x: xpos, y: height}], 1.0, color,)?;
+            xpos += interval;
+        }
+        let mut ypos = 0.0;
+        while ypos < height {
+            builder.line(&[Point2{x: 0.0, y: ypos}, Point2{x: width, y: ypos}], 1.0, color,)?;
+            ypos += interval;
+        }
+
+        let gridmesh = builder.build(ctx)?;
+        Ok(gridmesh)
+    }
+
+    /// This creates the Next and Previous buttons that make it easy to load and view animations.
+    /// The set_onclick method appends a u32 value that is evaluated in the run loop update() method.
+    pub fn make_next_prev_buttons(ctx: &mut Context) -> GameResult<Vec<ButtonView>> {
+        const BUTTON_WIDTH: f32 = 90.0;
+        const BUTTON_HEIGHT: f32 = 40.0;
+        let screen_w = ctx.conf.window_mode.width;
+
+        let font = graphics::Font::new(ctx, "/Roboto-Bold.ttf")?;
+
+        let mut buttons: Vec<ButtonView> = Vec::new();
+        let xpos = 30.0;
+        let ypos = 30.0;
+
+        // ---- Previous ---------------------
+        let frame = Rect::new(xpos, ypos, BUTTON_WIDTH, BUTTON_HEIGHT);
+        let mut button = ButtonView::new(frame).with_title("Previous");
+        button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
+        button.set_color(&Color::from_rgb_u32(HexColors::Tan));
+        button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
+        button.set_onclick(move |_action, tk| {
+            // tk.commands.push(PREV_COMMAND);
+        });
+        buttons.push(button);
+
+        // ---- Next ---------------------
+        let frame = Rect::new(
+            screen_w - BUTTON_WIDTH - 30.0,
+            ypos,
+            BUTTON_WIDTH,
+            BUTTON_HEIGHT,
+        );
+        let mut button = ButtonView::new(frame).with_title("Next");
+        button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
+        button.set_color(&Color::from_rgb_u32(HexColors::Tan));
+        button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
+        button.set_onclick(move |_action, state| {
+            // state.commands.push(NEXT_COMMAND);
+        });
+        buttons.push(button);
+
+        Ok(buttons)
+    }
+
+}
 pub struct ItemState {
     pub id: usize,
     pub shape: Shape,

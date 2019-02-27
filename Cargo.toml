@@ -9,27 +9,15 @@ name = "tweek"
 path = "src/lib.rs"
 
 [[bin]]
-name = "ggmix"
-path = "examples/ggez/ggmix.rs"
-
-[[bin]]
-name = "ggsequence"
-path = "examples/ggez/ggsequence.rs"
-
-[[bin]]
-name = "ggtransform"
-path = "examples/ggez/ggtransform.rs"
-
-[[bin]]
 name = "basics"
-path = "examples/ggez/basics.rs"
+path = "examples/ggez/gg_basics.rs"
 
 [[bin]]
-name = "gg_demos"
+name = "demos"
 path = "examples/ggez/gg_demos.rs"
 
 [[bin]]
-name = "gg_player"
+name = "player"
 path = "examples/ggez/gg_player.rs"
 
 [dependencies]

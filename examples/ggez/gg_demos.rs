@@ -28,44 +28,6 @@ struct DemoHelper {}
 #[allow(unused_variables)]
 impl DemoHelper {
 
-    /// This creates the Next and Previous buttons that make it easy to load and view animations.
-    /// The set_onclick method appends a u32 value that is evaluated in the run loop update() method.
-    fn make_buttons(ctx: &mut Context) -> GameResult<Vec<ButtonView>> {
-        const BUTTON_WIDTH: f32 = 90.0;
-        const BUTTON_HEIGHT: f32 = 40.0;
-        const BUTTON_GAP: f32 = 20.0;
-        let screen_w = ctx.conf.window_mode.width;
-
-        let font = graphics::Font::new(ctx, "/Roboto-Bold.ttf")?;
-
-        let mut buttons: Vec<ButtonView> = Vec::new();
-        let xpos = 30.0;
-        let ypos = 30.0;
-
-        // ---- Previous ---------------------
-        let frame = Rect::new(xpos, ypos, BUTTON_WIDTH, BUTTON_HEIGHT);
-        let mut button = ButtonView::new(frame).with_title("Previous");
-        button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
-        button.set_color(&Color::from_rgb_u32(HexColors::Tan));
-        button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
-        button.set_onclick(move |_action, tk| {
-            tk.commands.push(PREV_COMMAND);
-        });
-        buttons.push(button);
-
-        // ---- Next ---------------------
-        let frame = Rect::new(screen_w - BUTTON_WIDTH - 30.0, ypos, BUTTON_WIDTH, BUTTON_HEIGHT);
-        let mut button = ButtonView::new(frame).with_title("Next");
-        button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
-        button.set_color(&Color::from_rgb_u32(HexColors::Tan));
-        button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
-        button.set_onclick(move |_action, state| {
-            state.commands.push(NEXT_COMMAND);
-        });
-        buttons.push(button);
-
-        Ok(buttons)
-    }
 
     /// Create a unit vector representing the
     /// given angle (in radians)
@@ -367,8 +329,8 @@ impl MainState {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
 
-        let buttons = DemoHelper::make_buttons(ctx)?;
-        let gridmesh = GGTools::build_grid(ctx, screen_w, screen_h, 16.0, Color::from_rgb_u32(0xCCCCCC))?;
+        let buttons = ShapeHelper::make_next_prev_buttons(ctx)?;
+        let gridmesh = ShapeHelper::build_grid(ctx, screen_w, screen_h, 16.0, Color::from_rgb_u32(0xCCCCCC))?;
 
         let mut s = MainState {
             grid: gridmesh,

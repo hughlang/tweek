@@ -9,7 +9,6 @@ extern crate ggez;
 use crate::core::*;
 
 use ggez::graphics::{self, DrawParam};
-use ggez::mint;
 
 //-- Main -----------------------------------------------------------------------
 

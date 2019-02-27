@@ -28,7 +28,7 @@ impl MainState {
         let width = ctx.conf.window_mode.width;
         let height = ctx.conf.window_mode.height;
 
-        let gridmesh = GGTools::build_grid(ctx, width, height, 50.0, graphics::BLACK)?;
+        let gridmesh = ShapeHelper::build_grid(ctx, width, height, 50.0, graphics::BLACK)?;
 
         // Add a rectangle
         let rect = graphics::Rect::new(0.0, 0.0, 50.0, 50.0);
