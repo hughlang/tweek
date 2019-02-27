@@ -73,7 +73,7 @@ impl ShapeHelper {
         button.set_color(&Color::from_rgb_u32(HexColors::Tan));
         button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
         button.set_onclick(move |_action, tk| {
-            // tk.commands.push(PREV_COMMAND);
+            tk.commands.push(PREV_COMMAND);
         });
         buttons.push(button);
 
@@ -89,7 +89,7 @@ impl ShapeHelper {
         button.set_color(&Color::from_rgb_u32(HexColors::Tan));
         button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
         button.set_onclick(move |_action, state| {
-            // state.commands.push(NEXT_COMMAND);
+            state.commands.push(NEXT_COMMAND);
         });
         buttons.push(button);
 
@@ -104,6 +104,12 @@ pub struct ItemState {
     pub tween: Option<Tween>,
     pub image: Option<graphics::Image>,
     pub text: Option<graphics::Text>,
+}
+
+impl Drop for ItemState {
+    fn drop(&mut self) {
+        self.tween = None;
+    }
 }
 
 impl ItemState {

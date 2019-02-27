@@ -365,6 +365,8 @@ impl MainState {
     /// This method takes a Demo enum as a parameter to identify which DemoHelper function
     /// to call and replace the current timeline animation.
     fn load_demo(&mut self, ctx: &mut Context, demo: &Demo) -> GameResult {
+        self.tk_state.commands.clear();
+
         let (timeline, items) = match demo {
             Demo::Bars => {
                 DemoHelper::build_bars_demo(ctx)?
@@ -425,7 +427,6 @@ impl event::EventHandler for MainState {
                 },
                 _ => (),
             }
-            self.tk_state.commands.clear();
         }
 
         self.tweek.update(&mut self.tk_state);

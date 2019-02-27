@@ -132,6 +132,17 @@ impl Tween {
         }
     }
 
+    // Usage:
+    // tween2.add_callback(move |e, ctx| {
+    //     // This does nothing yet
+    //     println!("OG callback: event={:?}", e);
+    //     match e {
+    //         TKEvent::Completed(_id) => {
+    //             ctx.events.push(e);
+    //         },
+    //         _ => (),
+    //     }
+    // });
     pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKState) + 'static {
         self.callbacks.push(Box::new(cb));
     }
@@ -421,11 +432,9 @@ impl Tween {
 impl Playable for Tween {
 
     fn play(&mut self) {
-        println!("Play?");
         if self.state == TweenState::Pending {
             self.sync_animators();
         }
-        // self.print_timeline();
 
         self.started_at = Instant::now();
         self.state = TweenState::Running;

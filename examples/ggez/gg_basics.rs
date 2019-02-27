@@ -12,7 +12,7 @@ use ggez::conf;
 use ggez::event::{self, MouseButton};
 use ggez::graphics::{self, Color, DrawParam, Rect};
 use ggez::input::mouse;
-// use ggez::mint::{self, Point2};
+use ggez::mint::{Point2};
 use ggez::{Context, ContextBuilder, GameResult};
 
 use std::env;
@@ -56,6 +56,33 @@ impl DemoHelper {
         Ok(vec![item1])
     }
 
+    fn test_circle_1(ctx: &mut Context) -> GameResult<(Vec<ItemState>)> {
+        let screen_w = ctx.conf.window_mode.width;
+        let screen_h = ctx.conf.window_mode.height;
+        let draw_area = Rect::new(
+            (screen_w - STAGE_WIDTH) / 2.0,
+            120.0,
+            STAGE_WIDTH,
+            STAGE_HEIGHT,
+        );
+
+        let item_id = 2;
+        // Add a circle
+        let mut item2 = ItemState::new(item_id, Shape::Circle(Point2{x: 500.0, y: 200.0}, 40.0))?;
+        item2.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
+
+        let mut tween2 = Tween::with(item_id, &item2.layer)
+            .to(vec![position(40.0, 400.0), alpha(0.2)]).duration(1.0)
+            .to(vec![position(40.0, 40.0), alpha(1.0)]).duration(0.5)
+            .to(vec![position(300.0, 40.0), alpha(1.0)]).duration(0.5)
+            .to(vec![size(200.0, 200.0)]).duration(1.0)
+            .repeat(-1, 0.25);
+
+        &tween2.play();
+        item2.tween = Some(tween2);
+        Ok(vec![item2])
+    }
+
     /// ********************************************************************************
     /// This is a template for creating a new animation.
     /// Copy it and try out different animation techniques.
@@ -75,7 +102,8 @@ impl DemoHelper {
 /// This enum is a list of all the loadable demo animations.
 #[derive(Copy, Clone, Debug)]
 enum Demo {
-    Size1,
+    Square1,
+    Circle1,
 }
 
 /// ##########################################################################################
@@ -118,10 +146,11 @@ impl MainState {
         // s.show_fps = true;
 
         // ===== If you are adding a new animation to try out, add it to the demo_list here. =====
-        s.demo_list.push(Demo::Size1);
+        s.demo_list.push(Demo::Square1);
+        s.demo_list.push(Demo::Circle1);
 
         // Pick which demo to start with.
-        s.demo_index = 0;
+        s.demo_index = 1;
         let demo = s.demo_list[s.demo_index].clone();
         s.load_demo(ctx, &demo)?;
 
@@ -132,8 +161,10 @@ impl MainState {
     /// This method takes a Demo enum as a parameter to identify which DemoHelper function
     /// to call and replace the current timeline animation.
     fn load_demo(&mut self, ctx: &mut Context, demo: &Demo) -> GameResult {
+        self.tk_state.commands.clear();
         let items = match demo {
-            Demo::Size1 => DemoHelper::test_square_1(ctx)?,
+            Demo::Square1 => DemoHelper::test_square_1(ctx)?,
+            Demo::Circle1 => DemoHelper::test_circle_1(ctx)?,
             _ => DemoHelper::empty_template(ctx)?,
         };
         self.items = items;
@@ -153,6 +184,8 @@ impl event::EventHandler for MainState {
                         self.demo_index = 0;
                     }
                     let next = &self.demo_list[self.demo_index].clone();
+
+
                     &self.load_demo(ctx, next);
                     return Ok(());
                 }
@@ -168,7 +201,6 @@ impl event::EventHandler for MainState {
                 }
                 _ => (),
             }
-            self.tk_state.commands.clear();
         }
 
         for item in &mut self.items {
@@ -199,9 +231,6 @@ impl event::EventHandler for MainState {
         }
 
         for item in &mut self.items {
-            // if let Some(text) = item.text {
-            //     graphics::queue_text(ctx, &text, item.layer.graphics, None);
-            // }
             item.render(ctx)?;
         }
 
