@@ -29,7 +29,7 @@ struct DemoHelper {}
 #[allow(unused_variables)]
 impl DemoHelper {
 
-    fn test_square_1(ctx: &mut Context) -> GameResult<(Vec<ItemState>)> {
+    fn get_stage(ctx: &mut Context) -> (f32, f32, Rect) {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
         let draw_area = Rect::new(
@@ -38,6 +38,11 @@ impl DemoHelper {
             STAGE_WIDTH,
             STAGE_HEIGHT,
         );
+        (screen_w, screen_h, draw_area)
+    }
+
+    fn test_square_1(ctx: &mut Context) -> GameResult<(Vec<ItemState>)> {
+        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
         let rect = Rect::new(draw_area.x, 200.0, 80.0, 80.0);
 
@@ -57,14 +62,7 @@ impl DemoHelper {
     }
 
     fn test_circle_1(ctx: &mut Context) -> GameResult<(Vec<ItemState>)> {
-        let screen_w = ctx.conf.window_mode.width;
-        let screen_h = ctx.conf.window_mode.height;
-        let draw_area = Rect::new(
-            (screen_w - STAGE_WIDTH) / 2.0,
-            120.0,
-            STAGE_WIDTH,
-            STAGE_HEIGHT,
-        );
+        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
         let item_id = 2;
         // Add a circle
@@ -81,6 +79,27 @@ impl DemoHelper {
         &tween2.play();
         item2.tween = Some(tween2);
         Ok(vec![item2])
+    }
+
+    fn test_image_1(ctx: &mut Context) -> GameResult<(Vec<ItemState>)> {
+        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
+
+        const ITEM_ID: usize = 3;
+        let tile = graphics::Image::new(ctx, "/tile.png")?;
+        let rect = graphics::Rect::new(10.0, 300.0, 80.0, 80.0);
+        let mut item3 = ItemState::new(ITEM_ID, Shape::Image(rect))?;
+        item3.image = Some(tile);
+
+        let mut tween3 = Tween::with(ITEM_ID, &item3.layer)
+            .to(vec![position(400.0, 300.0), rotate(360.0)]).duration(3.0)
+            .ease(Ease::BounceOut)
+            .repeat(5, 0.5)
+            ;
+            // .to(vec![rotate(45.0)]);
+        &tween3.play();
+        item3.tween = Some(tween3);
+
+        Ok(vec![item3])
     }
 
     /// ********************************************************************************
@@ -104,6 +123,7 @@ impl DemoHelper {
 enum Demo {
     Square1,
     Circle1,
+    Image1,
 }
 
 /// ##########################################################################################
@@ -148,9 +168,10 @@ impl MainState {
         // ===== If you are adding a new animation to try out, add it to the demo_list here. =====
         s.demo_list.push(Demo::Square1);
         s.demo_list.push(Demo::Circle1);
+        s.demo_list.push(Demo::Image1);
 
         // Pick which demo to start with.
-        s.demo_index = 1;
+        s.demo_index = 2;
         let demo = s.demo_list[s.demo_index].clone();
         s.load_demo(ctx, &demo)?;
 
@@ -165,6 +186,7 @@ impl MainState {
         let items = match demo {
             Demo::Square1 => DemoHelper::test_square_1(ctx)?,
             Demo::Circle1 => DemoHelper::test_circle_1(ctx)?,
+            Demo::Image1 => DemoHelper::test_image_1(ctx)?,
             _ => DemoHelper::empty_template(ctx)?,
         };
         self.items = items;
