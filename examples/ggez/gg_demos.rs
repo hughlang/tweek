@@ -50,10 +50,10 @@ impl DemoHelper {
     }
 
     /// This demo shows a collection of dots rotating around in a circle
-    fn build_dots_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn build_dots_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
         let center_pt = mint::Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
-        let mut items: Vec<ItemState> = Vec::new();
+        let mut items: Vec<Item> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
 
         let dot_count = 8;
@@ -63,7 +63,7 @@ impl DemoHelper {
         for i in 0..dot_count {
             let item_id = i + 10 as usize;
 
-            let mut item1 = ItemState::new(item_id, Shape::Circle(mint::Point2{x: center_pt.x, y: center_pt.y - scene_radius}, dot_radius))?;
+            let mut item1 = Item::new(item_id, Shape::Circle(mint::Point2{x: center_pt.x, y: center_pt.y - scene_radius}, dot_radius))?;
             item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
             let alpha = 1.0 - (i as f32 / dot_count as f32)/2.0;
             item1.layer.graphics.color.a = alpha;
@@ -86,11 +86,11 @@ impl DemoHelper {
     }
 
     /// Draw lines and rotate from center
-    fn build_spin_lines_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn build_spin_lines_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
         let center_pt = mint::Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
 
-        let mut items: Vec<ItemState> = Vec::new();
+        let mut items: Vec<Item> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
 
         const LINE_WIDTH: f32 = 9.0;
@@ -102,7 +102,7 @@ impl DemoHelper {
             let xpos = center_pt.x - line_length / 2.0;
             let ypos = center_pt.y;
 
-            let mut item = ItemState::new(item_id,
+            let mut item = Item::new(item_id,
                 Shape::Line(
                     Point2{x: xpos, y: ypos},
                     Point2{x: xpos + line_length, y: ypos},
@@ -136,10 +136,10 @@ impl DemoHelper {
 
     /// Rockets!!! Many rockets of different sizes arcing across the screen endlessly.
     /// Random sizes and speed.
-    fn build_rocket_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn build_rocket_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
-        let mut items: Vec<ItemState> = Vec::new();
+        let mut items: Vec<Item> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
 
         let rocket_count = 8;
@@ -160,7 +160,7 @@ impl DemoHelper {
             let angle = 0.0 as f32;
             let rect = Rect::new(x, y, w, h);
             println!("new rocket={:?}", rect);
-            let mut item = ItemState::new(item_id, Shape::Image(rect))?;
+            let mut item = Item::new(item_id, Shape::Image(rect))?;
             item.image = Some(image.clone());
             // item.layer.graphics.offset = na::Point2::new(0.5, 0.5);
             item.layer.graphics.rotation = angle.to_radians();
@@ -183,10 +183,10 @@ impl DemoHelper {
     }
 
 
-    fn build_bars_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn build_bars_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
-        let mut items: Vec<ItemState> = Vec::new();
+        let mut items: Vec<Item> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
 
         const STAGE_WIDTH: f32 = 600.0;
@@ -201,7 +201,7 @@ impl DemoHelper {
 
             let rect = Rect::new(draw_area.left(), ypos, 0.0, BAR_HEIGHT);
 
-            let mut item = ItemState::new(item_id, Shape::Rectangle(rect))?;
+            let mut item = Item::new(item_id, Shape::Rectangle(rect))?;
             item.layer.graphics.color = Color::from_rgb_u32(HexColors::Orange);
 
             let tween = Tween::with(item_id, &item.layer)
@@ -226,10 +226,10 @@ impl DemoHelper {
     /// It performs terribly in debug mode (11 fps), but achieves over 120 fps in release mode.
     /// A future optimization would be to use ggez graphics::draw_queued_text in the draw() function.
     /// Also consider combining all of the text into a mesh somehow.
-    fn build_text_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn build_text_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
-        let mut items: Vec<ItemState> = Vec::new();
+        let mut items: Vec<Item> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
 
         let med_size = 20.0;
@@ -239,8 +239,8 @@ impl DemoHelper {
             (String::from("The name 'Tweek' originates from the word 'Tween', a term sometimes used in digital animation."), med_size),
             (String::from("Tweening can be more generally described as an interpolation system that calculates"), med_size),
             (String::from("changes in visual characteristics of an object over a specified duration."), med_size),
-            (String::from("For example, the target position or size of an object can be specified and Tweek will provide"), med_size),
-            (String::from("the numeric changes that can be applied in the graphics engine of your choice."), med_size),
+            (String::from("Animating groups of text objects is pretty slow. In debug mode, it's 11 fps. In release mode, it's around 120 fps."), med_size),
+            (String::from("In such cases, you may be better off importing a large PNG image of the text and animating that."), med_size),
         ];
         let font = graphics::Font::new(ctx, "/Roboto-Bold.ttf")?;
         let line_height = 50.0;
@@ -257,7 +257,7 @@ impl DemoHelper {
             let ypos = screen_h + (i as f32 * line_height);
 
             let rect = graphics::Rect::new(xpos, ypos, width as f32, height as f32);
-            let mut item = ItemState::new(item_id, Shape::Text(rect))?;
+            let mut item = Item::new(item_id, Shape::Text(rect))?;
             item.text = Some(text);
             item.layer.graphics.color = graphics::BLACK;
 
@@ -282,10 +282,10 @@ impl DemoHelper {
     /// This is a template for creating a new animation.
     /// Copy it and try out different animation techniques.
     /// Add an entry to the Demo enum below to make it part of the Next/Previous cycle.
-    fn empty_template(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn empty_template(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
-        let mut items: Vec<ItemState> = Vec::new();
+        let mut items: Vec<Item> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
 
         // =====================================================
@@ -323,7 +323,7 @@ struct MainState {
     frames: usize,
     tweek: Tweek,
     tk_state: TKState,
-    items: Vec<ItemState>,
+    items: Vec<Item>,
     buttons: Vec<ButtonView>,
     demo_index: usize,
     demo_list: Vec<Demo>,

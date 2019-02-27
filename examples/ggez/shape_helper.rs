@@ -97,7 +97,7 @@ impl ShapeHelper {
     }
 
 }
-pub struct ItemState {
+pub struct Item {
     pub id: usize,
     pub shape: Shape,
     pub layer: TweenLayer,
@@ -106,16 +106,16 @@ pub struct ItemState {
     pub text: Option<graphics::Text>,
 }
 
-impl Drop for ItemState {
+impl Drop for Item {
     fn drop(&mut self) {
         self.tween = None;
     }
 }
 
-impl ItemState {
+impl Item {
 
     #[allow(dead_code)]
-    pub fn new(id: usize, shape: Shape) -> GameResult<ItemState> {
+    pub fn new(id: usize, shape: Shape) -> GameResult<Item> {
         let layer = match shape {
             Shape::Rectangle(rect) => {
                 TweenLayer::new(rect, graphics::DrawParam::new())
@@ -138,7 +138,7 @@ impl ItemState {
             },
         };
 
-        Ok(ItemState {
+        Ok(Item {
             id: id,
             shape: shape,
             layer: layer,

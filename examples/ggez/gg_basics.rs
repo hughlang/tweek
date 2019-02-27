@@ -41,13 +41,13 @@ impl DemoHelper {
         (screen_w, screen_h, draw_area)
     }
 
-    fn test_square_1(ctx: &mut Context) -> GameResult<(Vec<ItemState>)> {
+    fn test_square_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
         let rect = Rect::new(draw_area.x, 200.0, 80.0, 80.0);
 
         let item_id = 1;
-        let mut item1 = ItemState::new(item_id, Shape::Rectangle(rect))?;
+        let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
 
         let mut tween1 = Tween::with(item_id, &item1.layer)
@@ -61,12 +61,12 @@ impl DemoHelper {
         Ok(vec![item1])
     }
 
-    fn test_circle_1(ctx: &mut Context) -> GameResult<(Vec<ItemState>)> {
+    fn test_circle_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
         let item_id = 2;
         // Add a circle
-        let mut item2 = ItemState::new(item_id, Shape::Circle(Point2{x: 500.0, y: 200.0}, 40.0))?;
+        let mut item2 = Item::new(item_id, Shape::Circle(Point2{x: 500.0, y: 200.0}, 40.0))?;
         item2.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
 
         let mut tween2 = Tween::with(item_id, &item2.layer)
@@ -81,13 +81,13 @@ impl DemoHelper {
         Ok(vec![item2])
     }
 
-    fn test_image_1(ctx: &mut Context) -> GameResult<(Vec<ItemState>)> {
+    fn test_image_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
         const ITEM_ID: usize = 3;
         let tile = graphics::Image::new(ctx, "/tile.png")?;
         let rect = graphics::Rect::new(120.0, 300.0, 100.0, 100.0);
-        let mut item3 = ItemState::new(ITEM_ID, Shape::Image(rect))?;
+        let mut item3 = Item::new(ITEM_ID, Shape::Image(rect))?;
         item3.image = Some(tile);
         item3.layer.graphics.offset = Point2{x: 0.5, y: 0.5};
 
@@ -110,7 +110,7 @@ impl DemoHelper {
     /// This is a template for creating a new animation.
     /// Copy it and try out different animation techniques.
     /// Add an entry to the Demo enum below to make it part of the Next/Previous cycle.
-    fn empty_template(ctx: &mut Context) -> GameResult<(Vec<ItemState>)> {
+    fn empty_template(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
         // =====================================================
@@ -138,7 +138,7 @@ enum Demo {
 struct MainState {
     grid: graphics::Mesh,
     frames: usize,
-    items: Vec<ItemState>,
+    items: Vec<Item>,
     buttons: Vec<ButtonView>,
     tk_state: TKState,
     demo_index: usize,

@@ -152,6 +152,7 @@ impl TKResponder for ButtonView {
     fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
         false
     }
+
     fn handle_mouse_up(&mut self, x: f32, y: f32, state: &mut TKState) -> bool {
         if self.layer.frame.contains(mint::Point2{ x, y }) {
             println!("Click at: x={} y={}", x, y);

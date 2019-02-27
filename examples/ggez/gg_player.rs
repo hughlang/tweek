@@ -2,6 +2,12 @@
 /// player controls to help you review the animations in detail. The other examples provided
 /// generally demonstrate simple Tween animations without a timeline.
 ///
+/// STATUS: This example was created before gg_basics and gg_demos and therefore is a little outdated.
+/// For now, this file is used for testing timeline stuff. It needs:
+/// * a Next/Previous browsing scheme
+/// * Buttons for slower, faster, replay that work.
+///
+///
 mod shape_helper;
 use shape_helper::*;
 
@@ -95,14 +101,14 @@ impl StageHelper {
     //---- 1 ----------------------------------------------------------------------
     /// This is a simple Sequence timeline where 4 independent tweens play sequentially,
     /// without any repeats.
-    fn build_timeline_1(_ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn build_timeline_1(_ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let mut ypos = 50.0 as f32;
-        let mut items: Vec<ItemState> = Vec::new();
+        let mut items: Vec<Item> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
         for i in 0..4 {
             let item_id = SQUARE_ITEM_ID + i as usize;
             let rect = graphics::Rect::new(50.0, ypos, 50.0, 50.0);
-            let mut item1 = ItemState::new(item_id, Shape::Rectangle(rect))?;
+            let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
             item1.layer.graphics.color = graphics::Color::from_rgb_u32(0x333333);
 
             let tween1 = Tween::with(item_id, &item1.layer)
@@ -130,13 +136,13 @@ impl StageHelper {
     ///---- 2 ----------------------------------------------------------------------
     /// This is a timeline with a single tween that repeats. A repeat_count of 1 means it
     /// play twice.
-    fn build_timeline_2(_ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
-        let mut items: Vec<ItemState> = Vec::new();
+    fn build_timeline_2(_ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
+        let mut items: Vec<Item> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
         let mut ypos = 50.0 as f32;
 
         let rect = graphics::Rect::new(50.0, ypos, 50.0, 50.0);
-        let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
+        let mut item1 = Item::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
         item1.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
 
         // FYI: the Tween props below show how you can dynamically build sequences of animations
@@ -171,8 +177,8 @@ impl StageHelper {
 
     ///---- 3 ----------------------------------------------------------------------
     /// play twice.
-    fn build_timeline_3(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
-        let mut items: Vec<ItemState> = Vec::new();
+    fn build_timeline_3(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
+        let mut items: Vec<Item> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
         let mut ypos = 50.0 as f32;
 
@@ -181,7 +187,7 @@ impl StageHelper {
         let text = graphics::Text::new(("Tweek Player", font, 48.0));
 
         let rect = graphics::Rect::new(20.0, 20.0, 200.0, 40.0);
-        let mut item4 = ItemState::new(TEXT_ITEM_ID, Shape::Text(rect))?;
+        let mut item4 = Item::new(TEXT_ITEM_ID, Shape::Text(rect))?;
         item4.text = Some(text);
 
         let mut tween4 = Tween::with(TEXT_ITEM_ID, &item4.layer)
@@ -192,7 +198,7 @@ impl StageHelper {
 
 
         let rect = graphics::Rect::new(50.0, ypos, 50.0, 50.0);
-        let mut item1 = ItemState::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
+        let mut item1 = Item::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
         item1.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
 
         // FYI: the Tween props below show how you can dynamically build sequences of animations
@@ -236,7 +242,7 @@ impl StageHelper {
 struct MainState {
     tweek: Tweek,
     tk_state: TKState,
-    items: Vec<ItemState>,
+    items: Vec<Item>,
     buttons: Vec<ButtonView>,
     progress_bar: ProgressBarView,
 }
@@ -306,7 +312,7 @@ impl event::EventHandler for MainState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        graphics::clear(ctx, graphics::BLACK);
+        graphics::clear(ctx, graphics::WHITE);
 
         for control in &mut self.buttons {
             control.render(ctx)?;

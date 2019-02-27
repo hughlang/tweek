@@ -1,6 +1,5 @@
 extern crate ggez;
 
-use std::{collections::HashMap};
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -15,6 +14,8 @@ pub type UserCommand = u32;
 
 pub trait Playable {
     fn play(&mut self);
+
+    // TODO: Return an Option<TKEvent> instead.
     fn tick(&mut self) -> Vec<TKEvent>;
     fn get_update(&mut self, id: &usize) -> Option<UIState>;
     fn stop(&mut self);
@@ -26,9 +27,7 @@ pub trait Playable {
 
 
 /// This is an experimental trait with the intention of passing around a mutable TKState
-/// which other code can use. TKState has a shared tween_store where all tweens are registered.
-/// Some ideas
-/// * allow other code to add callback functions that execute when specific events happen?
+/// which other code can use.
 ///
 pub trait TimelineAware {
     // fn tk_play(&mut self, ctx: &mut TKState);
@@ -73,7 +72,6 @@ pub struct TKState {
     pub requests: Vec<TKRequest>,
     /// user defined u32 values that can be used for any purpose.
     pub commands: Vec<UserCommand>,
-    tween_store: HashMap<usize, TweenRef>,
 }
 
 impl TKState {
@@ -85,22 +83,9 @@ impl TKState {
             events: Vec::new(),
             requests: Vec::new(),
             commands: Vec::new(),
-            tween_store: HashMap::new(),
         }
     }
 
-    pub fn get_update(&mut self, id: &usize) -> Option<UIState> {
-        if let Some(rc) = self.tween_store.get(id) {
-            let mut tween = rc.borrow_mut();
-            let update = (&mut *tween).update();
-            return update;
-        }
-        None
-    }
-
-    pub fn register_tween(&mut self, tween: Tween) {
-        self.tween_store.insert(tween.tween_id.clone(), Rc::new(RefCell::new(tween)));
-    }
 }
 
 
