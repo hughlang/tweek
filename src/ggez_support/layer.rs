@@ -9,6 +9,7 @@ extern crate ggez;
 use crate::core::*;
 
 use ggez::graphics::{self, DrawParam};
+use ggez::mint::{self};
 
 //-- Main -----------------------------------------------------------------------
 
@@ -50,6 +51,9 @@ impl Tweenable for TweenLayer {
                 self.frame.y = pos[1] as f32
             }
             Prop::Size(v) => {
+                // let scale_x = v[0] as f32 / self.frame.w;
+                // let scale_y = v[1] as f32 / self.frame.h;
+                // self.graphics.scale = mint::Vector2{x: scale_x, y: scale_y};
                 self.frame.w = v[0] as f32;
                 self.frame.h = v[1] as f32
             }

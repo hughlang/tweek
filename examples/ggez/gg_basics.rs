@@ -63,18 +63,21 @@ impl DemoHelper {
 
     fn test_circle_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
+        let center_pt = Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
 
         let item_id = 2;
         // Add a circle
-        let mut item2 = Item::new(item_id, Shape::Circle(Point2{x: 500.0, y: 200.0}, 40.0))?;
+        let mut item2 = Item::new(item_id, Shape::Circle(center_pt, 40.0))?;
         item2.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
+        item2.layer.graphics.offset = Point2{x: 0.5, y: 0.5};
 
         let mut tween2 = Tween::with(item_id, &item2.layer)
-            .to(vec![position(40.0, 400.0), alpha(0.2)]).duration(1.0)
-            .to(vec![position(40.0, 40.0), alpha(1.0)]).duration(0.5)
-            .to(vec![position(300.0, 40.0), alpha(1.0)]).duration(0.5)
-            .to(vec![size(200.0, 200.0)]).duration(1.0)
-            .repeat(-1, 0.25);
+            .to(vec![size(200.0, 200.0), alpha(0.9)]).duration(3.0)
+            .to(vec![position(800.0, 90.0), size(100.0, 100.0), alpha(0.8)]).duration(0.25)
+            .to(vec![position(1000.0, 200.0), size(50.0, 50.0), alpha(0.6)]).duration(0.25)
+            .to(vec![position(650.0, 750.0), size(20.0, 20.0), alpha(0.23)]).duration(0.25)
+            .to(vec![position(400.0, 600.0), size(5.0, 5.0), alpha(0.0)]).duration(0.25)
+            .repeat(-1, 2.0);
 
         &tween2.play();
         item2.tween = Some(tween2);
@@ -109,19 +112,24 @@ impl DemoHelper {
     fn test_rectangle_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
-        let rect = Rect::new(draw_area.x + 40.0, draw_area.y + 40.0, 20.0, 20.0);
+        let rect = Rect::new(draw_area.x + 120.0, draw_area.y + 40.0, 20.0, 20.0);
 
         let item_id = 1;
         let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::HotPink);
 
+        let w = 600.0 as f64;
+        let h = 400.0 as f64;
         let mut tween1 = Tween::with(item_id, &item1.layer)
-            .to(vec![size(800.0, 20.0)]).duration(1.0).anchor(1.0, 0.0)
+            .to(vec![size(w, 20.0)]).duration(1.0)
+            .to(vec![size(20.0, 20.0), shift_x(w - 20.0)]).duration(1.0)
+            .to(vec![size(20.0, h)]).duration(1.0)
+            .to(vec![size(20.0, 20.0), shift_y(h - 20.0)]).duration(1.0)
+            .to(vec![size(w, 20.0), shift_x(-w)]).duration(1.0)
             .to(vec![size(20.0, 20.0)]).duration(1.0)
-            .to(vec![size(20.0, draw_area.h as f64)]).duration(1.0)
-
-            .ease(Ease::SineIn)
-            .repeat(8, 0.2)
+            .to(vec![size(20.0, h), shift_y(-h + 20.0)]).duration(1.0)
+            .to(vec![size(20.0, 20.0)]).duration(1.0)
+            .repeat(4, 0.2)
             // .debug()
             ;
 
@@ -200,7 +208,7 @@ impl MainState {
         s.demo_list.push(Demo::Rectangle1);
 
         // Pick which demo to start with.
-        s.demo_index = 3;
+        s.demo_index = 0;
         let demo = s.demo_list[s.demo_index].clone();
         s.load_demo(ctx, &demo)?;
 

@@ -104,6 +104,7 @@ pub struct Item {
     pub tween: Option<Tween>,
     pub image: Option<graphics::Image>,
     pub text: Option<graphics::Text>,
+    pub mesh: Option<graphics::Mesh>,
 }
 
 impl Drop for Item {
@@ -145,6 +146,7 @@ impl Item {
             tween: None,
             image: None,
             text: None,
+            mesh: None,
         })
     }
 
@@ -155,7 +157,7 @@ impl Item {
             if let Some(update) = tween.get_update(&self.id) {
                 self.layer.apply_updates(&update.props);
                 if let Some(offset) = update.offset {
-                    println!("{:?}", offset);
+                    // println!("{:?}", offset);
                     self.layer.graphics.offset = Point2{x: offset.x as f32, y: offset.y as f32};
                 }
             }
@@ -207,6 +209,14 @@ impl Item {
             Shape::Rectangle(_) => {
                 let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.layer.frame, self.layer.graphics.color)?;
                 let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
+                // TODO:
+                // if let Some(mesh) = &self.mesh {
+                //     let _result = graphics::draw(ctx, mesh, self.layer.graphics);
+                // } else {
+                //     let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.layer.frame, self.layer.graphics.color)?;
+                //     let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
+                //     self.mesh = Some(mesh);
+                // }
             },
             Shape::Text(_) => {
                 match &self.text {
