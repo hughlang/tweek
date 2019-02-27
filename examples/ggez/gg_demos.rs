@@ -18,8 +18,8 @@ use std::env;
 use std::path;
 use tweek::prelude::*;
 
-const NEXT_COMMAND: u32 = 1;
-const PREV_COMMAND: u32 = 2;
+const STAGE_WIDTH: f32 = 900.0;
+const STAGE_HEIGHT: f32 = 500.0;
 
 struct DemoHelper {}
 
@@ -37,10 +37,21 @@ impl DemoHelper {
         mint::Vector2{ x: vx, y: vy }
     }
 
-    /// This demo shows a collection of dots rotating around in a circle
-    fn build_dots_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+    fn get_stage(ctx: &mut Context) -> (f32, f32, Rect) {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
+        let draw_area = Rect::new(
+            (screen_w - STAGE_WIDTH) / 2.0,
+            120.0,
+            STAGE_WIDTH,
+            STAGE_HEIGHT,
+        );
+        (screen_w, screen_h, draw_area)
+    }
+
+    /// This demo shows a collection of dots rotating around in a circle
+    fn build_dots_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
+        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
         let center_pt = mint::Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
@@ -76,8 +87,7 @@ impl DemoHelper {
 
     /// Draw lines and rotate from center
     fn build_spin_lines_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
-        let screen_w = ctx.conf.window_mode.width;
-        let screen_h = ctx.conf.window_mode.height;
+        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
         let center_pt = mint::Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
 
         let mut items: Vec<ItemState> = Vec::new();
@@ -127,8 +137,7 @@ impl DemoHelper {
     /// Rockets!!! Many rockets of different sizes arcing across the screen endlessly.
     /// Random sizes and speed.
     fn build_rocket_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
-        let screen_w = ctx.conf.window_mode.width;
-        let screen_h = ctx.conf.window_mode.height;
+        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
@@ -175,8 +184,7 @@ impl DemoHelper {
 
 
     fn build_bars_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
-        let screen_w = ctx.conf.window_mode.width;
-        let screen_h = ctx.conf.window_mode.height;
+        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
@@ -219,8 +227,7 @@ impl DemoHelper {
     /// A future optimization would be to use ggez graphics::draw_queued_text in the draw() function.
     /// Also consider combining all of the text into a mesh somehow.
     fn build_text_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
-        let screen_w = ctx.conf.window_mode.width;
-        let screen_h = ctx.conf.window_mode.height;
+        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
@@ -276,8 +283,7 @@ impl DemoHelper {
     /// Copy it and try out different animation techniques.
     /// Add an entry to the Demo enum below to make it part of the Next/Previous cycle.
     fn empty_template(ctx: &mut Context) -> GameResult<(Timeline, Vec<ItemState>)> {
-        let screen_w = ctx.conf.window_mode.width;
-        let screen_h = ctx.conf.window_mode.height;
+        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
         let mut items: Vec<ItemState> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();

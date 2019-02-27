@@ -86,16 +86,20 @@ impl DemoHelper {
 
         const ITEM_ID: usize = 3;
         let tile = graphics::Image::new(ctx, "/tile.png")?;
-        let rect = graphics::Rect::new(10.0, 300.0, 80.0, 80.0);
+        let rect = graphics::Rect::new(120.0, 300.0, 100.0, 100.0);
         let mut item3 = ItemState::new(ITEM_ID, Shape::Image(rect))?;
         item3.image = Some(tile);
+        item3.layer.graphics.offset = Point2{x: 0.5, y: 0.5};
+
+        println!("rotation={} offset={:?}", item3.layer.graphics.rotation, item3.layer.graphics.offset);
 
         let mut tween3 = Tween::with(ITEM_ID, &item3.layer)
-            .to(vec![position(400.0, 300.0), rotate(360.0)]).duration(3.0)
+            .to(vec![shift_x(600.0), rotate(360.0)]).duration(3.5)
             .ease(Ease::BounceOut)
             .repeat(5, 0.5)
+            // .debug()
             ;
-            // .to(vec![rotate(45.0)]);
+
         &tween3.play();
         item3.tween = Some(tween3);
 
@@ -107,8 +111,7 @@ impl DemoHelper {
     /// Copy it and try out different animation techniques.
     /// Add an entry to the Demo enum below to make it part of the Next/Previous cycle.
     fn empty_template(ctx: &mut Context) -> GameResult<(Vec<ItemState>)> {
-        let screen_w = ctx.conf.window_mode.width;
-        let screen_h = ctx.conf.window_mode.height;
+        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
         // =====================================================
         // Create item and tween here

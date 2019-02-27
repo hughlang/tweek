@@ -70,7 +70,7 @@ impl Animator {
             let current = Animator::interpolate(prop, &self.end_state.props[i], progress);
 
             if self.debug {
-                // println!("[{}.{}] from={:?} to={:?} >>> now={:?}", self.id.0, self.id.1, prop, &self.end_state.props[i], current);
+                println!("[{}.{}] from={:?} to={:?} >>> now={:?}", self.id.0, self.id.1, prop, &self.end_state.props[i], current);
             }
             props.push(current);
         }
