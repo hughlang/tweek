@@ -56,9 +56,9 @@ impl DemoHelper {
         let mut items: Vec<Item> = Vec::new();
         let mut tweens: Vec<Tween> = Vec::new();
 
-        let dot_count = 8;
         let dot_radius = 10.0;
         let scene_radius = 96.0;
+        let dot_count = 8;
 
         for i in 0..dot_count {
             let item_id = i + 10 as usize;
@@ -192,7 +192,7 @@ impl DemoHelper {
         const STAGE_WIDTH: f32 = 600.0;
         const STAGE_HEIGHT: f32 = 400.0;
         const BAR_HEIGHT: f32 = 20.0;
-        let draw_area = Rect::new((screen_w - STAGE_WIDTH) / 2.0, 100.0, STAGE_WIDTH, STAGE_HEIGHT);
+        let draw_area = Rect::new((screen_w - STAGE_WIDTH) / 2.0, 200.0, STAGE_WIDTH, STAGE_HEIGHT);
         let line_count = 12;
 
         for i in 0..line_count {

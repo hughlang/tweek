@@ -9,6 +9,18 @@ Hence, this project aspires to deliver the same level of power and simplicity to
 
 However, the end game is quite clear to me. Rust is currently the language of choice when targeting WebAssembly (aka, Wasm) and Wasm-enabled browsers. Specifically, I'm talking about pure WebGL graphics and not a hybrid solution that requires HTML. When this is achieved, it will be possible to deliver the rich animations that work in nearly all browsers and bring back the "write once, run anywhere" vision.
 
+## Examples
+There are several demos you can try out in the examples directory that showcase various animation scenarios. Conveniently, most of them are bundled into a small set of files where you can browse demos with the Next and Previous buttons. 
+
+* cargo run --bin basics
+* cargo run --bin demos
+
+To learn more about these examples, please also read the following pages:
+
+* [Basics](docs/1-basics.md)
+* [Timelines](docs/2-timelines.md)
+
+
 ## Basic Usage
 
 * To start, make sure you are using the nightly Rust build for now. 
@@ -69,14 +81,6 @@ Naturally, these components also have Tweenable graphics, which provides "intern
         });
 ```
 
-
-## Examples
-There are several demos you can try out in the examples directory that showcase various animation scenarios. Conveniently, most of them are bundled into a single example file where you can browse demos with the Next and Previous buttons.
-
-* cargo run --bin basics
-* cargo run --bin demos
-
-Note: Animated gifs will be added here soon.
 
 
 

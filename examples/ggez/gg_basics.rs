@@ -44,9 +44,9 @@ impl DemoHelper {
     fn test_square_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
-        let rect = Rect::new(draw_area.x, 200.0, 80.0, 80.0);
 
         let item_id = 1;
+        let rect = Rect::new(draw_area.x, 200.0, 80.0, 80.0);
         let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
 
@@ -97,8 +97,6 @@ impl DemoHelper {
         item3.image = Some(tile);
         item3.layer.graphics.offset = Point2{x: 0.5, y: 0.5};
 
-        println!("rotation={} offset={:?}", item3.layer.graphics.rotation, item3.layer.graphics.offset);
-
         let mut tween3 = Tween::with(ITEM_ID, &item3.layer)
             .to(vec![shift_x(600.0), rotate(360.0)]).duration(3.0)
             .ease(Ease::BounceOut)
@@ -117,12 +115,13 @@ impl DemoHelper {
 
         let rect = Rect::new(draw_area.x + 80.0, draw_area.y, 20.0, 20.0);
 
+        let w = 640.0 as f64;
+        let h = 400.0 as f64;
+
         let item_id = 1;
         let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::HotPink);
 
-        let w = 640.0 as f64;
-        let h = 400.0 as f64;
         let mut tween1 = Tween::with(item_id, &item1.layer)
             .to(vec![size(w, 20.0)]).duration(1.0)
                 .ease(Ease::ElasticIn)
