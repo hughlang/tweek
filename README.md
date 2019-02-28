@@ -27,7 +27,7 @@ To learn more about these examples, please also read the following pages:
 
 This is a sample of a simple animation that increases the size of rectangle graphic over time with a SineOut easing speed. It also repeats and has a yoyo effect. 
 
-```
+```rust
     let rect = Rect::new(xpos, ypos, 0.0, 20.0);
 
     let mut item = Item::new(item_id, Shape::Rectangle(rect))?;
@@ -106,3 +106,12 @@ Naturally, these components also have Tweenable graphics, which provides "intern
 ### Contributing
 
 More details to come.
+
+
+## License
+
+[See License file](LICENSE.txt)
+
+## Author
+
+Hugh Lang 

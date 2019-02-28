@@ -55,7 +55,7 @@ Note that the `repeat(-1, 2.0)` function call at the end specifies that it shoul
 
 ![Balloon bounce](demos/balloon-bounce-hd.gif)
 
-### Rolling tile
+## Rolling tile
 Here, we have an image loaded from the file system and rotated on its center axis while moving to the right. It uses the BounceOut ease to finish off the animation. 
 
 ```rust
@@ -77,10 +77,10 @@ Here, we have an image loaded from the file system and rotated on its center axi
 ![Rolling tile](demos/rolling-tile-hd.gif)
 
 
-### Drawing elastic bars
+## Drawing elastic bars
 And this is a sequence of chained animations that takes a square block and draws bars that expand and contract as it travels around the perimeter of a rectangle. Each step in the animation has a different Ease parameter which showcases some of the built-in timing effects.
 
-```
+```rust
         let w = 640.0 as f64;
         let h = 400.0 as f64;
         
