@@ -57,7 +57,7 @@ impl DemoHelper {
             .duration(1.0)
             .ease(Ease::SineIn)
             .repeat(8, 0.2).yoyo()
-            .debug()
+            // .debug()
             ;
 
         &tween1.play();
@@ -129,7 +129,7 @@ impl DemoHelper {
             .to(vec![size(20.0, 20.0), shift_x(w - 20.0)]).duration(1.0)
             .to(vec![size(20.0, h)]).duration(1.0)
             .to(vec![size(20.0, 20.0), shift_y(h - 20.0)]).duration(1.0)
-            .to(vec![size(w, 20.0), shift_x(-w)]).duration(1.0)
+            .to(vec![size(w, 20.0), shift_x(-w + 20.0)]).duration(1.0)
             .to(vec![size(20.0, 20.0)]).duration(1.0)
             .to(vec![size(20.0, h), shift_y(-h + 20.0)]).duration(1.0)
             .to(vec![size(20.0, 20.0)]).duration(1.0)

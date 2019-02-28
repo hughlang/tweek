@@ -1,4 +1,4 @@
-/// A Command is a trait that allows Tween to manipulate it
+/// This file contains most of the model objects used to read and write values in Tweenable objects.
 ///
 
 use cgmath::*;
@@ -10,6 +10,8 @@ pub type Point2D = Vector2<f64>;
 pub type Frame2D = Vector2<f64>;
 pub type Bezier = Vector4<f64>;
 
+/// The Prop enum contains a cgmath::Vector instance that is interpolated in the Animator update() method
+/// based on the initial and target Prop values of the same type.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Prop {
     None,
@@ -106,11 +108,12 @@ impl UIState {
     }
 }
 
+/// The UITransition struct is used to carry animation instructions for "internal tweening" of objects like ButtonView
+/// It contains the Props and the duration in seconds for the animation.
 #[derive(Debug, Clone)]
 pub struct UITransition {
     pub props: Vec<Prop>,
     pub seconds: f64,
-    pub center_at: Point2D,
 }
 
 impl UITransition {
@@ -118,7 +121,6 @@ impl UITransition {
         UITransition {
             props,
             seconds,
-            center_at: Point2D::zero(),
         }
     }
 }

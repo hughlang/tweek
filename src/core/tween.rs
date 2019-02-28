@@ -382,10 +382,8 @@ impl Tween {
             // a) Find exact match in end_state.props and insert into end_props
             // b) Find offset matches (like Shift) in end_state.props and insert into end_props
             // c) Copy unchanged prop from start_state.props to end_state.props
-            println!("end_state.props={:?}", animator.end_state.props);
 
             for begin_prop in begin_props {
-                println!("begin_prop={:?}", begin_prop);
                 let mut iter = animator.end_state.props.iter_mut().filter(|x| x.prop_id() == begin_prop.prop_id());
                 if let Some(end_prop) = iter.next() {
                     end_props.push(end_prop.clone());
@@ -394,7 +392,6 @@ impl Tween {
                     let mut iter = animator.end_state.props.iter_mut()
                         .filter(|x| x.lookup_parent_prop().prop_id() == begin_prop.prop_id());
                     if let Some(end_prop) = iter.next() {
-                        println!("end_prop={:?}", end_prop);
                         match end_prop {
                             Prop::Shift(offset) => {
                                 // calculate offset from begin_prop
@@ -402,7 +399,7 @@ impl Tween {
                                     Prop::Position(pos) => {
                                         let sum_vec = pos.clone() + offset.clone();
                                         let sum_prop = Prop::Position(sum_vec);
-                                        println!(">>>> Inserting sum_prop={:?}", sum_prop);
+                                        // println!(">>>> Inserting sum_prop={:?}", sum_prop);
                                         end_props.push(sum_prop);
                                         keep_prop_ids.insert(begin_prop.prop_id());
                                     },
@@ -415,7 +412,7 @@ impl Tween {
                                     Prop::Size(size) => {
                                         let sum_vec = size.clone() + offset.clone();
                                         let sum_prop = Prop::Size(sum_vec);
-                                        println!(">>>> Inserting sum_prop={:?}", sum_prop);
+                                        // println!(">>>> Inserting sum_prop={:?}", sum_prop);
                                         end_props.push(sum_prop);
                                         keep_prop_ids.insert(begin_prop.prop_id());
                                     },
@@ -438,7 +435,7 @@ impl Tween {
             animator.debug = self.debug;
 
             if self.debug {
-                println!("start = {:?} \nend   = {:?}", &animator.start_state.props, &animator.end_state.props);
+                println!("# start = {:?} \n# end   = {:?}", &animator.start_state.props, &animator.end_state.props);
             }
         }
 

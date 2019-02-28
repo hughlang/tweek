@@ -1,3 +1,5 @@
+/// Tweek acts as the coordinator when there are multiple tweens being animated with one or more timelines.
+///
 extern crate ggez;
 
 use std::rc::Rc;
@@ -12,6 +14,7 @@ use super::tween::*;
 pub type TweenRef = Rc<RefCell<Tween>>;
 pub type UserCommand = u32;
 
+/// The Playable trait provides support for basic animation updating and control
 pub trait Playable {
     fn play(&mut self);
 
@@ -87,7 +90,10 @@ impl TKState {
     }
 }
 
-
+/// This trait is implemented by ButtonView and other controls to conveniently handle mouse
+/// events in a game/animation runloop. The mutable TKState parameter allows the developer
+/// to arbitrarily add u32 values to specify that a specific action should be handled in
+/// another part of the code.
 pub trait TKResponder {
     fn handle_mouse_at(&mut self, _x: f32, _y: f32) -> bool {
         false
@@ -103,10 +109,8 @@ pub trait TKResponder {
 
 //-- Main -----------------------------------------------------------------------
 
-/// Tweek is the god class around here. It is meant to be the parent of all Tweens
-/// and the receiver of all notification events about animation status.
-/// The tween_db is an attempt to centralize ownership of Tweens in one place
-/// when using a Timeline. TBD
+/// Tweek acts as a coordinator when multiple tween animations are added to a Timeline
+/// for animation.
 pub struct Tweek {
     subscribers: Vec<Rc<Fn(TKEvent, &mut TKState) + 'static>>,
     timelines: Vec<Rc<RefCell<Timeline>>>,
@@ -148,19 +152,6 @@ impl Tweek {
 
 
     }
-
-    // Unused. Use register_tween instead
-    pub fn add_tween<'a>(&'a self, tween: &'a mut Tween) {
-        println!("add_tween for id={}", &tween.tween_id);
-        let subscribers = self.subscribers.clone();
-        tween.add_callback(move |e, g| {
-            println!("Tween callback: event={:?}", e);
-            for cb in subscribers.iter() {
-                (&*cb)(e, g);
-            }
-        });
-    }
-
 
 }
 

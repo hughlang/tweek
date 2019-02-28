@@ -1,4 +1,4 @@
-/// Basic views that conform to GGEZView, but are not required to implement TKResponder
+/// Basic views that conform to Displayable, but are not required to implement TKResponder
 ///
 ///
 extern crate ggez;

@@ -1,3 +1,6 @@
+/// A Timeline represents a group of Tween animations that each have a start and stop time in seconds
+/// in the overall timeline.
+
 extern crate ggez;
 
 use std::rc::Rc;
@@ -31,10 +34,9 @@ impl TweenRange {
 	}
 }
 
-
 //-- Main -----------------------------------------------------------------------
 
-/// This class provides a way of coordinating multiple Tweens for playback,
+/// This struct provides a way of coordinating multiple Tweens for playback,
 /// either starting at the same time or sequentially.
 /// See also: https://greensock.com/asdocs/com/greensock/TimelineLite.html
 pub struct Timeline {
@@ -151,45 +153,7 @@ impl Playable for Timeline {
 	#[allow(unused_mut)]
     fn tick(&mut self) -> Vec<TKEvent> {
 		println!("Timeline.tick is deprecated ###########################");
-        let mut events: Vec<TKEvent> = Vec::new();
-		// for (_, range) in &self.children {
-		// 	let elapsed = self.tl_start.elapsed().as_float_secs();
-		// 	if range.start <= elapsed && range.end > elapsed {
-		// 		let mut tween = range.tween.borrow_mut();
-		// 		match tween.state {
-		// 			TweenState::Idle | TweenState::Pending => {
-		// 				(&mut *tween).play();
-		// 			},
-		// 			_ => {
-		// 				let mut ticks = (&mut *tween).tick();
-		// 	            events.append(&mut ticks);
-		// 			}
-		// 		}
-		// 	} else {
-		// 		let mut tween = range.tween.borrow_mut();
-		// 		let mut ticks = (&mut *tween).tick();
-		// 		events.append(&mut ticks);
-		// 	}
-		// }
-
-		// // Now read the context for events
-		// for event in &events {
-		// 	match event {
-		// 		TKEvent::Completed(id) => {
-		// 			// Decide: repeat?
-		// 			println!("Completed={}", id);
-		// 			if let Some(_range) = &self.children.get(id) {
-
-		// 				// self.reset();
-		// 				// let mut tween = range.tween.borrow_mut();
-		// 				// (&mut *tween).reset();
-		// 			}
-
-		// 		}
-		// 		_ => (),
-		// 	}
-		// }
-		events
+		Vec::new()
 	}
 
     fn stop(&mut self) {

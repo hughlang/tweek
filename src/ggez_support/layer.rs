@@ -4,14 +4,13 @@
 ///
 extern crate ggez;
 
-use crate::core::*;
-
 use ggez::graphics::{self, DrawParam};
-use ggez::mint::{self};
+use crate::core::*;
 
 //-- Main -----------------------------------------------------------------------
 
-/// This also implements Tweenable
+/// This is a wrapper for the ggez properties that are tweenable. It is used as a convenient substitute
+/// for having to manage multiple tweenables per displayed asset.
 pub struct TweenLayer {
     pub frame: graphics::Rect,
     pub original: graphics::Rect,
@@ -32,8 +31,6 @@ impl TweenLayer {
     }
 }
 
-/// This is a wrapper for the ggez properties that are tweenable. It is used as a convenient substitute
-/// for having to manage multiple tweenables per displayed asset.
 impl Tweenable for TweenLayer {
     fn apply(&mut self, prop: &Prop) {
         match prop {

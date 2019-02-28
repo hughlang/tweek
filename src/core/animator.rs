@@ -9,7 +9,7 @@ use super::ease::*;
 /// An Animator represents state change from one UIState to another UIState state
 pub struct Animator {
     /// The id is a weird composite of the parent tween_id and the position within the animators vector.
-    /// Not important yet, but it's better to have a grouping differentiator in the future.
+    /// Currently, it is only used for debug printing to differentiate between Animator segments
     pub id: (usize, usize),
     pub start_state: UIState,
     pub end_state: UIState,
