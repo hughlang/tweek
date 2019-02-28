@@ -1,15 +1,15 @@
 
 
 
-###Animate square
+### Animate square
 ![Square transform](demos/square-transform-hd.gif)
 
-###Balloon bounce
-![Balloon bounce](balloon-bounce-hd.gif)
+### Balloon bounce
+![Balloon bounce](docs/balloon-bounce-hd.gif)
 
-###Rolling tile
-![Rolling tile](rolling-tile-hd.gif)
+### Rolling tile
+![Rolling tile](docs/rolling-tile-hd.gif)
 
-###Pink lines
-![Pink lines](pink-lines-hd.gif)
+### Pink lines
+![Pink lines](docs/pink-lines-hd.gif)
 
