@@ -48,13 +48,17 @@ impl DemoHelper {
 
         let item_id = 1;
         let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
+        let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), rect, graphics::WHITE)?;
+        item1.mesh = Some(mesh);
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
 
         let mut tween1 = Tween::with(item_id, &item1.layer)
             .to(vec![position(840.0, 200.0), size(120.0, 120.0), color(HexColors::Gold)])
             .duration(1.0)
             .ease(Ease::SineIn)
-            .repeat(8, 0.2);
+            .repeat(8, 0.2).yoyo()
+            .debug()
+            ;
 
         &tween1.play();
         item1.tween = Some(tween1);
@@ -63,7 +67,7 @@ impl DemoHelper {
 
     fn test_circle_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
-        let center_pt = Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
+        let center_pt = Point2{ x: screen_w / 2.0 - 100.0, y: screen_h / 2.0 };
 
         let item_id = 2;
         // Add a circle
@@ -72,11 +76,11 @@ impl DemoHelper {
         item2.layer.graphics.offset = Point2{x: 0.5, y: 0.5};
 
         let mut tween2 = Tween::with(item_id, &item2.layer)
-            .to(vec![size(200.0, 200.0), alpha(0.9)]).duration(3.0)
-            .to(vec![position(800.0, 90.0), size(100.0, 100.0), alpha(0.8)]).duration(0.25)
-            .to(vec![position(1000.0, 200.0), size(50.0, 50.0), alpha(0.6)]).duration(0.25)
-            .to(vec![position(650.0, 750.0), size(20.0, 20.0), alpha(0.23)]).duration(0.25)
-            .to(vec![position(400.0, 600.0), size(5.0, 5.0), alpha(0.0)]).duration(0.25)
+            .to(vec![size(200.0, 200.0), alpha(0.9)]).duration(4.0)
+            .to(vec![position(800.0, 90.0), size(100.0, 100.0), alpha(0.8)]).duration(0.2)
+            .to(vec![position(1000.0, 200.0), size(50.0, 50.0), alpha(0.7)]).duration(0.2)
+            .to(vec![position(650.0, 750.0), size(20.0, 20.0), alpha(0.6)]).duration(0.2)
+            .to(vec![position(400.0, 600.0), size(5.0, 5.0), alpha(0.2)]).duration(0.2)
             .repeat(-1, 2.0);
 
         &tween2.play();
@@ -118,7 +122,7 @@ impl DemoHelper {
         let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::HotPink);
 
-        let w = 600.0 as f64;
+        let w = 640.0 as f64;
         let h = 400.0 as f64;
         let mut tween1 = Tween::with(item_id, &item1.layer)
             .to(vec![size(w, 20.0)]).duration(1.0)

@@ -50,7 +50,7 @@ pub trait Tweenable {
 }
 ```
 
-And this is the [TweenLayer wrapper for ggez that implements Tweenable](https://github.com/wasm-network/tweek-rust/blob/master/src/ggez_support/base.rs). It reads and writes the values you specify.
+And this is the [TweenLayer wrapper for ggez that implements Tweenable](https://github.com/wasm-network/tweek-rust/blob/master/src/ggez_support/layer.rs). It reads and writes the values you specify.
 
 
 ### UI Components

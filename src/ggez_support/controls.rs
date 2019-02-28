@@ -120,7 +120,6 @@ impl Displayable for ButtonView {
             tween.tick();
             if let Some(update) = tween.update() {
                 self.layer.apply_updates(&update.props);
-                self.layer.redraw = true;
             }
         }
         Ok(())

@@ -113,9 +113,9 @@ impl Drop for Item {
     }
 }
 
+#[allow(dead_code)]
 impl Item {
 
-    #[allow(dead_code)]
     pub fn new(id: usize, shape: Shape) -> GameResult<Item> {
         let layer = match shape {
             Shape::Rectangle(rect) => {
@@ -150,7 +150,8 @@ impl Item {
         })
     }
 
-    #[allow(dead_code)]
+    /// This method is used for animation on a single Tweenable object and not a Timeline containing multiple
+    /// Tween objects.
     pub fn update(&mut self) -> GameResult {
         if let Some(tween) = &mut self.tween {
             tween.tick();
@@ -165,10 +166,8 @@ impl Item {
         Ok(())
     }
 
-    /// This is an experimental/temporary means of getting Tween updates.
-    /// The publishing of UIState updates may be handled by TKState in the
-    /// future.
-    #[allow(dead_code)]
+    /// This method is used for animation on a single Tweenable object and not a Timeline containing multiple
+    /// Tween objects.
     pub fn timeline_update(&mut self, tweek: &mut Tweek) -> GameResult {
         if let Some(update) = tweek.get_update(&self.id) {
             self.layer.apply_updates(&update.props);
@@ -176,7 +175,6 @@ impl Item {
         Ok(())
     }
 
-    #[allow(dead_code)]
     pub fn render(&mut self, ctx: &mut Context) -> GameResult {
         match self.shape {
             Shape::Circle(_, _) => {
@@ -209,14 +207,6 @@ impl Item {
             Shape::Rectangle(_) => {
                 let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.layer.frame, self.layer.graphics.color)?;
                 let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
-                // TODO:
-                // if let Some(mesh) = &self.mesh {
-                //     let _result = graphics::draw(ctx, mesh, self.layer.graphics);
-                // } else {
-                //     let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), self.layer.frame, self.layer.graphics.color)?;
-                //     let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
-                //     self.mesh = Some(mesh);
-                // }
             },
             Shape::Text(_) => {
                 match &self.text {

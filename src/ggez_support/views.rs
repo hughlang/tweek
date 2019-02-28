@@ -57,7 +57,6 @@ impl Displayable for LabelView {
             tween.tick();
             if let Some(update) = tween.update() {
                 self.layer.apply_updates(&update.props);
-                self.layer.redraw = true;
             }
         }
         Ok(())
@@ -103,7 +102,6 @@ impl Displayable for ImageView {
             tween.tick();
             if let Some(update) = tween.update() {
                 self.layer.apply_updates(&update.props);
-                self.layer.redraw = true;
             }
         }
         Ok(())

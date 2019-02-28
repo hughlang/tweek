@@ -1,8 +1,6 @@
-/// This file will contain various helpers that will make it easier to use Tweek
-/// in conjunction with ggez. Some ideas:
-/// * A progress/timeline widget that can display timeline status information
-/// * Buttons for play/pause/restart
-///
+/// The TweenLayer in ggez_support is a simple wrapper that makes ggez objects Tweenable.
+/// That means it provides support for the get_prop() and apply() methods which simply
+/// allow the framework to read and write values to graphical objects.
 ///
 extern crate ggez;
 
@@ -16,20 +14,20 @@ use ggez::mint::{self};
 /// This also implements Tweenable
 pub struct TweenLayer {
     pub frame: graphics::Rect,
+    pub original: graphics::Rect,
     pub graphics: DrawParam,
     pub animation: Option<Tween>,
     pub stroke: f32,
-    pub redraw: bool,
 }
 
 impl TweenLayer {
     pub fn new(frame: graphics::Rect, graphics: DrawParam) -> Self {
         TweenLayer {
             frame: frame,
+            original: frame.clone(),
             graphics: graphics,
             animation: None,
             stroke: 0.0,
-            redraw: false,
         }
     }
 }
@@ -47,15 +45,21 @@ impl Tweenable for TweenLayer {
             }
             Prop::Rotate(val) => self.graphics.rotation = val[0] as f32,
             Prop::Position(pos) => {
-                self.frame.x = pos[0] as f32;
-                self.frame.y = pos[1] as f32
+                // The new position should take into account the specified offset for the graphic,
+                // but only if it is between 0.0 and 1.0 for both x and y. You should not mess with
+                // the scale property of DrawParam during live animation.
+                let offset = self.graphics.offset;
+                if offset.x > 0.0 && offset.x <= 1.0 && offset.y > 0.0 && offset.y <= 1.0 {
+                    self.frame.x = pos[0] as f32 - offset.x * self.frame.w as f32;
+                    self.frame.y = pos[1] as f32 - offset.y * self.frame.h as f32;
+                } else {
+                    self.frame.x = pos[0] as f32;
+                    self.frame.y = pos[1] as f32;
+                }
             }
-            Prop::Size(v) => {
-                // let scale_x = v[0] as f32 / self.frame.w;
-                // let scale_y = v[1] as f32 / self.frame.h;
-                // self.graphics.scale = mint::Vector2{x: scale_x, y: scale_y};
-                self.frame.w = v[0] as f32;
-                self.frame.h = v[1] as f32
+            Prop::Size(size) => {
+                self.frame.w = size[0] as f32;
+                self.frame.h = size[1] as f32
             }
             _ => (),
         }
