@@ -19,7 +19,7 @@ use std::env;
 use std::path;
 use tweek::prelude::*;
 
-const STAGE_WIDTH: f32 = 900.0;
+const STAGE_WIDTH: f32 = 800.0;
 const STAGE_HEIGHT: f32 = 500.0;
 
 struct DemoHelper {}
@@ -53,10 +53,10 @@ impl DemoHelper {
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
 
         let mut tween1 = Tween::with(item_id, &item1.layer)
-            .to(vec![position(840.0, 200.0), size(120.0, 120.0), color(HexColors::Gold)])
+            .to(vec![position(draw_area.right() as f64 - 120.0, 400.0), size(120.0, 120.0), color(HexColors::Gold)])
             .duration(1.0)
-            .ease(Ease::SineIn)
-            .repeat(8, 0.2).yoyo()
+            .ease(Ease::SineInOut)
+            .repeat(9, 0.2).yoyo()
             // .debug()
             ;
 
@@ -77,10 +77,12 @@ impl DemoHelper {
 
         let mut tween2 = Tween::with(item_id, &item2.layer)
             .to(vec![size(200.0, 200.0), alpha(0.9)]).duration(4.0)
-            .to(vec![position(800.0, 90.0), size(100.0, 100.0), alpha(0.8)]).duration(0.2)
-            .to(vec![position(1000.0, 200.0), size(50.0, 50.0), alpha(0.7)]).duration(0.2)
-            .to(vec![position(650.0, 750.0), size(20.0, 20.0), alpha(0.6)]).duration(0.2)
-            .to(vec![position(400.0, 600.0), size(5.0, 5.0), alpha(0.2)]).duration(0.2)
+            .to(vec![position(700.0, draw_area.top() as f64 + 40.0), size(100.0, 100.0), alpha(0.8)]).duration(0.2)
+                        .ease(Ease::SineIn)
+
+            .to(vec![position(draw_area.right() as f64, 200.0), size(50.0, 50.0), alpha(0.7)]).duration(0.2)
+            .to(vec![position(650.0, draw_area.bottom() as f64), size(20.0, 20.0), alpha(0.6)]).duration(0.2)
+            .to(vec![position(400.0, 300.0), size(5.0, 5.0), alpha(0.2)]).duration(0.2)
             .repeat(-1, 2.0);
 
         &tween2.play();
@@ -93,7 +95,7 @@ impl DemoHelper {
 
         const ITEM_ID: usize = 3;
         let tile = graphics::Image::new(ctx, "/tile.png")?;
-        let rect = graphics::Rect::new(120.0, 300.0, 100.0, 100.0);
+        let rect = graphics::Rect::new(250.0, 400.0, 100.0, 100.0);
         let mut item3 = Item::new(ITEM_ID, Shape::Image(rect))?;
         item3.image = Some(tile);
         item3.layer.graphics.offset = Point2{x: 0.5, y: 0.5};
@@ -101,7 +103,7 @@ impl DemoHelper {
         println!("rotation={} offset={:?}", item3.layer.graphics.rotation, item3.layer.graphics.offset);
 
         let mut tween3 = Tween::with(ITEM_ID, &item3.layer)
-            .to(vec![shift_x(600.0), rotate(360.0)]).duration(3.5)
+            .to(vec![shift_x(600.0), rotate(360.0)]).duration(3.0)
             .ease(Ease::BounceOut)
             .repeat(5, 0.5)
             // .debug()
@@ -116,7 +118,7 @@ impl DemoHelper {
     fn test_rectangle_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
-        let rect = Rect::new(draw_area.x + 120.0, draw_area.y + 40.0, 20.0, 20.0);
+        let rect = Rect::new(draw_area.x + 80.0, draw_area.y, 20.0, 20.0);
 
         let item_id = 1;
         let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
@@ -126,14 +128,22 @@ impl DemoHelper {
         let h = 400.0 as f64;
         let mut tween1 = Tween::with(item_id, &item1.layer)
             .to(vec![size(w, 20.0)]).duration(1.0)
+                .ease(Ease::ElasticIn)
             .to(vec![size(20.0, 20.0), shift_x(w - 20.0)]).duration(1.0)
+                .ease(Ease::ElasticOut)
             .to(vec![size(20.0, h)]).duration(1.0)
+                .ease(Ease::BackIn)
             .to(vec![size(20.0, 20.0), shift_y(h - 20.0)]).duration(1.0)
+                .ease(Ease::BackOut)
             .to(vec![size(w, 20.0), shift_x(-w + 20.0)]).duration(1.0)
+                .ease(Ease::BounceIn)
             .to(vec![size(20.0, 20.0)]).duration(1.0)
+                .ease(Ease::BounceOut)
             .to(vec![size(20.0, h), shift_y(-h + 20.0)]).duration(1.0)
+                .ease(Ease::SineIn)
             .to(vec![size(20.0, 20.0)]).duration(1.0)
-            .repeat(4, 0.2)
+                .ease(Ease::SineOut)
+            .repeat(-1, 0.2)
             // .debug()
             ;
 
@@ -212,7 +222,7 @@ impl MainState {
         s.demo_list.push(Demo::Rectangle1);
 
         // Pick which demo to start with.
-        s.demo_index = 0;
+        s.demo_index = 3;
         let demo = s.demo_list[s.demo_index].clone();
         s.load_demo(ctx, &demo)?;
 
