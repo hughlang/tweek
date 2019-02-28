@@ -48,8 +48,6 @@ impl DemoHelper {
 
         let item_id = 1;
         let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
-        let mesh = graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), rect, graphics::WHITE)?;
-        item1.mesh = Some(mesh);
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
 
         let mut tween1 = Tween::with(item_id, &item1.layer)
@@ -57,7 +55,6 @@ impl DemoHelper {
             .duration(1.0)
             .ease(Ease::SineInOut)
             .repeat(9, 0.2).yoyo()
-            // .debug()
             ;
 
         &tween1.play();
