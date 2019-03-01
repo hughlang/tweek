@@ -7,7 +7,7 @@
 
 Hence, this project aspires to deliver the same level of power and simplicity to the Rust community. That's a very ambitious goal, given that Rust has a steep learning curve and can be very intimidating because of its ultra-strict rules and syntax. Moreover, graphical user interfaces in Rust are still being developed and many GUI frameworks are not ready to build on top of.
 
-However, the end game is quite clear to me. Rust is currently the language of choice when targeting WebAssembly (aka, Wasm) and Wasm-enabled browsers. Specifically, I'm talking about pure WebGL graphics and not a hybrid solution that requires HTML. When this is achieved, it will be possible to deliver the rich animations that work in nearly all browsers and bring back the "write once, run anywhere" vision.
+However, the endgame is quite clear to me. Rust is currently the language of choice when targeting WebAssembly (aka, Wasm) and Wasm-enabled browsers. Specifically, I'm talking about pure WebGL graphics and not a hybrid solution that requires HTML. When this is achieved, it will be possible to deliver the rich animations that work in nearly all browsers and bring back the "write once, run anywhere" vision.
 
 ## Examples
 There are several demos you can try out in the examples directory that showcase various animation scenarios. Conveniently, most of them are bundled into a small set of files where you can browse demos with the Next and Previous buttons. 
@@ -86,7 +86,7 @@ Naturally, these components also have Tweenable graphics, which provides "intern
 
 ### Performance
 
-* In release mode, frame rate is well over 120 fps. In debug mode, it is close to 60 fps, unless you are animating text.
+* In release mode, frame rate is well over 120 fps. In debug mode, it is close to 60 fps, unless you are animating text. As an alternative, you can render your text as images and import them. 
 
 
 

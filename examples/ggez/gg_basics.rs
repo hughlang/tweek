@@ -79,7 +79,7 @@ impl DemoHelper {
 
             .to(vec![position(draw_area.right() as f64, 200.0), size(50.0, 50.0), alpha(0.7)]).duration(0.2)
             .to(vec![position(650.0, draw_area.bottom() as f64), size(20.0, 20.0), alpha(0.6)]).duration(0.2)
-            .to(vec![position(400.0, 300.0), size(5.0, 5.0), alpha(0.2)]).duration(0.2)
+            .to(vec![position(400.0, 300.0), size(5.0, 5.0), alpha(0.2)]).duration(0.5)
             .repeat(-1, 2.0);
 
         &tween2.play();
@@ -218,7 +218,7 @@ impl MainState {
         s.demo_list.push(Demo::Rectangle1);
 
         // Pick which demo to start with.
-        s.demo_index = 3;
+        s.demo_index = 0;
         let demo = s.demo_list[s.demo_index].clone();
         s.load_demo(ctx, &demo)?;
 

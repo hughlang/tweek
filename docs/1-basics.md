@@ -16,7 +16,7 @@ This is the relevant code that creates a square and animates the position, size,
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
 
         let mut tween1 = Tween::with(item_id, &item1.layer)
-            .to(vec![position(draw_area.right() as f64 - 120.0, 400.0), size(120.0, 120.0), color(HexColors::Gold)])
+            .to(vec![position(900.0, 400.0), size(120.0, 120.0), color(HexColors::Gold)])
             .duration(1.0)
             .ease(Ease::SineInOut)
             .repeat(9, 0.2).yoyo()
