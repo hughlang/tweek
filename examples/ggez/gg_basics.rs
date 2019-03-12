@@ -51,7 +51,7 @@ impl DemoHelper {
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
 
         let mut tween1 = Tween::with(item_id, &item1.layer)
-            .to(vec![position(draw_area.right() as f64 - 120.0, 400.0), size(120.0, 120.0), color(HexColors::Gold)])
+            .to(&[position(draw_area.right() as f64 - 120.0, 400.0), size(120.0, 120.0), color(HexColors::Gold)])
             .duration(1.0)
             .ease(Ease::SineInOut)
             .repeat(9, 0.2).yoyo()
@@ -73,13 +73,13 @@ impl DemoHelper {
         item2.layer.graphics.offset = Point2{x: 0.5, y: 0.5};
 
         let mut tween2 = Tween::with(item_id, &item2.layer)
-            .to(vec![size(200.0, 200.0), alpha(0.9)]).duration(4.0)
-            .to(vec![position(700.0, draw_area.top() as f64 + 40.0), size(100.0, 100.0), alpha(0.8)]).duration(0.2)
+            .to(&[size(200.0, 200.0), alpha(0.9)]).duration(4.0)
+            .to(&[position(700.0, draw_area.top() as f64 + 40.0), size(100.0, 100.0), alpha(0.8)]).duration(0.2)
                         .ease(Ease::SineIn)
 
-            .to(vec![position(draw_area.right() as f64, 200.0), size(50.0, 50.0), alpha(0.7)]).duration(0.2)
-            .to(vec![position(650.0, draw_area.bottom() as f64), size(20.0, 20.0), alpha(0.6)]).duration(0.2)
-            .to(vec![position(400.0, 300.0), size(5.0, 5.0), alpha(0.2)]).duration(0.5)
+            .to(&[position(draw_area.right() as f64, 200.0), size(50.0, 50.0), alpha(0.7)]).duration(0.2)
+            .to(&[position(650.0, draw_area.bottom() as f64), size(20.0, 20.0), alpha(0.6)]).duration(0.2)
+            .to(&[position(400.0, 300.0), size(5.0, 5.0), alpha(0.2)]).duration(0.5)
             .repeat(-1, 2.0);
 
         &tween2.play();
@@ -98,7 +98,7 @@ impl DemoHelper {
         item3.layer.graphics.offset = Point2{x: 0.5, y: 0.5};
 
         let mut tween3 = Tween::with(ITEM_ID, &item3.layer)
-            .to(vec![shift_x(600.0), rotate(360.0)]).duration(3.0)
+            .to(&[shift_x(600.0), rotate(360.0)]).duration(3.0)
             .ease(Ease::BounceOut)
             .repeat(5, 0.5)
             // .debug()
@@ -123,21 +123,21 @@ impl DemoHelper {
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::HotPink);
 
         let mut tween1 = Tween::with(item_id, &item1.layer)
-            .to(vec![size(w, 20.0)]).duration(1.0)
+            .to(&[size(w, 20.0)]).duration(1.0)
                 .ease(Ease::ElasticIn)
-            .to(vec![size(20.0, 20.0), shift_x(w - 20.0)]).duration(1.0)
+            .to(&[size(20.0, 20.0), shift_x(w - 20.0)]).duration(1.0)
                 .ease(Ease::ElasticOut)
-            .to(vec![size(20.0, h)]).duration(1.0)
+            .to(&[size(20.0, h)]).duration(1.0)
                 .ease(Ease::BackIn)
-            .to(vec![size(20.0, 20.0), shift_y(h - 20.0)]).duration(1.0)
+            .to(&[size(20.0, 20.0), shift_y(h - 20.0)]).duration(1.0)
                 .ease(Ease::BackOut)
-            .to(vec![size(w, 20.0), shift_x(-w + 20.0)]).duration(1.0)
+            .to(&[size(w, 20.0), shift_x(-w + 20.0)]).duration(1.0)
                 .ease(Ease::BounceIn)
-            .to(vec![size(20.0, 20.0)]).duration(1.0)
+            .to(&[size(20.0, 20.0)]).duration(1.0)
                 .ease(Ease::BounceOut)
-            .to(vec![size(20.0, h), shift_y(-h + 20.0)]).duration(1.0)
+            .to(&[size(20.0, h), shift_y(-h + 20.0)]).duration(1.0)
                 .ease(Ease::SineIn)
-            .to(vec![size(20.0, 20.0)]).duration(1.0)
+            .to(&[size(20.0, 20.0)]).duration(1.0)
                 .ease(Ease::SineOut)
             .repeat(-1, 0.2)
             // .debug()

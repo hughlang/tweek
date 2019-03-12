@@ -52,7 +52,7 @@ impl ButtonView {
 
     // Probably not needed since the original props for the object are captured in the set_hover_animation method
     // and any similar ones in the future.
-    pub fn with_props(mut self, props: &Vec<Prop>) -> Self {
+    pub fn with_props(mut self, props: &[Prop]) -> Self {
         for prop in props {
             self.defaults.insert(prop.prop_id(), prop.clone());
         }
@@ -87,16 +87,16 @@ impl ButtonView {
     }
 
     pub fn get_defaults(&self) -> Vec<Prop> {
-        let mut props:Vec<Prop> = Vec::new();
+        let mut props: Vec<Prop> = Vec::new();
         for (_, v) in &self.defaults {
             props.push(v.clone());
         }
         props
     }
 
-    pub fn set_hover_animation(&mut self, props: Vec<Prop>, seconds: f64) {
-        for prop in &props {
-            let start_prop = self.layer.get_prop(&prop);
+    pub fn set_hover_animation(&mut self, props: &[Prop], seconds: f64) {
+        for prop in props {
+            let start_prop = self.layer.get_prop(prop);
             match start_prop {
                 Prop::None => {},
                 _ => {
@@ -104,7 +104,7 @@ impl ButtonView {
                 }
             }
         }
-        let transition = UITransition::new(props, seconds);
+        let transition = UITransition::new(props.to_vec(), seconds);
         self.hover_animation = Some(transition);
     }
 
@@ -174,7 +174,7 @@ impl TKResponder for ButtonView {
                     if let Some(transition) = &self.hover_animation {
                         if transition.seconds > 0.0 {
                             let mut tween = Tween::with(0, &self.layer)
-                                .to(transition.props.clone())
+                                .to(&transition.props)
                                 .duration(transition.seconds);
                             &tween.play();
                             self.layer.animation = Some(tween);

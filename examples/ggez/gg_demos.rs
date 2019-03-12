@@ -53,12 +53,13 @@ impl DemoHelper {
     fn build_dots_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
         let center_pt = mint::Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
-        let mut items: Vec<Item> = Vec::new();
-        let mut tweens: Vec<Tween> = Vec::new();
 
         let dot_radius = 10.0;
         let scene_radius = 96.0;
         let dot_count = 8;
+
+        let mut items: Vec<Item> = Vec::with_capacity(dot_count);
+        let mut tweens: Vec<Tween> = Vec::with_capacity(dot_count);
 
         for i in 0..dot_count {
             let item_id = i + 10 as usize;
@@ -70,7 +71,7 @@ impl DemoHelper {
             item1.layer.graphics.offset = mint::Point2{ x: center_pt.x, y: center_pt.y };
 
             let tween1 = Tween::with(item_id, &item1.layer)
-                .to(vec![rotate(360.0)])
+                .to(&[rotate(360.0)])
                 .duration(1.8)
                 .ease(Ease::SineInOut)
                 .repeat(-1, 0.8)
@@ -90,12 +91,12 @@ impl DemoHelper {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
         let center_pt = mint::Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
 
-        let mut items: Vec<Item> = Vec::new();
-        let mut tweens: Vec<Tween> = Vec::new();
-
         const LINE_WIDTH: f32 = 9.0;
         let line_count = 3;
         let line_length = 300.0;
+
+        let mut items: Vec<Item> = Vec::with_capacity(line_count);
+        let mut tweens: Vec<Tween> = Vec::with_capacity(line_count);
 
         for i in 0..line_count {
             let item_id = i as usize;
@@ -119,9 +120,9 @@ impl DemoHelper {
             let target = (120.0 + angle) as f64;
             let time = 2.0 as f64;
             let mut tween = Tween::with(item_id, &item.layer)
-                .to(vec![rotate(target), color(0x556B2F)]).duration(time)
-                .to(vec![rotate(target * 2.0), color(0x7FFFD4)]).duration(time)
-                .to(vec![rotate(target * 3.0), color(0xCD5C5C)]).duration(time)
+                .to(&[rotate(target), color(0x556B2F)]).duration(time)
+                .to(&[rotate(target * 2.0), color(0x7FFFD4)]).duration(time)
+                .to(&[rotate(target * 3.0), color(0xCD5C5C)]).duration(time)
                 .repeat(-1, 0.0)
                 .yoyo()
                 ;
@@ -139,10 +140,10 @@ impl DemoHelper {
     fn build_rocket_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
-        let mut items: Vec<Item> = Vec::new();
-        let mut tweens: Vec<Tween> = Vec::new();
-
         let rocket_count = 8;
+
+        let mut items: Vec<Item> = Vec::with_capacity(rocket_count);
+        let mut tweens: Vec<Tween> = Vec::with_capacity(rocket_count);
 
         let image = graphics::Image::new(ctx, "/rocket.png")?;
         let base_h = *&image.height() as f32;
@@ -166,7 +167,7 @@ impl DemoHelper {
             item.layer.graphics.rotation = angle.to_radians();
 
             let tween = Tween::with(item_id, &item.layer)
-                .to(vec![shift_x((screen_w + w).into())])
+                .to(&[shift_x((screen_w + w).into())])
                 .duration(1.8)
                 .ease(Ease::SineInOut)
                 .repeat(-1, 0.8)
@@ -186,14 +187,14 @@ impl DemoHelper {
     fn build_bars_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
-        let mut items: Vec<Item> = Vec::new();
-        let mut tweens: Vec<Tween> = Vec::new();
-
         const STAGE_WIDTH: f32 = 600.0;
         const STAGE_HEIGHT: f32 = 400.0;
         const BAR_HEIGHT: f32 = 20.0;
         let draw_area = Rect::new((screen_w - STAGE_WIDTH) / 2.0, 200.0, STAGE_WIDTH, STAGE_HEIGHT);
         let line_count = 12;
+
+        let mut items: Vec<Item> = Vec::with_capacity(line_count);
+        let mut tweens: Vec<Tween> = Vec::with_capacity(line_count);
 
         for i in 0..line_count {
             let item_id = i as usize;
@@ -205,7 +206,7 @@ impl DemoHelper {
             item.layer.graphics.color = Color::from_rgb_u32(HexColors::Orange);
 
             let tween = Tween::with(item_id, &item.layer)
-                .to(vec![size(draw_area.w as f64, BAR_HEIGHT as f64)])
+                .to(&[size(draw_area.w as f64, BAR_HEIGHT as f64)])
                 .duration(1.0)
                 .ease(Ease::SineOut)
                 .repeat(8, 0.2).yoyo()
@@ -229,11 +230,11 @@ impl DemoHelper {
     fn build_text_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
-        let mut items: Vec<Item> = Vec::new();
-        let mut tweens: Vec<Tween> = Vec::new();
+        let mut items: Vec<Item> = Vec::with_capacity(7);
+        let mut tweens: Vec<Tween> = Vec::with_capacity(7);
 
         let med_size = 20.0;
-        let lines: Vec<(String, f32)> = vec![
+        let lines: [(String, f32); 7] = [
             (String::from("Tweek: An animation kit for Rust"), 40.0),
             (String::from(" "), 40.0),
             (String::from("The name 'Tweek' originates from the word 'Tween', a term sometimes used in digital animation."), med_size),
@@ -263,7 +264,7 @@ impl DemoHelper {
 
             let move_y = (screen_h as f64 + content_height) * -1.0;
             let mut tween = Tween::with(item_id, &item.layer)
-                .to(vec![shift_y(move_y)]).duration(12.0)
+                .to(&[shift_y(move_y)]).duration(12.0)
                 .repeat(5, 0.5)
                 ;
 

@@ -52,7 +52,7 @@ impl StageHelper {
 
         let _font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
 
-        let mut buttons: Vec<ButtonView> = Vec::new();
+        let mut buttons: Vec<ButtonView> = Vec::with_capacity(3);
         let mut xpos = (screen_w - BAR_WIDTH)/2.0;
 
         let ypos = screen_h - 60.0;
@@ -94,7 +94,7 @@ impl StageHelper {
         let icon = graphics::Image::new(ctx, file.to_string())?;
         let mut button = ButtonView::new(frame).with_image(icon, 4.0);
         button.set_color(&graphics::Color::from_rgb_u32(0x999999));
-        button.set_hover_animation(vec![color(0xFF8920)], 0.1);
+        button.set_hover_animation(&[color(0xFF8920)], 0.1);
         Ok(button)
     }
 
@@ -103,8 +103,8 @@ impl StageHelper {
     /// without any repeats.
     fn build_timeline_1(_ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let mut ypos = 50.0 as f32;
-        let mut items: Vec<Item> = Vec::new();
-        let mut tweens: Vec<Tween> = Vec::new();
+        let mut items: Vec<Item> = Vec::with_capacity(4);
+        let mut tweens: Vec<Tween> = Vec::with_capacity(4);
         for i in 0..4 {
             let item_id = SQUARE_ITEM_ID + i as usize;
             let rect = graphics::Rect::new(50.0, ypos, 50.0, 50.0);
@@ -112,7 +112,7 @@ impl StageHelper {
             item1.layer.graphics.color = graphics::Color::from_rgb_u32(0x333333);
 
             let tween1 = Tween::with(item_id, &item1.layer)
-                .to(vec![position(400.0, ypos as f64), size(80.0, 80.0)])
+                .to(&[position(400.0, ypos as f64), size(80.0, 80.0)])
                 .duration(0.5)
                 .yoyo()
                 ;
@@ -137,8 +137,8 @@ impl StageHelper {
     /// This is a timeline with a single tween that repeats. A repeat_count of 1 means it
     /// play twice.
     fn build_timeline_2(_ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
-        let mut items: Vec<Item> = Vec::new();
-        let mut tweens: Vec<Tween> = Vec::new();
+        let mut items: Vec<Item> = Vec::with_capacity(1);
+        let mut tweens: Vec<Tween> = Vec::with_capacity(1);
         let mut ypos = 50.0 as f32;
 
         let rect = graphics::Rect::new(50.0, ypos, 50.0, 50.0);
@@ -156,10 +156,10 @@ impl StageHelper {
         // * Tween repeat (without yoyo) should repeat the number of times you specify
         // * Yoyo repeat should go back and forth smoothly based on repeat_count (default=1)
         let mut tween = Tween::with(SQUARE_ITEM_ID, &item1.layer)
-            .to(vec![shift_x(400.0), shift_x(200.0), alpha(0.2)]).duration(1.0)
-            .to(vec![shift_y(300.0), shift_x(-100.0), alpha(1.0)]).duration(0.5)
-            .to(vec![position(200.0, 200.0), alpha(1.0)]).duration(0.5)
-            .to(vec![size(200.0, 200.0)]).duration(1.0)
+            .to(&[shift_x(400.0), shift_x(200.0), alpha(0.2)]).duration(1.0)
+            .to(&[shift_y(300.0), shift_x(-100.0), alpha(1.0)]).duration(0.5)
+            .to(&[position(200.0, 200.0), alpha(1.0)]).duration(0.5)
+            .to(&[size(200.0, 200.0)]).duration(1.0)
             .repeat(1, 0.25)
             .yoyo()
             ;
@@ -178,8 +178,8 @@ impl StageHelper {
     ///---- 3 ----------------------------------------------------------------------
     /// play twice.
     fn build_timeline_3(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
-        let mut items: Vec<Item> = Vec::new();
-        let mut tweens: Vec<Tween> = Vec::new();
+        let mut items: Vec<Item> = Vec::with_capacity(1);
+        let mut tweens: Vec<Tween> = Vec::with_capacity(1);
         let mut ypos = 50.0 as f32;
 
         const TEXT_ITEM_ID: usize = 10;
@@ -191,7 +191,7 @@ impl StageHelper {
         item4.text = Some(text);
 
         let mut tween4 = Tween::with(TEXT_ITEM_ID, &item4.layer)
-            .to(vec![position(400.0, 20.0), alpha(0.2)])
+            .to(&[position(400.0, 20.0), alpha(0.2)])
             .duration(3.0);
         &tween4.play();
         item4.tween = Some(tween4);
@@ -212,10 +212,10 @@ impl StageHelper {
         // * Tween repeat (without yoyo) should repeat the number of times you specify
         // * Yoyo repeat should go back and forth smoothly based on repeat_count (default=1)
         let mut tween = Tween::with(SQUARE_ITEM_ID, &item1.layer)
-            .to(vec![shift_x(400.0), shift_x(200.0), alpha(0.2)]).duration(1.0)
-            .to(vec![shift_y(300.0), shift_x(-100.0), alpha(1.0)]).duration(0.5)
-            .to(vec![position(200.0, 200.0), alpha(1.0)]).duration(0.5)
-            .to(vec![size(200.0, 200.0)]).duration(1.0)
+            .to(&[shift_x(400.0), shift_x(200.0), alpha(0.2)]).duration(1.0)
+            .to(&[shift_y(300.0), shift_x(-100.0), alpha(1.0)]).duration(0.5)
+            .to(&[position(200.0, 200.0), alpha(1.0)]).duration(0.5)
+            .to(&[size(200.0, 200.0)]).duration(1.0)
             .repeat(1, 0.25)
             .yoyo()
             ;

@@ -27,7 +27,7 @@ The following is a simple collection of bars that start small and extend to the 
           item.layer.graphics.color = Color::from_rgb_u32(HexColors::Orange);
 
           let tween = Tween::with(item_id, &item.layer)
-              .to(vec![size(draw_area.w as f64, BAR_HEIGHT as f64)])
+              .to(&[size(draw_area.w as f64, BAR_HEIGHT as f64)])
               .duration(1.0)
               .ease(Ease::SineOut)
               .repeat(8, 0.2).yoyo()
@@ -62,7 +62,7 @@ This is a similar demo where a collection of dots rotate around in a circle in a
         item1.layer.graphics.offset = mint::Point2{ x: center_pt.x, y: center_pt.y };
 
         let tween1 = Tween::with(item_id, &item1.layer)
-            .to(vec![rotate(360.0)])
+            .to(&[rotate(360.0)])
             .duration(1.8)
             .ease(Ease::SineInOut)
             .repeat(-1, 0.8)

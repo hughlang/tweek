@@ -61,7 +61,7 @@ pub fn rotate(degrees: f64) -> Prop {
 pub trait Tweenable {
     fn get_prop(&self, prop: &Prop) -> Prop;
     fn apply(&mut self, prop: &Prop);
-    fn apply_updates(&mut self, props: &Vec<Prop>) {
+    fn apply_updates(&mut self, props: &[Prop]) {
         for prop in props {
             self.apply(prop);
         }
@@ -101,7 +101,7 @@ pub struct Tween {
     pub play_count: u32,
     pub repeat_count: i32, // -1 = forever. If > 0, decrement after each play until 0
     pub repeat_delay: Duration,
-	pub loop_forever: bool,
+    pub loop_forever: bool,
     pub time_scale: f64,
     pub anim_type: AnimType,
     pub debug: bool,
@@ -315,7 +315,7 @@ impl Tween {
     /// Function which reads the list of "to" props and finds the matching ones
     /// already saved in self.start_props to make sure that start_props and
     /// end_props have matching Prop types in the same order.
-    pub fn to(mut self, props:Vec<Prop>) -> Self {
+    pub fn to(mut self, props: &[Prop]) -> Self {
 
         // Some of the props may include offset types like Shift. These need to be separated
         // from the basic props
@@ -323,7 +323,7 @@ impl Tween {
         let mut sum_shift = Point2D::zero();
         let mut sum_resize = Frame2D::zero();
 
-        for prop in &props {
+        for prop in props {
             match prop {
                 Prop::Shift(v2) => {
                     sum_shift += v2.clone();

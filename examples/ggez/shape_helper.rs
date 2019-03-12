@@ -62,7 +62,7 @@ impl ShapeHelper {
 
         let font = graphics::Font::new(ctx, "/Roboto-Bold.ttf")?;
 
-        let mut buttons: Vec<ButtonView> = Vec::new();
+        let mut buttons: Vec<ButtonView> = Vec::with_capacity(2);
         let xpos = 30.0;
         let ypos = 30.0;
 
@@ -71,7 +71,7 @@ impl ShapeHelper {
         let mut button = ButtonView::new(frame).with_title("Previous");
         button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&Color::from_rgb_u32(HexColors::Tan));
-        button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
+        button.set_hover_animation(&[color(HexColors::Chocolate)], 0.1);
         button.set_onclick(move |_action, tk| {
             tk.commands.push(PREV_COMMAND);
         });
@@ -87,7 +87,7 @@ impl ShapeHelper {
         let mut button = ButtonView::new(frame).with_title("Next");
         button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&Color::from_rgb_u32(HexColors::Tan));
-        button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
+        button.set_hover_animation(&[color(HexColors::Chocolate)], 0.1);
         button.set_onclick(move |_action, state| {
             state.commands.push(NEXT_COMMAND);
         });
@@ -196,7 +196,7 @@ impl Item {
                 }
             },
             Shape::Line(_, _, _) => {
-                let points = vec![
+                let points = [
                     mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y},
                     mint::Point2{x: self.layer.frame.x + self.layer.frame.w, y: self.layer.frame.y},
                 ];

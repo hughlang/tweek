@@ -34,7 +34,7 @@ This is a sample of a simple animation that increases the size of rectangle grap
     item.layer.graphics.color = Color::from_rgb_u32(HexColors::Orange);
 
     let tween = Tween::with(item_id, &item.layer)
-        .to(vec![size(target_width as f64, 20.0)])
+        .to(&[size(target_width as f64, 20.0)])
         .duration(1.0)
         .ease(Ease::SineOut)
         .repeat(8, 0.2).yoyo()
@@ -54,7 +54,7 @@ Tweek provides a trait called *Tweenable* that makes it simple to add support fo
 pub trait Tweenable {
     fn get_prop(&self, prop: &Prop) -> Prop;
     fn apply(&mut self, prop: &Prop);
-    fn apply_updates(&mut self, props: &Vec<Prop>) {
+    fn apply_updates(&mut self, props: &[Prop]) {
         for prop in props {
             self.apply(prop);
         }
@@ -75,7 +75,7 @@ Naturally, these components also have Tweenable graphics, which provides "intern
         let mut button = ButtonView::new(frame).with_title("Previous");
         button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&Color::from_rgb_u32(HexColors::Tan));
-        button.set_hover_animation(vec![color(HexColors::Chocolate)], 0.1);
+        button.set_hover_animation(&[color(HexColors::Chocolate)], 0.1);
         button.set_onclick(move |_action, tk| {
             tk.commands.push(PREV_COMMAND);
         });
