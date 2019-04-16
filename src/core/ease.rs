@@ -250,7 +250,7 @@ impl Ease {
                 }
             },
             _ => {
-                println!("************* Not implemented: {:?}", self);
+                log::warn!("Not implemented: {:?}", self);
                 0.0
             },
         }

@@ -158,7 +158,7 @@ impl Item {
             if let Some(update) = tween.get_update(&self.id) {
                 self.layer.apply_updates(&update.props);
                 if let Some(offset) = update.offset {
-                    // println!("{:?}", offset);
+                    log::trace!("{:?}", offset);
                     self.layer.graphics.offset = Point2{x: offset.x as f32, y: offset.y as f32};
                 }
             }
@@ -200,7 +200,7 @@ impl Item {
                     mint::Point2{x: self.layer.frame.x, y: self.layer.frame.y},
                     mint::Point2{x: self.layer.frame.x + self.layer.frame.w, y: self.layer.frame.y},
                 ];
-                // println!("pt1={:?} // pt2={:?}", points[0], points[1]);
+                log::trace!("pt1={:?} // pt2={:?}", points[0], points[1]);
                 let mesh = graphics::Mesh::new_line(ctx, &points, self.layer.stroke, self.layer.graphics.color)?;
                 let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
             }

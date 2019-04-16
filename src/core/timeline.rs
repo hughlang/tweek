@@ -81,7 +81,7 @@ impl Timeline {
 				let total_secs = (&*tween).total_time();
 				range.start = start;
 				range.end = range.start + total_secs;
-				println!("align start={} end={}", range.start, range.end);
+				log::debug!("align start={} end={}", range.start, range.end);
 
 				match alignment {
 					TweenAlign::Normal => {
@@ -105,7 +105,7 @@ impl Timeline {
 				let total_secs = (&mut *tween).total_time();
 				range.start = index as f64 * offset;
 				range.end = range.start + total_secs;
-				println!("stagger start={} end={}", range.start, range.end);
+				log::debug!("stagger start={} end={}", range.start, range.end);
 			}
 		}
 		self
@@ -118,7 +118,7 @@ impl Timeline {
     }
 
 	pub fn notify(&mut self, event:&TKEvent) {
-		println!("notify event={:?}", event);
+		log::debug!("notify event={:?}", event);
 	}
 
 	pub fn total_time(&self) -> f64 {
@@ -141,7 +141,7 @@ impl Playable for Timeline {
 			let elapsed = self.tl_start.elapsed().as_float_secs();
 			if range.start <= elapsed && range.end > elapsed {
 
-				println!("timeline play id={}", id);
+				log::debug!("timeline play id={}", id);
 				let mut tween = range.tween.borrow_mut();
 				(&mut *tween).play();
 				// range.state = TweenState::Running;
@@ -152,7 +152,7 @@ impl Playable for Timeline {
 	// Deprecate this to a no-op
 	#[allow(unused_mut)]
     fn tick(&mut self) -> Vec<TKEvent> {
-		println!("Timeline.tick is deprecated ###########################");
+		log::warn!("Timeline.tick is deprecated");
 		Vec::new()
 	}
 

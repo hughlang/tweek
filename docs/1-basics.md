@@ -3,7 +3,7 @@
 This is a quick overview of some examples that show how to animate tweens. Conveniently, all of these can be found in a single file: [/examples/ggez/gg_basics.rs](https://github.com/wasm-network/tweek-rust/blob/master/examples/ggez/gg_basics.rs), which lets you browse and test various examples. If you have Rust nightly installed, you can run these examples like this:
 
 ```
-cargo run --bin basics 
+cargo run --example basics 
 ```
 
 
@@ -106,13 +106,12 @@ And this is a sequence of chained animations that takes a square block and draws
             .to(&[size(20.0, 20.0)]).duration(1.0)
                 .ease(Ease::SineOut)
             .repeat(-1, 0.2)
-            // .debug()
             ;
 
         &tween1.play();
 ```
 
-Note that you can add the `debug()` call to any Tween or manually set `tween.debug = true` to tell the system to print verbose information about the internal workings of the Tween animation. 
+Note, that you can enable `debug` level logs for the crate to print verbose information about the internal workings of the Tween animation (i.e. `RUST_LOG="tweek=debug"` for [env_logger](https://docs.rs/env_logger)).
 
 ![Pink lines](demos/pink-lines-hd.gif)
 

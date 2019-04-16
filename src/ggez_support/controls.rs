@@ -154,7 +154,7 @@ impl TKResponder for ButtonView {
 
     fn handle_mouse_up(&mut self, x: f32, y: f32, state: &mut TKState) -> bool {
         if self.layer.frame.contains(mint::Point2{ x, y }) {
-            println!("Click at: x={} y={}", x, y);
+            log::debug!("Click at: x={} y={}", x, y);
             if let Some(cb) = &mut self.onclick {
                 // TODO: modify state or pass new information
                 (&mut *cb)(TKAction::Click, state);
@@ -189,7 +189,7 @@ impl TKResponder for ButtonView {
         } else {
             match self.mouse_state {
                 MouseState::Hover => {
-                    // println!("Mouse out at: x={} y={}", x, y);
+                    log::trace!("Mouse out at: x={} y={}", x, y);
                     self.layer.apply_updates(&self.get_defaults());
                     self.mouse_state = MouseState::None;
                     self.layer.animation = None;

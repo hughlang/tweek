@@ -61,7 +61,7 @@ impl StageHelper {
         let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
         let mut button = StageHelper::make_player_button(ctx, "/icons/md-skip-backward.png", frame)?;
         button.set_onclick(move |_action, _state| {
-            // println!("Button onclick: action={:?}", action);
+            log::trace!("Button onclick: action={:?}", _action);
 
         });
         buttons.push(button);
@@ -71,7 +71,7 @@ impl StageHelper {
         let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
         let mut button = StageHelper::make_player_button(ctx, "/icons/ios-play.png", frame)?;
         button.set_onclick(move |_action, tk| {
-            // println!("Button onclick: action={:?}", _action);
+            log::trace!("Button onclick: action={:?}", _action);
             tk.requests.push(TKRequest::Play);
 
         });
@@ -82,7 +82,7 @@ impl StageHelper {
         let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
         let mut button = StageHelper::make_player_button(ctx, "/icons/md-skip-forward.png", frame)?;
         button.set_onclick(move |_action, _state| {
-            // println!("Button onclick: action={:?}", action);
+            log::trace!("Button onclick: action={:?}", _action);
 
         });
         buttons.push(button);
@@ -327,7 +327,7 @@ impl event::EventHandler for MainState {
 
         // self.frames += 1;
         // if (self.frames % 10) == 0 {
-        //     println!("FPS: {}", ggez::timer::fps(ctx));
+        //     log::debug!("FPS: {}", ggez::timer::fps(ctx));
         // }
 
         // timer::yield_now();
@@ -342,7 +342,7 @@ impl event::EventHandler for MainState {
         x: f32,
         y: f32,
     ) {
-        println!("Mouse down at: x={} y={}", x, y);
+        log::debug!("Mouse down at: x={} y={}", x, y);
     }
 
     /// A mouse button was released
@@ -376,6 +376,9 @@ impl event::EventHandler for MainState {
 }
 
 pub fn main() -> GameResult {
+    std::env::set_var("RUST_LOG", "main=debug,tweek=debug");
+    env_logger::init();
+
     let resource_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
         let mut path = path::PathBuf::from(manifest_dir);
         path.push("resources");
@@ -395,7 +398,7 @@ pub fn main() -> GameResult {
 
     let (ctx, events_loop) = &mut cb.build()?;
 
-    println!("HIDPI: {}", graphics::os_hidpi_factor(ctx));
+    log::debug!("HIDPI: {}", graphics::os_hidpi_factor(ctx));
 
     let game = &mut MainState::new(ctx)?;
     event::run(ctx, events_loop, game)

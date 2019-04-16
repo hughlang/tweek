@@ -7,7 +7,7 @@ These examples are all found within the file: [/examples/ggez/gg_demos.rs](https
 If you have Rust nightly installed, you can run these examples like this:
 
 ```
-cargo run --bin demos 
+cargo run --example demos 
 ```
 
 

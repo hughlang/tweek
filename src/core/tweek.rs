@@ -132,7 +132,7 @@ impl Tweek {
     /// This method should be called by a Timeline that wants to receive callbacks from
     /// Tweek.
     pub fn add_subscriber<C>(&mut self, cb: C) where C: Fn(TKEvent, &mut TKState) + 'static {
-        println!("Adding subscriber");
+        log::debug!("Adding subscriber");
         self.subscribers.push(Rc::new(cb));
     }
 
@@ -144,7 +144,7 @@ impl Tweek {
         let subscribers = self.subscribers.clone();
         // let timelines = self.timelines.
         tween.add_callback(move |e, g| {
-            println!("Tween callback: event={:?}", e);
+            log::debug!("Tween callback: event={:?}", e);
             for cb in subscribers.iter() {
                 (&*cb)(e, g);
             }

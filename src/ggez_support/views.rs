@@ -70,7 +70,7 @@ impl Displayable for LabelView {
     fn render_inside(&mut self, rect: &graphics::Rect, ctx: &mut Context) -> GameResult {
         let (width, height) = self.text.dimensions(ctx);
         let pt = Point2{x: rect.x + (rect.w - width as f32)/2.0 , y: rect.y + (rect.h - height as f32)/2.0 };
-        // println!("inside={:?} // dest={:?}", rect,  pt);
+        log::trace!("inside={:?} // dest={:?}", rect,  pt);
         let _result = graphics::draw(ctx, &self.text, self.layer.graphics.dest(pt));
         Ok(())
     }

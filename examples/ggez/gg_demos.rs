@@ -126,7 +126,6 @@ impl DemoHelper {
                 .repeat(-1, 0.0)
                 .yoyo()
                 ;
-            // tween.debug = true;
             items.push(item);
             tweens.push(tween)
         }
@@ -160,7 +159,7 @@ impl DemoHelper {
             let h = base_h * scale;
             let angle = 0.0 as f32;
             let rect = Rect::new(x, y, w, h);
-            println!("new rocket={:?}", rect);
+            log::debug!("new rocket={:?}", rect);
             let mut item = Item::new(item_id, Shape::Image(rect))?;
             item.image = Some(image.clone());
             // item.layer.graphics.offset = na::Point2::new(0.5, 0.5);
@@ -171,7 +170,6 @@ impl DemoHelper {
                 .duration(1.8)
                 .ease(Ease::SineInOut)
                 .repeat(-1, 0.8)
-                // .debug()
                 ;
             items.push(item);
             tweens.push(tween)
@@ -210,7 +208,6 @@ impl DemoHelper {
                 .duration(1.0)
                 .ease(Ease::SineOut)
                 .repeat(8, 0.2).yoyo()
-                // .debug()
                 ;
             items.push(item);
             tweens.push(tween)
@@ -458,7 +455,7 @@ impl event::EventHandler for MainState {
         if self.show_fps {
             self.frames += 1;
             if (self.frames % 20) == 0 {
-                println!("FPS: {}", ggez::timer::fps(ctx));
+                log::debug!("FPS: {}", ggez::timer::fps(ctx));
             }
         }
 
@@ -486,7 +483,7 @@ impl event::EventHandler for MainState {
         x: f32,
         y: f32,
     ) {
-        println!("Mouse down at: x={} y={}", x, y);
+        log::debug!("Mouse down at: x={} y={}", x, y);
     }
 
     /// A mouse button was released
@@ -518,6 +515,9 @@ impl event::EventHandler for MainState {
 }
 
 pub fn main() -> GameResult {
+    std::env::set_var("RUST_LOG", "main=debug,tweek=debug");
+    env_logger::init();
+
     let resource_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
         let mut path = path::PathBuf::from(manifest_dir);
         path.push("resources");
@@ -534,7 +534,7 @@ pub fn main() -> GameResult {
 
     let (ctx, events_loop) = &mut cb.build()?;
 
-    // println!("HIDPI: {}", graphics::os_hidpi_factor(ctx));
+    log::trace!("HIDPI: {}", graphics::os_hidpi_factor(ctx));
 
     let game = &mut MainState::new(ctx)?;
     event::run(ctx, events_loop, game)

@@ -12,8 +12,8 @@ However, the endgame is quite clear to me. Rust is currently the language of cho
 ## Examples
 There are several demos you can try out in the examples directory that showcase various animation scenarios. Conveniently, most of them are bundled into a small set of files where you can browse demos with the Next and Previous buttons. 
 
-* cargo run --bin basics
-* cargo run --bin demos
+* cargo run --example basics
+* cargo run --example demos
 
 To learn more about these examples, please also read the following pages:
 

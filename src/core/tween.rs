@@ -104,7 +104,6 @@ pub struct Tween {
     pub loop_forever: bool,
     pub time_scale: f64,
     pub anim_type: AnimType,
-    pub debug: bool,
     start_props: Vec<Prop>,
     animators: Vec<Animator>,
     callbacks: Vec<Box<FnMut(TKEvent, &mut TKState) + 'static>>, // Don't need this.
@@ -126,7 +125,6 @@ impl Tween {
             loop_forever: false,
             time_scale: 1.0,
             anim_type: AnimType::Normal,
-            debug: false,
             start_props: Vec::new(),
             animators: Vec::new(),
             callbacks: Vec::new(),
@@ -160,7 +158,7 @@ impl Tween {
     /// animation created.
     pub fn duration(mut self, secs: f64) -> Self {
         if self.animators.is_empty() {
-            println!("####### No animators created yet. Use the to() function first to add Props");
+            log::warn!("No animators created yet. Use the to() function first to add Props");
             return self;
         }
         // this gets recalculated on play() so the logic isn't too important
@@ -220,14 +218,6 @@ impl Tween {
         self
     }
 
-    /// The debug option enables more println logging to the console.
-    /// Currently it's too verbose, since each Animator instance will print ALL interpolation data.
-    /// May consider adding configurable debug levels in the future.
-    pub fn debug(mut self) -> Self {
-        self.debug = true;
-        self
-    }
-
     /// Run the animation to the end and reverses direction.
     /// Each playback in either direction counts as one play_count.
     pub fn yoyo(mut self) -> Self {
@@ -240,7 +230,7 @@ impl Tween {
     // Usage:
     // tween2.add_callback(move |e, ctx| {
     //     // This does nothing yet
-    //     println!("OG callback: event={:?}", e);
+    //     log::debug!("OG callback: event={:?}", e);
     //     match e {
     //         TKEvent::Completed(_id) => {
     //             ctx.events.push(e);
@@ -337,15 +327,11 @@ impl Tween {
             }
         }
         if sum_shift != Point2D::zero() {
-            if self.debug {
-                println!(">>>> Add prop: sum_shift={:?}", sum_shift);
-            }
+            log::debug!(">>>> Add prop: sum_shift={:?}", sum_shift);
             cleaned_props.push(Prop::Shift(sum_shift));
         }
         if sum_resize != Frame2D::zero() {
-            if self.debug {
-                println!(">>>> Add prop: sum_resize={:?}", sum_resize);
-            }
+            log::debug!(">>>> Add prop: sum_resize={:?}", sum_resize);
             cleaned_props.push(Prop::Resize(sum_resize));
         }
 
@@ -369,7 +355,7 @@ impl Tween {
             begin_props = first.start_state.props.clone();
         }
 
-        println!("[{}] -------------------------------------------------------------------------------", self.tween_id);
+        log::debug!("[{}] -------------------------------------------------------------------------------", self.tween_id);
         for animator in &mut self.animators {
             if !&end_props.is_empty() {
                 animator.start_state.props = end_props.clone();
@@ -399,7 +385,7 @@ impl Tween {
                                     Prop::Position(pos) => {
                                         let sum_vec = pos.clone() + offset.clone();
                                         let sum_prop = Prop::Position(sum_vec);
-                                        // println!(">>>> Inserting sum_prop={:?}", sum_prop);
+                                        log::trace!(">>>> Inserting sum_prop={:?}", sum_prop);
                                         end_props.push(sum_prop);
                                         keep_prop_ids.insert(begin_prop.prop_id());
                                     },
@@ -412,7 +398,7 @@ impl Tween {
                                     Prop::Size(size) => {
                                         let sum_vec = size.clone() + offset.clone();
                                         let sum_prop = Prop::Size(sum_vec);
-                                        // println!(">>>> Inserting sum_prop={:?}", sum_prop);
+                                        log::trace!(">>>> Inserting sum_prop={:?}", sum_prop);
                                         end_props.push(sum_prop);
                                         keep_prop_ids.insert(begin_prop.prop_id());
                                     },
@@ -432,11 +418,8 @@ impl Tween {
             // And then overwrite begin_props with end_props for the next loop.
             animator.end_state.props = end_props.clone();
             begin_props = end_props.clone();
-            animator.debug = self.debug;
 
-            if self.debug {
-                println!("# start = {:?} \n# end   = {:?}", &animator.start_state.props, &animator.end_state.props);
-            }
+            log::debug!("# start = {:?} \n# end   = {:?}", &animator.start_state.props, &animator.end_state.props);
         }
 
         // Step 2:
@@ -458,7 +441,7 @@ impl Tween {
                 end_props.push(prop.clone());
             }
             animator.end_state.props = end_props;
-            println!("start: {:?} \nend  : {:?}", &animator.start_state.props, &animator.end_state.props);
+            log::debug!("start: {:?} \nend  : {:?}", &animator.start_state.props, &animator.end_state.props);
         }
 
     }
@@ -561,8 +544,6 @@ impl Eq for Tween {}
 
 impl Drop for Tween {
     fn drop(&mut self) {
-        if self.debug {
-            println!("Dropping: {}", self.tween_id);
-        }
+        log::debug!("Dropping: {}", self.tween_id);
     }
 }

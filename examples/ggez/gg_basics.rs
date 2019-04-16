@@ -101,7 +101,6 @@ impl DemoHelper {
             .to(&[shift_x(600.0), rotate(360.0)]).duration(3.0)
             .ease(Ease::BounceOut)
             .repeat(5, 0.5)
-            // .debug()
             ;
 
         &tween3.play();
@@ -140,7 +139,6 @@ impl DemoHelper {
             .to(&[size(20.0, 20.0)]).duration(1.0)
                 .ease(Ease::SineOut)
             .repeat(-1, 0.2)
-            // .debug()
             ;
 
         &tween1.play();
@@ -292,7 +290,7 @@ impl event::EventHandler for MainState {
         if self.show_fps {
             self.frames += 1;
             if (self.frames % 20) == 0 {
-                println!("FPS: {}", ggez::timer::fps(ctx));
+                log::debug!("FPS: {}", ggez::timer::fps(ctx));
             }
         }
 
@@ -317,7 +315,7 @@ impl event::EventHandler for MainState {
         x: f32,
         y: f32,
     ) {
-        println!("Mouse down at: x={} y={}", x, y);
+        log::debug!("Mouse down at: x={} y={}", x, y);
     }
 
     /// A mouse button was released
@@ -347,6 +345,9 @@ impl event::EventHandler for MainState {
 }
 
 pub fn main() -> GameResult {
+    std::env::set_var("RUST_LOG", "main=debug,tweek=debug");
+    env_logger::init();
+
     let resource_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
         let mut path = path::PathBuf::from(manifest_dir);
         path.push("resources");
@@ -354,7 +355,7 @@ pub fn main() -> GameResult {
     } else {
         path::PathBuf::from("./resources")
     };
-    // println!("HIDPI: {}", graphics::os_hidpi_factor(ctx));
+    // log::debug!("HIDPI: {}", graphics::os_hidpi_factor(ctx));
 
     let cb = ContextBuilder::new("tween0", "tweenkit")
         .window_setup(conf::WindowSetup::default().title("Tween Basics"))
