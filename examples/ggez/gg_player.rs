@@ -17,8 +17,8 @@ extern crate tweek;
 use ggez::conf;
 use ggez::event::{self, MouseButton};
 use ggez::graphics::{self, Color};
+use ggez::input::mouse;
 use ggez::{Context, ContextBuilder, GameResult};
-use ggez::input::{mouse};
 // use ggez::mint;
 
 use std::env;
@@ -53,16 +53,16 @@ impl StageHelper {
         let _font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
 
         let mut buttons: Vec<ButtonView> = Vec::with_capacity(3);
-        let mut xpos = (screen_w - BAR_WIDTH)/2.0;
+        let mut xpos = (screen_w - BAR_WIDTH) / 2.0;
 
         let ypos = screen_h - 60.0;
 
         // ---- Skip Back ---------------------
         let frame = graphics::Rect::new(xpos, ypos, BUTTON_WIDTH, 32.0);
-        let mut button = StageHelper::make_player_button(ctx, "/icons/md-skip-backward.png", frame)?;
+        let mut button =
+            StageHelper::make_player_button(ctx, "/icons/md-skip-backward.png", frame)?;
         button.set_onclick(move |_action, _state| {
             log::trace!("Button onclick: action={:?}", _action);
-
         });
         buttons.push(button);
 
@@ -73,7 +73,6 @@ impl StageHelper {
         button.set_onclick(move |_action, tk| {
             log::trace!("Button onclick: action={:?}", _action);
             tk.requests.push(TKRequest::Play);
-
         });
         buttons.push(button);
 
@@ -83,14 +82,17 @@ impl StageHelper {
         let mut button = StageHelper::make_player_button(ctx, "/icons/md-skip-forward.png", frame)?;
         button.set_onclick(move |_action, _state| {
             log::trace!("Button onclick: action={:?}", _action);
-
         });
         buttons.push(button);
 
         Ok(buttons)
     }
 
-    fn make_player_button(ctx: &mut Context, file: &str, frame: graphics::Rect) -> GameResult<ButtonView> {
+    fn make_player_button(
+        ctx: &mut Context,
+        file: &str,
+        frame: graphics::Rect,
+    ) -> GameResult<ButtonView> {
         let icon = graphics::Image::new(ctx, file.to_string())?;
         let mut button = ButtonView::new(frame).with_image(icon, 4.0);
         button.set_color(&graphics::Color::from_rgb_u32(0x999999));
@@ -114,8 +116,7 @@ impl StageHelper {
             let tween1 = Tween::with(item_id, &item1.layer)
                 .to(&[position(400.0, ypos as f64), size(80.0, 80.0)])
                 .duration(0.5)
-                .yoyo()
-                ;
+                .yoyo();
             ypos += 120.0;
             items.push(item1);
             tweens.push(tween1)
@@ -128,8 +129,7 @@ impl StageHelper {
         // while the default behavior is to run them all simultaneously.
         let timeline = Timeline::add(tweens)
             // .align(TweenAlign::Sequence)
-            .stagger(0.2)
-            ;
+            .stagger(0.2);
         Ok((timeline, items))
     }
 
@@ -156,23 +156,23 @@ impl StageHelper {
         // * Tween repeat (without yoyo) should repeat the number of times you specify
         // * Yoyo repeat should go back and forth smoothly based on repeat_count (default=1)
         let mut tween = Tween::with(SQUARE_ITEM_ID, &item1.layer)
-            .to(&[shift_x(400.0), shift_x(200.0), alpha(0.2)]).duration(1.0)
-            .to(&[shift_y(300.0), shift_x(-100.0), alpha(1.0)]).duration(0.5)
-            .to(&[position(200.0, 200.0), alpha(1.0)]).duration(0.5)
-            .to(&[size(200.0, 200.0)]).duration(1.0)
+            .to(&[shift_x(400.0), shift_x(200.0), alpha(0.2)])
+            .duration(1.0)
+            .to(&[shift_y(300.0), shift_x(-100.0), alpha(1.0)])
+            .duration(0.5)
+            .to(&[position(200.0, 200.0), alpha(1.0)])
+            .duration(0.5)
+            .to(&[size(200.0, 200.0)])
+            .duration(1.0)
             .repeat(1, 0.25)
-            .yoyo()
-            ;
+            .yoyo();
 
         tweens.push(tween);
 
         items.push(item1);
 
-        let timeline = Timeline::add(tweens)
-            .align(TweenAlign::Sequence)
-            ;
+        let timeline = Timeline::add(tweens).align(TweenAlign::Sequence);
         Ok((timeline, items))
-
     }
 
     ///---- 3 ----------------------------------------------------------------------
@@ -196,7 +196,6 @@ impl StageHelper {
         &tween4.play();
         item4.tween = Some(tween4);
 
-
         let rect = graphics::Rect::new(50.0, ypos, 50.0, 50.0);
         let mut item1 = Item::new(SQUARE_ITEM_ID, Shape::Rectangle(rect))?;
         item1.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
@@ -212,25 +211,24 @@ impl StageHelper {
         // * Tween repeat (without yoyo) should repeat the number of times you specify
         // * Yoyo repeat should go back and forth smoothly based on repeat_count (default=1)
         let mut tween = Tween::with(SQUARE_ITEM_ID, &item1.layer)
-            .to(&[shift_x(400.0), shift_x(200.0), alpha(0.2)]).duration(1.0)
-            .to(&[shift_y(300.0), shift_x(-100.0), alpha(1.0)]).duration(0.5)
-            .to(&[position(200.0, 200.0), alpha(1.0)]).duration(0.5)
-            .to(&[size(200.0, 200.0)]).duration(1.0)
+            .to(&[shift_x(400.0), shift_x(200.0), alpha(0.2)])
+            .duration(1.0)
+            .to(&[shift_y(300.0), shift_x(-100.0), alpha(1.0)])
+            .duration(0.5)
+            .to(&[position(200.0, 200.0), alpha(1.0)])
+            .duration(0.5)
+            .to(&[size(200.0, 200.0)])
+            .duration(1.0)
             .repeat(1, 0.25)
-            .yoyo()
-            ;
+            .yoyo();
 
         tweens.push(tween);
 
         items.push(item1);
 
-        let timeline = Timeline::add(tweens)
-            .align(TweenAlign::Sequence)
-            ;
+        let timeline = Timeline::add(tweens).align(TweenAlign::Sequence);
         Ok((timeline, items))
-
     }
-
 }
 
 /// ##########################################################################################
@@ -253,7 +251,7 @@ impl MainState {
         let screen_h = ctx.conf.window_mode.height;
 
         let ypos = screen_h - 90.0;
-        let xpos = (screen_w - BAR_WIDTH)/2.0;
+        let xpos = (screen_w - BAR_WIDTH) / 2.0;
 
         // Create progress bar
         let frame = graphics::Rect::new(xpos, ypos, BAR_WIDTH, 4.0);
@@ -284,12 +282,10 @@ impl MainState {
         };
         Ok(s)
     }
-
 }
 
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-
         // This should be called here at the beginning of each run loop. It is responsible for
         // coordinating and all timeline and tween updates. The mutable TKState parameter is used to
         // store and share events and requests among all of the structs that implement TimelineAware.
@@ -355,9 +351,7 @@ impl event::EventHandler for MainState {
     ) {
         for button in &mut self.buttons {
             let _did_click = button.handle_mouse_up(_x, _y, &mut self.tk_state);
-
         }
-
     }
 
     /// The mouse was moved; it provides both absolute x and y coordinates in the window,
@@ -371,7 +365,6 @@ impl event::EventHandler for MainState {
             }
             // control.render(ctx)?;
         }
-
     }
 }
 
@@ -397,8 +390,6 @@ pub fn main() -> GameResult {
         .add_resource_path(resource_dir);
 
     let (ctx, events_loop) = &mut cb.build()?;
-
-    log::debug!("HIDPI: {}", graphics::os_hidpi_factor(ctx));
 
     let game = &mut MainState::new(ctx)?;
     event::run(ctx, events_loop, game)

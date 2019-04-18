@@ -3,8 +3,8 @@
 ///
 use cgmath::*;
 
-use super::property::*;
 use super::ease::*;
+use super::property::*;
 
 /// An Animator represents state change from one UIState to another UIState state
 pub struct Animator {
@@ -56,20 +56,31 @@ impl Animator {
         if time_scale > 0.0 {
             progress = playhead / self.seconds * time_scale;
         } else {
-            progress =  1.0 - playhead / self.seconds * time_scale.abs();
+            progress = 1.0 - playhead / self.seconds * time_scale.abs();
         }
         let ratio = self.ease.clone().get_ratio(progress as f32);
         progress = ratio as f64;
 
         for (i, prop) in self.start_state.props.iter().enumerate() {
-            if prop ==  &self.end_state.props[i] {
-                log::trace!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);
+            if prop == &self.end_state.props[i] {
+                log::trace!(
+                    "Unchanged start={:?} end={:?}",
+                    prop,
+                    &self.end_state.props[i]
+                );
                 props.push(prop.clone());
                 continue;
             }
             let current = Animator::interpolate(prop, &self.end_state.props[i], progress);
 
-            log::debug!("[{}.{}] from={:?} to={:?} >>> now={:?}", self.id.0, self.id.1, prop, &self.end_state.props[i], current);
+            log::debug!(
+                "[{}.{}] from={:?} to={:?} >>> now={:?}",
+                self.id.0,
+                self.id.1,
+                prop,
+                &self.end_state.props[i],
+                current
+            );
 
             props.push(current);
         }
@@ -80,7 +91,9 @@ impl Animator {
 
     /// Given two Props of same type, calculate the interpolated state
     fn interpolate(initial: &Prop, target: &Prop, scale: f64) -> Prop {
-        if initial.prop_id() != target.prop_id() { return initial.clone() }
+        if initial.prop_id() != target.prop_id() {
+            return initial.clone();
+        }
 
         let result = match initial {
             Prop::Alpha(v1) => {
@@ -88,36 +101,33 @@ impl Animator {
                 let out = v1.lerp(*v2, scale);
                 log::trace!("Interpolated to: {}", out[0]);
                 Prop::Alpha(out)
-
-            },
+            }
             Prop::Color(m1) => {
                 let m2 = unwrap_to!(target => Prop::Color);
                 let out = m1.lerp(*m2, scale as f32);
                 log::trace!("Interpolated to: r={} g={} b={}", out[0], out[1], out[2]);
                 Prop::Color(out)
-            },
+            }
             Prop::Position(m1) => {
                 let m2 = unwrap_to!(target => Prop::Position);
                 let out = m1.lerp(*m2, scale);
                 log::trace!("Interpolated to: x={} y={}", out[0], out[1]);
                 Prop::Position(out)
-            },
+            }
             Prop::Rotate(v1) => {
                 let v2 = unwrap_to!(target => Prop::Rotate);
                 let out = v1.lerp(*v2, scale);
                 log::trace!("Interpolated to: {}", out[0]);
                 Prop::Rotate(out)
-
-            },
+            }
             Prop::Size(v1) => {
                 let v2 = unwrap_to!(target => Prop::Size);
                 let out = v1.lerp(*v2, scale);
                 log::trace!("Interpolated to: {}", out[0]);
                 Prop::Size(out)
-            },
+            }
             _ => Prop::None,
         };
-
 
         return result;
     }

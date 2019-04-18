@@ -25,7 +25,7 @@ This is the relevant code that creates a square and animates the position, size,
         &tween1.play();
 ```
 
-Note that the `to()` function above accepts a vector of functions that define what visual properties  will change during the specified duration. In this case, the *position*, *size*, and *color* are affected.
+Note that the `to()` function above accepts a vector of functions that define what visual properties will change during the specified duration. In this case, the *position*, *size*, and *color* are affected.
 
 ![Square transform](demos/square-transform-hd.gif)
 
@@ -55,7 +55,7 @@ Note that the `repeat(-1, 2.0)` function call at the end specifies that it shoul
 
 ![Balloon bounce](demos/balloon-bounce-hd.gif)
 
-## Rolling tile
+## Rolling image
 Here, we have an image loaded from the file system and rotated on its center axis while moving to the right. It uses the BounceOut ease to finish off the animation. 
 
 ```rust

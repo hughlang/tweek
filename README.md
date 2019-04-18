@@ -73,7 +73,6 @@ Naturally, these components also have Tweenable graphics, which provides "intern
 
 ```rust
         let mut button = ButtonView::new(frame).with_title("Previous");
-        button.set_font(&font, &18.0, &Color::from_rgb_u32(0xFFFFFF));
         button.set_color(&Color::from_rgb_u32(HexColors::Tan));
         button.set_hover_animation(&[color(HexColors::Chocolate)], 0.1);
         button.set_onclick(move |_action, tk| {

@@ -1,6 +1,5 @@
 /// Easing formulas courtesy of GreenSock AS3 TweenLite code
 /// See also: https://greensock.com/gsap-as, https://greensock.com/standard-license
-
 use std::f32::consts::PI;
 
 const PERIOD: f32 = 0.3;
@@ -26,16 +25,16 @@ pub enum Ease {
     ElasticOut,
     ElasticInOut,
     // ***** The following are not supported yet. *****
-    QuadIn,   // power1
+    QuadIn, // power1
     QuadOut,
     QuadInOut,
-    CubicIn,  // power2
+    CubicIn, // power2
     CubicOut,
     CubicInOut,
-    QuartIn,  // power3 / quart
+    QuartIn, // power3 / quart
     QuartOut,
     QuartInOut,
-    QuintIn,  // power4 / strong
+    QuintIn, // power4 / strong
     QuintOut,
     QuintInOut,
     CircIn,
@@ -55,15 +54,15 @@ impl Ease {
             Ease::SineIn => {
                 // AS3: -Math.cos(p * _HALF_PI) + 1;
                 -1.0 * (p * PI / 2.0).cos() + 1.0
-            },
+            }
             Ease::SineOut => {
                 // AS3: Math.sin(p * _HALF_PI);
                 (p * PI / 2.0).sin()
-            },
+            }
             Ease::SineInOut => {
                 // AS3: -0.5 * (Math.cos(Math.PI * p) - 1);
                 -0.5 * ((PI * p).cos() - 1.0)
-            },
+            }
             Ease::ExpoIn => {
                 // AS3: Math.pow(2, 10 * (p - 1)) - 0.001;
                 2.0_f32.powf(10.0 * (p - 1.0)) - 0.001
@@ -91,7 +90,7 @@ impl Ease {
                 let overshoot = 1.70158;
                 let x = p - 1.0;
                 return x * x * ((overshoot + 1.0) * x + overshoot) + 1.0;
-            },
+            }
             Ease::BackInOut => {
                 // AS3: ((p*=2) < 1) ? 0.5 * p * p * ((overshoot + 1) * p - overshoot) : 0.5 * ((p -= 2) * p * ((overshoot + 1) * p + overshoot) + 2)
                 let overshoot = 1.70158 * 1.525;
@@ -102,19 +101,19 @@ impl Ease {
                     let y = x - 2.0;
                     return y * y * ((overshoot + 1.0) * y + overshoot) + 2.0;
                 }
-            },
+            }
             Ease::BounceIn => {
                 /*  AS3:
-                    if ((p = 1 - p) < 1 / 2.75) {
-                        return 1 - (7.5625 * p * p);
-                    } else if (p < 2 / 2.75) {
-                        return 1 - (7.5625 * (p -= 1.5 / 2.75) * p + .75);
-                    } else if (p < 2.5 / 2.75) {
-                        return 1 - (7.5625 * (p -= 2.25 / 2.75) * p + .9375);
-                    } else {
-                        return 1 - (7.5625 * (p -= 2.625 / 2.75) * p + .984375);
-                    }
-                 */
+                   if ((p = 1 - p) < 1 / 2.75) {
+                       return 1 - (7.5625 * p * p);
+                   } else if (p < 2 / 2.75) {
+                       return 1 - (7.5625 * (p -= 1.5 / 2.75) * p + .75);
+                   } else if (p < 2.5 / 2.75) {
+                       return 1 - (7.5625 * (p -= 2.25 / 2.75) * p + .9375);
+                   } else {
+                       return 1 - (7.5625 * (p -= 2.625 / 2.75) * p + .984375);
+                   }
+                */
                 // let x = self.bounce_time(p);
                 let mut p = 1.0 - p;
                 if p < 1.0 / 2.75 {
@@ -129,7 +128,7 @@ impl Ease {
                     p -= 2.625 / 2.75;
                     return 1.0 - (7.5625 * p * p + 0.984375);
                 }
-            },
+            }
             Ease::BounceOut => {
                 /* AS3:
                     if (p < 1 / 2.75) {
@@ -155,7 +154,7 @@ impl Ease {
                     p -= 2.625 / 2.75;
                     return 7.5625 * p * p + 0.984375;
                 }
-            },
+            }
             Ease::BounceInOut => {
                 /* AS3:
                     var invert:Boolean;
@@ -202,19 +201,19 @@ impl Ease {
                 } else {
                     return p * 0.5 + 0.5;
                 }
-            },
+            }
             Ease::ElasticIn => {
                 /* AS3:
-                    _p1 = amplitude || 1;
-                    _p2 = period || 0.3;
-                    _p3 = _p2 / _2PI * (Math.asin(1 / _p1) || 0);
+                   _p1 = amplitude || 1;
+                   _p2 = period || 0.3;
+                   _p3 = _p2 / _2PI * (Math.asin(1 / _p1) || 0);
 
-                    -(_p1 * Math.pow(2, 10 * (p -= 1)) * Math.sin( (p - _p3) * _2PI / _p2 ));
-                 */
+                   -(_p1 * Math.pow(2, 10 * (p -= 1)) * Math.sin( (p - _p3) * _2PI / _p2 ));
+                */
                 let curve = PERIOD / PI_2 * (1.0 / AMPLITUDE).asin();
                 let p = p - 1.0;
                 return -(AMPLITUDE * 2.0_f32.powf(10.0 * p) * (p - curve) * PI_2 / PERIOD).sin();
-            },
+            }
             Ease::ElasticOut => {
                 /* AS3:
                     _p1 = amplitude || 1;
@@ -224,8 +223,9 @@ impl Ease {
                     _p1 * Math.pow(2, -10 * p) * Math.sin( (p - _p3) * _2PI / _p2 ) + 1;
                 */
                 let curve = PERIOD / PI_2 * (1.0 / AMPLITUDE).asin();
-                return AMPLITUDE * 2.0_f32.powf(-10.0 * p) * ((p - curve) * PI_2 / PERIOD).sin() + 1.0;
-            },
+                return AMPLITUDE * 2.0_f32.powf(-10.0 * p) * ((p - curve) * PI_2 / PERIOD).sin()
+                    + 1.0;
+            }
             Ease::ElasticInOut => {
                 /*
                     _p1 = amplitude || 1;
@@ -243,18 +243,22 @@ impl Ease {
 
                 if p < 1.0 {
                     p -= 1.0;
-                    return -0.5 * (AMPLITUDE * 2.0_f32.powf(10.0 * p)) * ((p - curve) * PI_2 / period).sin();
+                    return -0.5
+                        * (AMPLITUDE * 2.0_f32.powf(10.0 * p))
+                        * ((p - curve) * PI_2 / period).sin();
                 } else {
                     p -= 1.0;
-                    return AMPLITUDE * 2.0_f32.powf(-10.0 * p) * ((p - curve) * PI_2 / period).sin() * 0.5 + 1.0;
+                    return AMPLITUDE
+                        * 2.0_f32.powf(-10.0 * p)
+                        * ((p - curve) * PI_2 / period).sin()
+                        * 0.5
+                        + 1.0;
                 }
-            },
+            }
             _ => {
                 log::warn!("Not implemented: {:?}", self);
                 0.0
-            },
+            }
         }
-
     }
-
 }

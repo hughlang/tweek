@@ -1,5 +1,1 @@
-pub use crate::{
-    core::*,
-    ggez_support::*,
-};
-
+pub use crate::{core::*, ggez_support::*};

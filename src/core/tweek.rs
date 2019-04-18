@@ -2,8 +2,8 @@
 ///
 extern crate ggez;
 
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use super::property::*;
 use super::timeline::*;
@@ -28,16 +28,13 @@ pub trait Playable {
     // fn seek(&mut self, pos: f64);
 }
 
-
 /// This is an experimental trait with the intention of passing around a mutable TKState
 /// which other code can use.
 ///
 pub trait TimelineAware {
     // fn tk_play(&mut self, ctx: &mut TKState);
     fn update(&mut self, ctx: &mut TKState);
-
 }
-
 
 #[derive(Copy, Clone, Debug)]
 pub enum TKEvent {
@@ -45,11 +42,11 @@ pub enum TKEvent {
     Completed(usize),
     Pause(usize),
     Play(usize),
-	// case pending
-	// case running
-	// case idle
-	// case cancelled
-	// case completed
+    // case pending
+    // case running
+    // case idle
+    // case cancelled
+    // case completed
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -64,7 +61,6 @@ pub enum TKRequest {
     Pause,
     Reverse,
     SkipForward,
-
 }
 
 pub struct TKState {
@@ -75,6 +71,8 @@ pub struct TKState {
     pub requests: Vec<TKRequest>,
     /// user defined u32 values that can be used for any purpose.
     pub commands: Vec<UserCommand>,
+    pub click_target: Option<usize>,
+    pub row_target: Option<usize>,
 }
 
 impl TKState {
@@ -86,26 +84,11 @@ impl TKState {
             events: Vec::new(),
             requests: Vec::new(),
             commands: Vec::new(),
+            click_target: None,
+            row_target: None,
         }
     }
 }
-
-/// This trait is implemented by ButtonView and other controls to conveniently handle mouse
-/// events in a game/animation runloop. The mutable TKState parameter allows the developer
-/// to arbitrarily add u32 values to specify that a specific action should be handled in
-/// another part of the code.
-pub trait TKResponder {
-    fn handle_mouse_at(&mut self, _x: f32, _y: f32) -> bool {
-        false
-    }
-    fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
-        false
-    }
-    fn handle_mouse_up(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
-        false
-    }
-}
-
 
 //-- Main -----------------------------------------------------------------------
 
@@ -131,7 +114,10 @@ impl Tweek {
     /// See: https://www.ralfj.de/projects/rust-101/part12.html
     /// This method should be called by a Timeline that wants to receive callbacks from
     /// Tweek.
-    pub fn add_subscriber<C>(&mut self, cb: C) where C: Fn(TKEvent, &mut TKState) + 'static {
+    pub fn add_subscriber<C>(&mut self, cb: C)
+    where
+        C: Fn(TKEvent, &mut TKState) + 'static,
+    {
         log::debug!("Adding subscriber");
         self.subscribers.push(Rc::new(cb));
     }
@@ -149,19 +135,16 @@ impl Tweek {
                 (&*cb)(e, g);
             }
         });
-
-
     }
-
 }
 
 impl Playable for Tweek {
-	fn play(&mut self) {
+    fn play(&mut self) {
         for tl in &self.timelines {
             let mut timeline = tl.borrow_mut();
             (&mut *timeline).play();
         }
-	}
+    }
 
     fn tick(&mut self) -> Vec<TKEvent> {
         let mut events: Vec<TKEvent> = Vec::new();
@@ -171,28 +154,28 @@ impl Playable for Tweek {
             events.append(&mut ticks);
         }
         events
-	}
+    }
 
     fn stop(&mut self) {
         for tl in &self.timelines {
             let mut timeline = tl.borrow_mut();
             (&mut *timeline).stop();
         }
-	}
+    }
 
     fn pause(&mut self) {
         for tl in &self.timelines {
             let mut timeline = tl.borrow_mut();
             (&mut *timeline).pause();
         }
-	}
+    }
 
-	fn reset(&mut self) {
+    fn reset(&mut self) {
         for tl in &self.timelines {
             let mut timeline = tl.borrow_mut();
             (&mut *timeline).reset();
         }
-	}
+    }
 
     fn get_update(&mut self, id: &usize) -> Option<UIState> {
         for tl in &self.timelines {
@@ -205,9 +188,7 @@ impl Playable for Tweek {
     }
 }
 impl TimelineAware for Tweek {
-
     fn update(&mut self, ctx: &mut TKState) {
-
         if ctx.requests.is_empty() {
             ctx.events.clear();
             for tl in &self.timelines {
@@ -222,7 +203,7 @@ impl TimelineAware for Tweek {
                             let mut timeline = tl.borrow_mut();
                             (&mut *timeline).reset();
                         }
-                    },
+                    }
                     _ => (),
                 }
             }
@@ -230,4 +211,3 @@ impl TimelineAware for Tweek {
         }
     }
 }
-

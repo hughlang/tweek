@@ -3,14 +3,14 @@ extern crate ggez;
 extern crate uuid;
 
 use cgmath::*;
-use std::{collections::HashSet};
-use std::{time::{Duration,Instant}};
+use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
+use std::time::{Duration, Instant};
 use uuid::Uuid;
 
-use super::property::*;
 use super::animator::*;
 use super::ease::*;
+use super::property::*;
 use super::tweek::*;
 
 //-- Helpers -----------------------------------------------------------------------
@@ -69,13 +69,13 @@ pub trait Tweenable {
 }
 
 /// The TweenState represents the animation state machine.
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum TweenState {
-    Pending, // the initial state before play begins
-    Running, // when play starts
-    Idle,    // after play has completed and waiting for next instruction
-    Cancelled,  // not in use
-    Finishing,  // final state that allows one last update call to deliver tween end_state props
+    Pending,   // the initial state before play begins
+    Running,   // when play starts
+    Idle,      // after play has completed and waiting for next instruction
+    Cancelled, // not in use
+    Finishing, // final state that allows one last update call to deliver tween end_state props
     Completed,
 }
 
@@ -84,7 +84,6 @@ pub enum AnimType {
     Normal,
     Yoyo,
 }
-
 
 //-- Main -----------------------------------------------------------------------
 
@@ -141,13 +140,32 @@ impl Tween {
         for prop in prop_list {
             let start_prop = tweenable.get_prop(&prop);
             match start_prop {
-                Prop::None => {},
+                Prop::None => {}
                 _ => {
                     tween.start_props.push(start_prop);
                 }
             }
         }
         tween
+    }
+
+    /// Static helper method to get the initial props for any Tweenable object
+    /// This is particularly useful for GUI structs that implement Displayable trait.
+    /// Examples: buttons, list boxes, text fields, etc.
+    /// Usage:  Tween::load_props(button.layer);
+    pub fn load_props(tweenable: &Tweenable) -> Vec<Prop> {
+        let mut results: Vec<Prop> = Vec::new();
+        let prop_list = Prop::get_prop_list();
+        for prop in prop_list {
+            let start_prop = tweenable.get_prop(&prop);
+            match start_prop {
+                Prop::None => {}
+                _ => {
+                    results.push(start_prop);
+                }
+            }
+        }
+        results
     }
 
     /// The duration function can be chained after target Props have been added using
@@ -204,7 +222,7 @@ impl Tween {
     pub fn anchor(mut self, x: f64, y: f64) -> Self {
         if self.animators.len() > 0 {
             if let Some(animator) = self.animators.last_mut() {
-                animator.offset = Some(Point2D::new(x , y));
+                animator.offset = Some(Point2D::new(x, y));
             }
         }
         self
@@ -223,7 +241,10 @@ impl Tween {
     pub fn yoyo(mut self) -> Self {
         self.anim_type = AnimType::Yoyo;
         // TODO: if repeat_count is forever, this will force it to 1.
-        if self.repeat_count < 1 { self.repeat_count = 1 }
+        // FIXME: Let's remove the -1 option and add a loop_forever bool to prevent confusion.
+        if self.repeat_count == 0 {
+            self.repeat_count = 1
+        }
         self
     }
 
@@ -238,7 +259,10 @@ impl Tween {
     //         _ => (),
     //     }
     // });
-    pub fn add_callback<C>(&mut self, cb: C) where C: FnMut(TKEvent, &mut TKState) + 'static {
+    pub fn add_callback<C>(&mut self, cb: C)
+    where
+        C: FnMut(TKEvent, &mut TKState) + 'static,
+    {
         self.callbacks.push(Box::new(cb));
     }
 
@@ -255,8 +279,9 @@ impl Tween {
             return time + self.delay_s.as_float_secs();
         }
 
-        let total = time + self.delay_s.as_float_secs() +
-             (self.repeat_count as f64) * (time + self.repeat_delay.as_float_secs());
+        let total = time
+            + self.delay_s.as_float_secs()
+            + (self.repeat_count as f64) * (time + self.repeat_delay.as_float_secs());
 
         total
     }
@@ -286,7 +311,7 @@ impl Tween {
                         }
                     }
                 }
-            },
+            }
             TweenState::Finishing => {
                 if let Some(animator) = self.animators.last_mut() {
                     self.state = TweenState::Completed;
@@ -297,7 +322,7 @@ impl Tween {
                     }
                 }
             }
-            _ => ()
+            _ => (),
         }
         None
     }
@@ -306,7 +331,6 @@ impl Tween {
     /// already saved in self.start_props to make sure that start_props and
     /// end_props have matching Prop types in the same order.
     pub fn to(mut self, props: &[Prop]) -> Self {
-
         // Some of the props may include offset types like Shift. These need to be separated
         // from the basic props
         let mut cleaned_props: Vec<Prop> = Vec::new();
@@ -317,13 +341,13 @@ impl Tween {
             match prop {
                 Prop::Shift(v2) => {
                     sum_shift += v2.clone();
-                },
+                }
                 Prop::Resize(v2) => {
                     sum_resize += v2.clone();
-                },
+                }
                 _ => {
                     cleaned_props.push(prop.clone());
-                },
+                }
             }
         }
         if sum_shift != Point2D::zero() {
@@ -335,18 +359,20 @@ impl Tween {
             cleaned_props.push(Prop::Resize(sum_resize));
         }
 
-        let animator = Animator::create(&(self.tween_id, self.animators.len()), &self.start_props, &cleaned_props);
+        let animator = Animator::create(
+            &(self.tween_id, self.animators.len()),
+            &self.start_props,
+            &cleaned_props,
+        );
         self.animators.push(animator);
         self
     }
-
 
     /// An awkward but necessary function to align all the start and end props in
     /// all animators so that they have matching props in the same order.
     /// This is necessary to support the chaining of to() functions to arbitrarily
     /// create a sequence of animations in a single Tween
     fn sync_animators(&mut self) {
-
         let mut keep_prop_ids: HashSet<u32> = HashSet::new();
         let mut begin_props: Vec<Prop> = Vec::new();
         let mut end_props: Vec<Prop> = Vec::new();
@@ -355,7 +381,10 @@ impl Tween {
             begin_props = first.start_state.props.clone();
         }
 
-        log::debug!("[{}] -------------------------------------------------------------------------------", self.tween_id);
+        log::debug!(
+            "[{}] -------------------------------------------------------------------------------",
+            self.tween_id
+        );
         for animator in &mut self.animators {
             if !&end_props.is_empty() {
                 animator.start_state.props = end_props.clone();
@@ -370,12 +399,19 @@ impl Tween {
             // c) Copy unchanged prop from start_state.props to end_state.props
 
             for begin_prop in begin_props {
-                let mut iter = animator.end_state.props.iter_mut().filter(|x| x.prop_id() == begin_prop.prop_id());
+                let mut iter = animator
+                    .end_state
+                    .props
+                    .iter_mut()
+                    .filter(|x| x.prop_id() == begin_prop.prop_id());
                 if let Some(end_prop) = iter.next() {
                     end_props.push(end_prop.clone());
                     keep_prop_ids.insert(begin_prop.prop_id());
                 } else {
-                    let mut iter = animator.end_state.props.iter_mut()
+                    let mut iter = animator
+                        .end_state
+                        .props
+                        .iter_mut()
                         .filter(|x| x.lookup_parent_prop().prop_id() == begin_prop.prop_id());
                     if let Some(end_prop) = iter.next() {
                         match end_prop {
@@ -388,10 +424,10 @@ impl Tween {
                                         log::trace!(">>>> Inserting sum_prop={:?}", sum_prop);
                                         end_props.push(sum_prop);
                                         keep_prop_ids.insert(begin_prop.prop_id());
-                                    },
+                                    }
                                     _ => (),
                                 }
-                            },
+                            }
                             Prop::Resize(offset) => {
                                 // calculate offset from begin_prop
                                 match begin_prop {
@@ -401,17 +437,16 @@ impl Tween {
                                         log::trace!(">>>> Inserting sum_prop={:?}", sum_prop);
                                         end_props.push(sum_prop);
                                         keep_prop_ids.insert(begin_prop.prop_id());
-                                    },
+                                    }
                                     _ => (),
                                 }
-                            },
+                            }
                             _ => (),
                         }
                     } else {
                         end_props.push(begin_prop.clone());
                     }
                 }
-
             }
 
             // Now, the end_props should be matching the list of start_state.props, so we can save that.
@@ -419,7 +454,11 @@ impl Tween {
             animator.end_state.props = end_props.clone();
             begin_props = end_props.clone();
 
-            log::debug!("# start = {:?} \n# end   = {:?}", &animator.start_state.props, &animator.end_state.props);
+            log::debug!(
+                "# start = {:?} \n# end   = {:?}",
+                &animator.start_state.props,
+                &animator.end_state.props
+            );
         }
 
         // Step 2:
@@ -428,27 +467,37 @@ impl Tween {
         // props that have been mutated across all animators.
         for animator in &mut self.animators {
             // TODO: Implement FromIterator or whatever to make this less complex.
-            let mut iter = animator.start_state.props.iter_mut().filter(|x| keep_prop_ids.contains(&x.prop_id()));
+            let mut iter = animator
+                .start_state
+                .props
+                .iter_mut()
+                .filter(|x| keep_prop_ids.contains(&x.prop_id()));
             let mut start_props: Vec<Prop> = Vec::new();
             while let Some(prop) = iter.next() {
                 start_props.push(prop.clone());
             }
             animator.start_state.props = start_props;
 
-            let mut iter = animator.end_state.props.iter_mut().filter(|x| keep_prop_ids.contains(&x.prop_id()));
+            let mut iter = animator
+                .end_state
+                .props
+                .iter_mut()
+                .filter(|x| keep_prop_ids.contains(&x.prop_id()));
             let mut end_props: Vec<Prop> = Vec::new();
             while let Some(prop) = iter.next() {
                 end_props.push(prop.clone());
             }
             animator.end_state.props = end_props;
-            log::debug!("start: {:?} \nend  : {:?}", &animator.start_state.props, &animator.end_state.props);
+            log::debug!(
+                "start: {:?} \nend  : {:?}",
+                &animator.start_state.props,
+                &animator.end_state.props
+            );
         }
-
     }
 }
 
 impl Playable for Tween {
-
     fn play(&mut self) {
         if self.state == TweenState::Pending {
             self.sync_animators();
@@ -470,17 +519,20 @@ impl Playable for Tween {
                         // If repeat_count is zero, tween is Completed.
                         self.state = TweenState::Finishing;
                         events.push(TKEvent::Completed(self.tween_id));
-
                     } else {
                         // set state=Idle means wait for repeat_delay to finish
                         self.state = TweenState::Idle;
                     }
                 }
-            },
+            }
             TweenState::Idle => {
                 // If repeat_delay > 0, tween should wait until time elapsed passes it
-                if self.started_at.elapsed() > self.duration + self.repeat_delay
-                {
+                if self.started_at.elapsed() > self.duration + self.repeat_delay {
+                    log::debug!(
+                        "repeats={:?} plays={:?}",
+                        self.repeat_count,
+                        self.play_count
+                    );
                     if self.repeat_count < 0 {
                         self.reset();
                     } else if self.play_count <= self.repeat_count as u32 {
@@ -489,7 +541,7 @@ impl Playable for Tween {
                         self.state = TweenState::Completed;
                     }
                 }
-            },
+            }
             _ => (),
         }
         events
@@ -499,17 +551,12 @@ impl Playable for Tween {
         return self.update();
     }
 
-    fn stop(&mut self) {
+    fn stop(&mut self) {}
 
-    }
-
-    fn pause(&mut self) {
-
-    }
+    fn pause(&mut self) {}
 
     /// Reset is used to move the playhead back to the start and set state to Running
     fn reset(&mut self) {
-
         if self.anim_type == AnimType::Yoyo {
             // If configured as yoyo animation, reverse the timescale so that the next play
             // is in reverse.
@@ -522,8 +569,6 @@ impl Playable for Tween {
         self.state = TweenState::Running;
         self.started_at = Instant::now();
     }
-
-
 }
 
 //-- Support -----------------------------------------------------------------------

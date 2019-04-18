@@ -9,8 +9,8 @@ extern crate tweek;
 
 use ggez::conf;
 use ggez::event::{self, MouseButton};
-use ggez::input::{mouse};
-use ggez::graphics::{self, Rect, DrawParam, Color};
+use ggez::graphics::{self, Color, DrawParam, Rect};
+use ggez::input::mouse;
 use ggez::mint::{self, Point2};
 use ggez::{Context, ContextBuilder, GameResult};
 
@@ -27,14 +27,12 @@ struct DemoHelper {}
 #[allow(unused_mut)]
 #[allow(unused_variables)]
 impl DemoHelper {
-
-
     /// Create a unit vector representing the
     /// given angle (in radians)
     fn vec_from_angle(angle: f32) -> mint::Vector2<f32> {
         let vx = angle.sin();
         let vy = angle.cos();
-        mint::Vector2{ x: vx, y: vy }
+        mint::Vector2 { x: vx, y: vy }
     }
 
     fn get_stage(ctx: &mut Context) -> (f32, f32, Rect) {
@@ -52,7 +50,10 @@ impl DemoHelper {
     /// This demo shows a collection of dots rotating around in a circle
     fn build_dots_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
-        let center_pt = mint::Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
+        let center_pt = mint::Point2 {
+            x: screen_w / 2.0,
+            y: screen_h / 2.0,
+        };
 
         let dot_radius = 10.0;
         let scene_radius = 96.0;
@@ -64,32 +65,44 @@ impl DemoHelper {
         for i in 0..dot_count {
             let item_id = i + 10 as usize;
 
-            let mut item1 = Item::new(item_id, Shape::Circle(mint::Point2{x: center_pt.x, y: center_pt.y - scene_radius}, dot_radius))?;
+            let mut item1 = Item::new(
+                item_id,
+                Shape::Circle(
+                    mint::Point2 {
+                        x: center_pt.x,
+                        y: center_pt.y - scene_radius,
+                    },
+                    dot_radius,
+                ),
+            )?;
             item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
-            let alpha = 1.0 - (i as f32 / dot_count as f32)/2.0;
+            let alpha = 1.0 - (i as f32 / dot_count as f32) / 2.0;
             item1.layer.graphics.color.a = alpha;
-            item1.layer.graphics.offset = mint::Point2{ x: center_pt.x, y: center_pt.y };
+            item1.layer.graphics.offset = mint::Point2 {
+                x: center_pt.x,
+                y: center_pt.y,
+            };
 
             let tween1 = Tween::with(item_id, &item1.layer)
                 .to(&[rotate(360.0)])
                 .duration(1.8)
                 .ease(Ease::SineInOut)
-                .repeat(-1, 0.8)
-                ;
+                .repeat(-1, 0.8);
             items.push(item1);
             tweens.push(tween1)
         }
 
-        let timeline = Timeline::add(tweens)
-            .stagger(0.12)
-            ;
+        let timeline = Timeline::add(tweens).stagger(0.12);
         Ok((timeline, items))
     }
 
     /// Draw lines and rotate from center
     fn build_spin_lines_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
-        let center_pt = mint::Point2{ x: screen_w / 2.0, y: screen_h / 2.0 };
+        let center_pt = mint::Point2 {
+            x: screen_w / 2.0,
+            y: screen_h / 2.0,
+        };
 
         const LINE_WIDTH: f32 = 9.0;
         let line_count = 3;
@@ -103,15 +116,23 @@ impl DemoHelper {
             let xpos = center_pt.x - line_length / 2.0;
             let ypos = center_pt.y;
 
-            let mut item = Item::new(item_id,
+            let mut item = Item::new(
+                item_id,
                 Shape::Line(
-                    Point2{x: xpos, y: ypos},
-                    Point2{x: xpos + line_length, y: ypos},
-                    LINE_WIDTH)
-                )?;
+                    Point2 { x: xpos, y: ypos },
+                    Point2 {
+                        x: xpos + line_length,
+                        y: ypos,
+                    },
+                    LINE_WIDTH,
+                ),
+            )?;
 
             item.layer.graphics.color = Color::from_rgb_u32(0xCD5C5C);
-            item.layer.graphics.offset = mint::Point2{ x: center_pt.x, y: center_pt.y };
+            item.layer.graphics.offset = mint::Point2 {
+                x: center_pt.x,
+                y: center_pt.y,
+            };
 
             // The plan was to make angle evenly distributed, but there seems to be a bug
             let delta = 360.0 / line_count as f32;
@@ -120,12 +141,14 @@ impl DemoHelper {
             let target = (120.0 + angle) as f64;
             let time = 2.0 as f64;
             let mut tween = Tween::with(item_id, &item.layer)
-                .to(&[rotate(target), color(0x556B2F)]).duration(time)
-                .to(&[rotate(target * 2.0), color(0x7FFFD4)]).duration(time)
-                .to(&[rotate(target * 3.0), color(0xCD5C5C)]).duration(time)
+                .to(&[rotate(target), color(0x556B2F)])
+                .duration(time)
+                .to(&[rotate(target * 2.0), color(0x7FFFD4)])
+                .duration(time)
+                .to(&[rotate(target * 3.0), color(0xCD5C5C)])
+                .duration(time)
                 .repeat(-1, 0.0)
-                .yoyo()
-                ;
+                .yoyo();
             items.push(item);
             tweens.push(tween)
         }
@@ -169,8 +192,7 @@ impl DemoHelper {
                 .to(&[shift_x((screen_w + w).into())])
                 .duration(1.8)
                 .ease(Ease::SineInOut)
-                .repeat(-1, 0.8)
-                ;
+                .repeat(-1, 0.8);
             items.push(item);
             tweens.push(tween)
         }
@@ -181,14 +203,18 @@ impl DemoHelper {
         Ok((timeline, items))
     }
 
-
     fn build_bars_demo(ctx: &mut Context) -> GameResult<(Timeline, Vec<Item>)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
         const STAGE_WIDTH: f32 = 600.0;
         const STAGE_HEIGHT: f32 = 400.0;
         const BAR_HEIGHT: f32 = 20.0;
-        let draw_area = Rect::new((screen_w - STAGE_WIDTH) / 2.0, 200.0, STAGE_WIDTH, STAGE_HEIGHT);
+        let draw_area = Rect::new(
+            (screen_w - STAGE_WIDTH) / 2.0,
+            200.0,
+            STAGE_WIDTH,
+            STAGE_HEIGHT,
+        );
         let line_count = 12;
 
         let mut items: Vec<Item> = Vec::with_capacity(line_count);
@@ -207,16 +233,13 @@ impl DemoHelper {
                 .to(&[size(draw_area.w as f64, BAR_HEIGHT as f64)])
                 .duration(1.0)
                 .ease(Ease::SineOut)
-                .repeat(8, 0.2).yoyo()
-                ;
+                .repeat(8, 0.2)
+                .yoyo();
             items.push(item);
             tweens.push(tween)
         }
 
-
-        let timeline = Timeline::add(tweens)
-            .stagger(0.1)
-            ;
+        let timeline = Timeline::add(tweens).stagger(0.1);
         Ok((timeline, items))
     }
 
@@ -250,7 +273,7 @@ impl DemoHelper {
 
             // Use text dimensions to center text horizontally
             let (width, height) = text.dimensions(ctx);
-            let xpos = (screen_w - width as f32)/2.0;
+            let xpos = (screen_w - width as f32) / 2.0;
             // Start the text offscreen below the bottom
             let ypos = screen_h + (i as f32 * line_height);
 
@@ -261,13 +284,12 @@ impl DemoHelper {
 
             let move_y = (screen_h as f64 + content_height) * -1.0;
             let mut tween = Tween::with(item_id, &item.layer)
-                .to(&[shift_y(move_y)]).duration(12.0)
-                .repeat(5, 0.5)
-                ;
+                .to(&[shift_y(move_y)])
+                .duration(12.0)
+                .repeat(5, 0.5);
 
             items.push(item);
             tweens.push(tween);
-
         }
 
         let timeline = Timeline::add(tweens)
@@ -295,7 +317,6 @@ impl DemoHelper {
             ;
         Ok((timeline, items))
     }
-
 }
 
 /// This enum is a list of all the loadable demo animations.
@@ -306,8 +327,6 @@ enum Demo {
     TextScroller,
     DotCircle,
     Rocket,
-
-
 }
 
 /// ##########################################################################################
@@ -334,7 +353,8 @@ impl MainState {
         let screen_h = ctx.conf.window_mode.height;
 
         let buttons = ShapeHelper::make_next_prev_buttons(ctx)?;
-        let gridmesh = ShapeHelper::build_grid(ctx, screen_w, screen_h, 16.0, Color::from_rgb_u32(0xCCCCCC))?;
+        let gridmesh =
+            ShapeHelper::build_grid(ctx, screen_w, screen_h, 16.0, Color::from_rgb_u32(0xCCCCCC))?;
 
         let mut s = MainState {
             grid: gridmesh,
@@ -372,24 +392,12 @@ impl MainState {
         self.tk_state.commands.clear();
 
         let (timeline, items) = match demo {
-            Demo::Bars => {
-                DemoHelper::build_bars_demo(ctx)?
-            },
-            Demo::Lines => {
-                DemoHelper::build_spin_lines_demo(ctx)?
-            },
-            Demo::TextScroller => {
-                DemoHelper::build_text_demo(ctx)?
-            },
-            Demo::DotCircle => {
-                DemoHelper::build_dots_demo(ctx)?
-            },
-            Demo::Rocket => {
-                DemoHelper::build_rocket_demo(ctx)?
-            },
-            _ => {
-                DemoHelper::empty_template(ctx)?
-            },
+            Demo::Bars => DemoHelper::build_bars_demo(ctx)?,
+            Demo::Lines => DemoHelper::build_spin_lines_demo(ctx)?,
+            Demo::TextScroller => DemoHelper::build_text_demo(ctx)?,
+            Demo::DotCircle => DemoHelper::build_dots_demo(ctx)?,
+            Demo::Rocket => DemoHelper::build_rocket_demo(ctx)?,
+            _ => DemoHelper::empty_template(ctx)?,
         };
         let mut tweek = Tweek::new();
         tweek.add_timeline(timeline);
@@ -401,7 +409,6 @@ impl MainState {
         self.items = items;
         Ok(())
     }
-
 }
 
 impl event::EventHandler for MainState {
@@ -417,8 +424,8 @@ impl event::EventHandler for MainState {
                     }
                     let next = &self.demo_list[self.demo_index].clone();
                     &self.load_demo(ctx, next);
-                    return Ok(())
-                },
+                    return Ok(());
+                }
                 PREV_COMMAND => {
                     if self.demo_index == 0 {
                         self.demo_index = self.demo_list.len() - 1;
@@ -427,8 +434,8 @@ impl event::EventHandler for MainState {
                     }
                     let next = &self.demo_list[self.demo_index].clone();
                     &self.load_demo(ctx, next);
-                    return Ok(())
-                },
+                    return Ok(());
+                }
                 _ => (),
             }
         }
@@ -441,7 +448,6 @@ impl event::EventHandler for MainState {
         for button in &mut self.buttons {
             button.update()?;
         }
-
 
         Ok(())
     }
@@ -509,9 +515,7 @@ impl event::EventHandler for MainState {
                 mouse::set_cursor_type(ctx, mouse::MouseCursor::Default);
             }
         }
-
     }
-
 }
 
 pub fn main() -> GameResult {
@@ -528,13 +532,16 @@ pub fn main() -> GameResult {
 
     let cb = ContextBuilder::new("tween0", "tweenkit")
         .window_setup(conf::WindowSetup::default().title("Tweek Demos"))
-        .window_mode(conf::WindowMode::default().dimensions(1024.0, 768.0).hidpi(true))
+        .window_mode(
+            conf::WindowMode::default()
+                .dimensions(1024.0, 768.0)
+                .hidpi(true),
+        )
         .add_resource_path(resource_dir);
-
 
     let (ctx, events_loop) = &mut cb.build()?;
 
-    log::trace!("HIDPI: {}", graphics::os_hidpi_factor(ctx));
+    // log::trace!("HIDPI: {}", graphics::os_hidpi_factor(ctx));
 
     let game = &mut MainState::new(ctx)?;
     event::run(ctx, events_loop, game)

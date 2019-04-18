@@ -1,6 +1,5 @@
-/// This is a collection of basic Tween examples that show individual tween animations without a timeline.
-/// This is a good reference for exploring the basic tween helper commands, which can be found at the
-/// top of the file: /src/core/tween.rs
+/// This is a test environment for using gfx with offscreen canvas to render stuff and clip it.
+/// Ignore this example for now.
 ///
 mod shape_helper;
 use shape_helper::*;
@@ -10,9 +9,9 @@ extern crate tweek;
 
 use ggez::conf;
 use ggez::event::{self, MouseButton};
-use ggez::graphics::{self, Color, DrawParam, Rect};
-use ggez::input::mouse;
-use ggez::mint::Point2;
+use ggez::graphics::{self, *};
+use ggez::input::{mouse};
+use ggez::mint::{Point2};
 use ggez::{Context, ContextBuilder, GameResult};
 
 use std::env;
@@ -28,6 +27,7 @@ struct DemoHelper {}
 #[allow(unused_mut)]
 #[allow(unused_variables)]
 impl DemoHelper {
+
     fn get_stage(ctx: &mut Context) -> (f32, f32, Rect) {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
@@ -40,140 +40,36 @@ impl DemoHelper {
         (screen_w, screen_h, draw_area)
     }
 
-    fn test_square_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
+    fn build_bars_demo(ctx: &mut Context) -> GameResult<(Vec<Item>, Rect)> {
         let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
 
-        let item_id = 1;
-        let rect = Rect::new(draw_area.x, 200.0, 80.0, 80.0);
-        let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
-        item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
+        let mut items: Vec<Item> = Vec::new();
 
-        let mut tween1 = Tween::with(item_id, &item1.layer)
-            .to(&[
-                position(draw_area.right() as f64 - 120.0, 400.0),
-                size(120.0, 120.0),
-                color(HexColors::Gold),
-            ])
-            .duration(1.0)
-            .ease(Ease::SineInOut)
-            .repeat(9, 0.2)
-            .yoyo();
+        const BAR_HEIGHT: f32 = 40.0;
+        let line_count = 9;
 
-        &tween1.play();
-        item1.tween = Some(tween1);
-        Ok(vec![item1])
+        for i in 0..line_count {
+            let item_id = i as usize;
+            let ypos = i as f32 * BAR_HEIGHT + draw_area.top();
+
+            let rect = Rect::new(draw_area.left(), ypos, draw_area.w, BAR_HEIGHT);
+
+            let mut item = Item::new(item_id, Shape::Rectangle(rect))?;
+
+            if i % 3 == 0 {
+                item.layer.graphics.color = Color::from_rgb_u32(HexColors::Tomato);
+            } else if i % 3 == 1 {
+                item.layer.graphics.color = Color::from_rgb_u32(HexColors::Gold);
+            } else {
+                item.layer.graphics.color = Color::from_rgb_u32(HexColors::Gray);
+            }
+
+            items.push(item);
+        }
+        let container = Rect::new(draw_area.x, draw_area.y, draw_area.w, BAR_HEIGHT * line_count as f32);
+
+        Ok((items, container))
     }
-
-    fn test_circle_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
-        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
-        let center_pt = Point2 {
-            x: screen_w / 2.0 - 100.0,
-            y: screen_h / 2.0,
-        };
-
-        let item_id = 2;
-        // Add a circle
-        let mut item2 = Item::new(item_id, Shape::Circle(center_pt, 40.0))?;
-        item2.layer.graphics.color = graphics::Color::from_rgb_u32(0xCD09AA);
-        item2.layer.graphics.offset = Point2 { x: 0.5, y: 0.5 };
-
-        let mut tween2 = Tween::with(item_id, &item2.layer)
-            .to(&[size(200.0, 200.0), alpha(0.9)])
-            .duration(4.0)
-            .to(&[
-                position(700.0, draw_area.top() as f64 + 40.0),
-                size(100.0, 100.0),
-                alpha(0.8),
-            ])
-            .duration(0.2)
-            .ease(Ease::SineIn)
-            .to(&[
-                position(draw_area.right() as f64, 200.0),
-                size(50.0, 50.0),
-                alpha(0.7),
-            ])
-            .duration(0.2)
-            .to(&[
-                position(650.0, draw_area.bottom() as f64),
-                size(20.0, 20.0),
-                alpha(0.6),
-            ])
-            .duration(0.2)
-            .to(&[position(400.0, 300.0), size(5.0, 5.0), alpha(0.2)])
-            .duration(0.5)
-            .repeat(-1, 2.0);
-
-        &tween2.play();
-        item2.tween = Some(tween2);
-        Ok(vec![item2])
-    }
-
-    fn test_image_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
-        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
-
-        const ITEM_ID: usize = 3;
-        let tile = graphics::Image::new(ctx, "/tile.png")?;
-        let rect = graphics::Rect::new(250.0, 400.0, 100.0, 100.0);
-        let mut item3 = Item::new(ITEM_ID, Shape::Image(rect))?;
-        item3.image = Some(tile);
-        item3.layer.graphics.offset = Point2 { x: 0.5, y: 0.5 };
-
-        let mut tween3 = Tween::with(ITEM_ID, &item3.layer)
-            .to(&[shift_x(600.0), rotate(360.0)])
-            .duration(3.0)
-            .ease(Ease::BounceOut)
-            .repeat(5, 0.5);
-
-        &tween3.play();
-        item3.tween = Some(tween3);
-
-        Ok(vec![item3])
-    }
-
-    fn test_rectangle_1(ctx: &mut Context) -> GameResult<(Vec<Item>)> {
-        let (screen_w, screen_h, draw_area) = DemoHelper::get_stage(ctx);
-
-        let rect = Rect::new(draw_area.x + 80.0, draw_area.y, 20.0, 20.0);
-
-        let w = 640.0 as f64;
-        let h = 400.0 as f64;
-
-        let item_id = 1;
-        let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
-        item1.layer.graphics.color = Color::from_rgb_u32(HexColors::HotPink);
-
-        let mut tween1 = Tween::with(item_id, &item1.layer)
-            .to(&[size(w, 20.0)])
-            .duration(1.0)
-            .ease(Ease::ElasticIn)
-            .to(&[size(20.0, 20.0), shift_x(w - 20.0)])
-            .duration(1.0)
-            .ease(Ease::ElasticOut)
-            .to(&[size(20.0, h)])
-            .duration(1.0)
-            .ease(Ease::BackIn)
-            .to(&[size(20.0, 20.0), shift_y(h - 20.0)])
-            .duration(1.0)
-            .ease(Ease::BackOut)
-            .to(&[size(w, 20.0), shift_x(-w + 20.0)])
-            .duration(1.0)
-            .ease(Ease::BounceIn)
-            .to(&[size(20.0, 20.0)])
-            .duration(1.0)
-            .ease(Ease::BounceOut)
-            .to(&[size(20.0, h), shift_y(-h + 20.0)])
-            .duration(1.0)
-            .ease(Ease::SineIn)
-            .to(&[size(20.0, 20.0)])
-            .duration(1.0)
-            .ease(Ease::SineOut)
-            .repeat(-1, 0.2);
-
-        &tween1.play();
-        item1.tween = Some(tween1);
-        Ok(vec![item1])
-    }
-
     /// ********************************************************************************
     /// This is a template for creating a new animation.
     /// Copy it and try out different animation techniques.
@@ -189,13 +85,11 @@ impl DemoHelper {
     }
 }
 
+#[allow(dead_code)]
 /// This enum is a list of all the loadable demo animations.
 #[derive(Copy, Clone, Debug)]
 enum Demo {
     Square1,
-    Circle1,
-    Image1,
-    Rectangle1,
 }
 
 /// ##########################################################################################
@@ -206,8 +100,11 @@ enum Demo {
 
 struct MainState {
     grid: graphics::Mesh,
+    canvas: graphics::Canvas,
+    container: Rect,
     frames: usize,
     items: Vec<Item>,
+    inputs: Vec<TextField>,
     buttons: Vec<ButtonView>,
     tk_state: TKState,
     demo_index: usize,
@@ -222,12 +119,20 @@ impl MainState {
 
         let buttons = ShapeHelper::make_next_prev_buttons(ctx)?;
         let gridmesh =
-            ShapeHelper::build_grid(ctx, screen_w, screen_h, 16.0, Color::from_rgb_u32(0xCCCCCC))?;
+            ShapeHelper::build_grid(ctx, screen_w, screen_h, 50.0, Color::from_rgb_u32(0xCCCCCC))?;
 
-        let mut s = MainState {
+
+        let canvas = graphics::Canvas::with_window_size(ctx)?;
+
+        let (items, rect) = DemoHelper::build_bars_demo(ctx)?;
+        log::debug!("bars={:?} rect={:?}", items.len(), rect);
+        let s = MainState {
             grid: gridmesh,
+            canvas: canvas,
+            container: rect,
             frames: 0,
-            items: Vec::new(),
+            items: items,
+            inputs: Vec::new(),
             buttons: buttons,
             tk_state: TKState::new(),
             demo_index: 0,
@@ -238,32 +143,27 @@ impl MainState {
         // s.show_fps = true;
 
         // ===== If you are adding a new animation to try out, add it to the demo_list here. =====
-        s.demo_list.push(Demo::Square1);
-        s.demo_list.push(Demo::Circle1);
-        s.demo_list.push(Demo::Image1);
-        s.demo_list.push(Demo::Rectangle1);
+        // s.demo_list.push(Demo::Square1);
 
-        // Pick which demo to start with.
-        s.demo_index = 0;
-        let demo = s.demo_list[s.demo_index].clone();
-        s.load_demo(ctx, &demo)?;
+        // // Pick which demo to start with.
+        // s.demo_index = 0;
+        // let demo = s.demo_list[s.demo_index].clone();
+        // s.load_demo(ctx, &demo)?;
 
         Ok(s)
     }
 
     #[allow(unreachable_patterns)]
+    #[allow(unused_variables)]
     /// This method takes a Demo enum as a parameter to identify which DemoHelper function
     /// to call and replace the current timeline animation.
     fn load_demo(&mut self, ctx: &mut Context, demo: &Demo) -> GameResult {
         self.tk_state.commands.clear();
-        let items = match demo {
-            Demo::Square1 => DemoHelper::test_square_1(ctx)?,
-            Demo::Circle1 => DemoHelper::test_circle_1(ctx)?,
-            Demo::Image1 => DemoHelper::test_image_1(ctx)?,
-            Demo::Rectangle1 => DemoHelper::test_rectangle_1(ctx)?,
-            _ => DemoHelper::empty_template(ctx)?,
-        };
-        self.items = items;
+        // let items = match demo {
+        //     Demo::Square1 => DemoHelper::make_text_field(ctx)?,
+        //     _ => DemoHelper::empty_template(ctx)?,
+        // };
+        // self.items = items;
         Ok(())
     }
 }
@@ -280,6 +180,7 @@ impl event::EventHandler for MainState {
                         self.demo_index = 0;
                     }
                     let next = &self.demo_list[self.demo_index].clone();
+
 
                     &self.load_demo(ctx, next);
                     return Ok(());
@@ -298,6 +199,10 @@ impl event::EventHandler for MainState {
             }
         }
 
+        for input in &mut self.inputs {
+            input.update()?;
+        }
+
         for item in &mut self.items {
             item.update()?;
         }
@@ -309,6 +214,16 @@ impl event::EventHandler for MainState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
+
+        // Render stuff offscreen first
+        graphics::set_canvas(ctx, Some(&self.canvas));
+        graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into()); // No idea what this color is
+
+        for item in &mut self.items {
+            item.render(ctx)?;
+        }
+        // log::debug!("canvas={:?}x{:?}", self.canvas.image().width(), self.canvas.image().height());
+        graphics::set_canvas(ctx, None);
         graphics::clear(ctx, graphics::WHITE);
 
         // To hide the grid, comment out this line.
@@ -320,19 +235,55 @@ impl event::EventHandler for MainState {
                 log::debug!("FPS: {}", ggez::timer::fps(ctx));
             }
         }
+        for input in &mut self.inputs {
+            input.render(ctx)?;
+        }
 
         for button in &mut self.buttons {
             button.render(ctx)?;
         }
+        let canvas_w = self.canvas.image().width() as f32;
+        let canvas_h = self.canvas.image().height() as f32;
 
-        for item in &mut self.items {
-            item.render(ctx)?;
-        }
+        // Calculate the reverse y: canvas height - rect bottom y
+        // 768.0 - 480.0 = 288.0
+        let flip_y = canvas_h - self.container.bottom();
+
+        let clip = Rect::new(
+            self.container.x / canvas_w,
+            flip_y / canvas_h,
+            self.container.w / canvas_w,
+            self.container.h / canvas_h,
+        );
+        // Must flip y to -1
+        let offset = Point2{x: 0.0, y: -1.0};
+        let origin = self.container.point();
+
+        let params = DrawParam::default()
+                .dest(origin)
+                .src(clip)
+                .offset(offset)
+                ;
+
+        graphics::draw(
+            ctx,
+            &self.canvas,
+            params
+        )?;
+
+        // for item in &mut self.items {
+        //     item.render(ctx)?;
+        // }
 
         graphics::present(ctx)?;
 
         // timer::yield_now();
         Ok(())
+    }
+
+    fn resize_event(&mut self, ctx: &mut Context, width: f32, height: f32) {
+        let new_rect = graphics::Rect::new(0.0, 0.0, width, height);
+        graphics::set_screen_coordinates(ctx, new_rect).unwrap();
     }
 
     fn mouse_button_down_event(
@@ -356,6 +307,10 @@ impl event::EventHandler for MainState {
         for button in &mut self.buttons {
             let _did_click = button.handle_mouse_up(_x, _y, &mut self.tk_state);
         }
+        for input in &mut self.inputs {
+            let _did_click = input.handle_mouse_up(_x, _y, &mut self.tk_state);
+        }
+
     }
 
     /// The mouse was moved; it provides both absolute x and y coordinates in the window,
@@ -368,13 +323,14 @@ impl event::EventHandler for MainState {
                 mouse::set_cursor_type(ctx, mouse::MouseCursor::Default);
             }
         }
+        for input in &mut self.inputs {
+            if input.handle_mouse_at(x, y) {
+            }
+        }
     }
 }
 
 pub fn main() -> GameResult {
-    std::env::set_var("RUST_LOG", "main=debug,tweek=debug");
-    env_logger::init();
-
     let resource_dir = if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
         let mut path = path::PathBuf::from(manifest_dir);
         path.push("resources");
@@ -392,8 +348,11 @@ pub fn main() -> GameResult {
                 .hidpi(true),
         )
         .add_resource_path(resource_dir);
-
     let (ctx, events_loop) = &mut cb.build()?;
+    // ggez::graphics::set_resolution(ctx, 2048.0, 1536.0)?;
     let game = &mut MainState::new(ctx)?;
     event::run(ctx, events_loop, game)
 }
+
+// ############################# CANVAS JUNK ##################################
+

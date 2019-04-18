@@ -1,6 +1,5 @@
 /// This file contains most of the model objects used to read and write values in Tweenable objects.
 ///
-
 use cgmath::*;
 
 pub type FloatProp = Vector1<f64>;
@@ -20,7 +19,7 @@ pub enum Prop {
     Position(Point2D),
     Rotate(FloatProp),
     Size(Frame2D),
-    Shift(Point2D), // offset the position by the specified x and y values
+    Shift(Point2D),  // offset the position by the specified x and y values
     Resize(Frame2D), // offset the size by the specified w and h values
 }
 
@@ -62,13 +61,22 @@ impl Prop {
     /// All of the internal values are zero vectors so this is only useful for iterating
     /// the list of possible Props that need to be inspected.
     pub fn get_prop_list() -> Vec<Prop> {
-        let mut results: Vec<Prop> = Vec::new();
-        results.push(Prop::Alpha(FloatProp::zero()));
-        results.push(Prop::Color(ColorRGB::zero()));
-        results.push(Prop::Position(Point2D::zero()));
-        results.push(Prop::Rotate(FloatProp::zero()));
-        results.push(Prop::Size(Frame2D::zero()));
-        results
+        let list = vec![
+            Prop::Alpha(FloatProp::zero()),
+            Prop::Color(ColorRGB::zero()),
+            Prop::Position(Point2D::zero()),
+            Prop::Rotate(FloatProp::zero()),
+            Prop::Size(Frame2D::zero()),
+        ];
+        list
+
+        // let mut results: Vec<Prop> = Vec::new();
+        // results.push(Prop::Alpha(FloatProp::zero()));
+        // results.push(Prop::Color(ColorRGB::zero()));
+        // results.push(Prop::Position(Point2D::zero()));
+        // results.push(Prop::Rotate(FloatProp::zero()));
+        // results.push(Prop::Size(Frame2D::zero()));
+        // results
     }
 
     /// Somewhat hacky, but useful helper method that defines which Props have parent props
@@ -100,7 +108,7 @@ impl UIState {
     }
 
     pub fn get_prop_value(&self, prop_id: u32) -> Prop {
-        let mut iter = self.props.iter().filter( |x| x.prop_id() == prop_id );
+        let mut iter = self.props.iter().filter(|x| x.prop_id() == prop_id);
         if let Some(item) = &iter.next() {
             return *item.clone();
         }
@@ -118,13 +126,9 @@ pub struct UITransition {
 
 impl UITransition {
     pub fn new(props: Vec<Prop>, seconds: f64) -> Self {
-        UITransition {
-            props,
-            seconds,
-        }
+        UITransition { props, seconds }
     }
 }
-
 
 // #####################################################################################
 
@@ -147,4 +151,3 @@ fn cartesian_cmp<T>(lhs: T, rhs: T) -> bool where T: Cartesian<T> + PartialEq {
     lhs.x() == rhs.x() && lhs.y() == rhs.y()
 }
 */
-

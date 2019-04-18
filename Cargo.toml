@@ -1,7 +1,13 @@
 [package]
 name = "tweek-rust"
-version = "0.1.0"
+description = "A tween animation library for Rust"
+version = "0.2.0"
 authors = ["Hugh Lang <hughlang@gmail.com>"]
+keywords = ["animation", "graphics", "gui"]
+license = "LGPL"
+readme = "README.md"
+repository = "https://github.com/wasm-network/tweek-rust"
+exclude = ["resources/*"]
 edition = "2018"
 
 [lib]
@@ -20,14 +26,22 @@ path = "examples/ggez/gg_demos.rs"
 name = "player"
 path = "examples/ggez/gg_player.rs"
 
+[[example]]
+name = "gui"
+path = "examples/ggez/gg_gui.rs"
+
 [dependencies]
 cgmath = "0.17.0"
 log = "0.4"
 rand = "0.6"
 uuid = { version = "0.7", features = ["v4"] }
 unwrap_to = "0.1.0"
-ggez = "0.5.0-rc.1"
-# ggez = { git = "https://github.com/ggez/ggez.git" }
+ggez = "^0.5.0-rc.1"
+# ggez = { path = "../ggez-fork" }
+glyph_brush = "0.4"
+# glyph_brush = { path = "../glyph-brush/glyph-brush" }
+image = { version = "0.21", default-features = false, features = ["png_codec"] }
+# image = { path = "../image" }
 
 [dev-dependencies]
 env_logger = "0.6"
