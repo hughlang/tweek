@@ -71,9 +71,7 @@ impl TweenLayer {
 
                     if let Some(transition) = &self.on_hover {
                         if transition.seconds > 0.0 {
-                            let mut tween = Tween::with(0, self)
-                                .to(&transition.props)
-                                .duration(transition.seconds);
+                            let mut tween = Tween::with(0, self).to(&transition.props).duration(transition.seconds);
                             &tween.play();
                             self.animation = Some(tween);
                         } else {
@@ -107,31 +105,17 @@ impl TweenLayer {
     /// – Apple iOS insets: https://developer.apple.com/documentation/uikit/1624475-uiedgeinsetsmake
     /// It seems more logical to use top-left-right-bottom, so mapping the x, y of a Rect is more obvious.
     pub fn inset_by(&self, left: f32, top: f32, right: f32, bottom: f32) -> Rect {
-        Rect::new(
-            self.frame.x + left,
-            self.frame.y + top,
-            self.frame.w - left - right,
-            self.frame.h - top - bottom,
-        )
+        Rect::new(self.frame.x + left, self.frame.y + top, self.frame.w - left - right, self.frame.h - top - bottom)
     }
 
     /// This returns a rect relative to the current self.frame coordinates using
     /// the coordinate system the parent of the this TweenLayer object.
     pub fn offset_by(&self, left: f32, top: f32, right: f32, bottom: f32) -> Rect {
-        Rect::new(
-            self.frame.x + left,
-            self.frame.y + top,
-            self.frame.w - left - right,
-            self.frame.h - top - bottom,
-        )
+        Rect::new(self.frame.x + left, self.frame.y + top, self.frame.w - left - right, self.frame.h - top - bottom)
     }
 
     pub fn scrollable_types() -> Vec<TypeId> {
-        vec![
-            TypeId::of::<ListBox>(),
-            TypeId::of::<TextArea>(),
-            TypeId::of::<TextField>(),
-        ]
+        vec![TypeId::of::<ListBox>(), TypeId::of::<TextArea>(), TypeId::of::<TextField>()]
     }
 
     pub fn is_scrollable(type_id: &TypeId) -> bool {
@@ -155,38 +139,19 @@ impl TweenLayer {
        +--------------+
     */
     pub fn get_perimeter_blocks(frame: &Rect, outside: &Rect) -> Vec<Rect> {
-        if outside.x == frame.x
-            && outside.y == frame.y
-            && outside.w == frame.w
-            && outside.h == frame.h
-        {
+        if outside.x == frame.x && outside.y == frame.y && outside.w == frame.w && outside.h == frame.h {
             return Vec::new();
         }
 
         let mut blocks: Vec<Rect> = Vec::new();
         if frame.y - outside.y > 0.0 {
-            blocks.push(Rect::new(
-                outside.x,
-                outside.y,
-                outside.w,
-                frame.y - outside.y - 1.0,
-            ));
+            blocks.push(Rect::new(outside.x, outside.y, outside.w, frame.y - outside.y - 1.0));
         }
         if outside.bottom() - frame.bottom() > 0.0 {
-            blocks.push(Rect::new(
-                outside.x,
-                frame.bottom() + 1.0,
-                outside.w,
-                outside.bottom() - frame.bottom(),
-            ));
+            blocks.push(Rect::new(outside.x, frame.bottom() + 1.0, outside.w, outside.bottom() - frame.bottom()));
         }
         if frame.x - outside.x > 0.0 {
-            blocks.push(Rect::new(
-                outside.x,
-                frame.top(),
-                frame.x - outside.x - 1.0,
-                frame.bottom() - frame.top(),
-            ));
+            blocks.push(Rect::new(outside.x, frame.top(), frame.x - outside.x - 1.0, frame.bottom() - frame.top()));
         }
         if outside.right() - frame.right() > 0.0 {
             blocks.push(Rect::new(
@@ -238,9 +203,7 @@ impl Tweenable for TweenLayer {
                 Prop::Color(ColorRGB::new(r as f32, g as f32, b as f32))
             }
             Prop::Rotate(_) => Prop::Rotate(FloatProp::new(self.graphics.rotation as f64)),
-            Prop::Position(_) => {
-                Prop::Position(Point2D::new(self.frame.x as f64, self.frame.y as f64))
-            }
+            Prop::Position(_) => Prop::Position(Point2D::new(self.frame.x as f64, self.frame.y as f64)),
             Prop::Size(_) => Prop::Size(Frame2D::new(self.frame.w as f64, self.frame.h as f64)),
             _ => Prop::None,
         }

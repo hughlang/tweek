@@ -223,8 +223,7 @@ impl Ease {
                     _p1 * Math.pow(2, -10 * p) * Math.sin( (p - _p3) * _2PI / _p2 ) + 1;
                 */
                 let curve = PERIOD / PI_2 * (1.0 / AMPLITUDE).asin();
-                return AMPLITUDE * 2.0_f32.powf(-10.0 * p) * ((p - curve) * PI_2 / PERIOD).sin()
-                    + 1.0;
+                return AMPLITUDE * 2.0_f32.powf(-10.0 * p) * ((p - curve) * PI_2 / PERIOD).sin() + 1.0;
             }
             Ease::ElasticInOut => {
                 /*
@@ -243,16 +242,10 @@ impl Ease {
 
                 if p < 1.0 {
                     p -= 1.0;
-                    return -0.5
-                        * (AMPLITUDE * 2.0_f32.powf(10.0 * p))
-                        * ((p - curve) * PI_2 / period).sin();
+                    return -0.5 * (AMPLITUDE * 2.0_f32.powf(10.0 * p)) * ((p - curve) * PI_2 / period).sin();
                 } else {
                     p -= 1.0;
-                    return AMPLITUDE
-                        * 2.0_f32.powf(-10.0 * p)
-                        * ((p - curve) * PI_2 / period).sin()
-                        * 0.5
-                        + 1.0;
+                    return AMPLITUDE * 2.0_f32.powf(-10.0 * p) * ((p - curve) * PI_2 / period).sin() * 0.5 + 1.0;
                 }
             }
             _ => {

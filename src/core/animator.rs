@@ -63,17 +63,13 @@ impl Animator {
 
         for (i, prop) in self.start_state.props.iter().enumerate() {
             if prop == &self.end_state.props[i] {
-                log::trace!(
-                    "Unchanged start={:?} end={:?}",
-                    prop,
-                    &self.end_state.props[i]
-                );
+                log::trace!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);
                 props.push(prop.clone());
                 continue;
             }
             let current = Animator::interpolate(prop, &self.end_state.props[i], progress);
 
-            log::debug!(
+            log::trace!(
                 "[{}.{}] from={:?} to={:?} >>> now={:?}",
                 self.id.0,
                 self.id.1,
@@ -99,31 +95,26 @@ impl Animator {
             Prop::Alpha(v1) => {
                 let v2 = unwrap_to!(target => Prop::Alpha);
                 let out = v1.lerp(*v2, scale);
-                log::trace!("Interpolated to: {}", out[0]);
                 Prop::Alpha(out)
             }
             Prop::Color(m1) => {
                 let m2 = unwrap_to!(target => Prop::Color);
                 let out = m1.lerp(*m2, scale as f32);
-                log::trace!("Interpolated to: r={} g={} b={}", out[0], out[1], out[2]);
                 Prop::Color(out)
             }
             Prop::Position(m1) => {
                 let m2 = unwrap_to!(target => Prop::Position);
                 let out = m1.lerp(*m2, scale);
-                log::trace!("Interpolated to: x={} y={}", out[0], out[1]);
                 Prop::Position(out)
             }
             Prop::Rotate(v1) => {
                 let v2 = unwrap_to!(target => Prop::Rotate);
                 let out = v1.lerp(*v2, scale);
-                log::trace!("Interpolated to: {}", out[0]);
                 Prop::Rotate(out)
             }
             Prop::Size(v1) => {
                 let v2 = unwrap_to!(target => Prop::Size);
                 let out = v1.lerp(*v2, scale);
-                log::trace!("Interpolated to: {}", out[0]);
                 Prop::Size(out)
             }
             _ => Prop::None,

@@ -1,14 +1,13 @@
-/// The ListBox view is a simple list of strings in a rectangular space that is scrollable.
+/// ListBox
 ///
-///
-extern crate ggez;
-
 use crate::core::*;
 
-// use ggez::conf;
-use ggez::graphics::{self, Color, DrawMode, DrawParam, Rect};
-use ggez::mint::{self, Point2};
-use ggez::{Context, GameResult};
+#[allow(unused_imports)]
+use quicksilver::{
+    geom::{Rectangle, Shape, Transform, Vector},
+    graphics::{Background::Col, Background::Img, Color, FontStyle, Image},
+    lifecycle::Window,
+};
 
 use std::any::TypeId;
 use std::f32;
@@ -18,7 +17,6 @@ use super::*;
 
 /// This is the multiplier that affects how quickly scrolling occurs.
 const SCROLL_FACTOR: f32 = 1.0;
-const SMOOTH_SCROLL: bool = true; // placeholder until it works.
 
 // *****************************************************************************************************
 // ListBox
@@ -44,18 +42,17 @@ pub struct ListBox {
     on_hover: Option<UITransition>,
     on_row_hover: Option<UITransition>,
     on_row_select: Option<UITransition>,
-    scroll_offset: mint::Point2<f32>,
-    // use_canvas: bool,
+    scroll_offset: f32,
 }
 
 impl ListBox {
-    pub fn new(frame: &Rect, _ctx: &mut Context) -> Self {
-        let mut layer = TweenLayer::new(frame.clone(), DrawParam::new().color(graphics::WHITE));
-        layer.border_color = Some(Color::from_rgb_u32(0x333333));
+    pub fn new(frame: &Rectangle) -> Self {
+        let mut layer = TweenLayer::new(frame.clone());
+        layer.border_color = Some(Color::from_hex("#333333"));
         layer.border_width = 1.0;
 
         let row_hover = UITransition::new(vec![color(0xEEEEEE)], 0.0);
-        let row_select = UITransition::new(vec![color(0xCCCCCC)], 0.3);
+        let row_select = UITransition::new(vec![color(0xCCCCCC)], 0.1);
 
         ListBox {
             layer: layer,
@@ -68,8 +65,7 @@ impl ListBox {
             on_hover: None,
             on_row_hover: Some(row_hover),
             on_row_select: Some(row_select),
-            scroll_offset: Point2 { x: 0.0, y: 0.0 },
-            // use_canvas: false,
+            scroll_offset: 0.0,
         }
     }
 
@@ -84,38 +80,28 @@ impl ListBox {
     }
 
     pub fn datasource(mut self, ds: Vec<String>) -> Self {
-        // TODO: Create only the rows needed to fill the visible range. Experiment first in future TableView gui
-        for (i, value) in ds.iter().enumerate() {
-            let rect = Rect::new(
-                self.layer.frame.x,
-                self.layer.frame.y + self.row_height * i as f32,
-                self.layer.frame.w,
-                self.row_height,
-            );
-            let mut row = ListBoxRow::new(rect).with_text(value);
+        // Create only the rows needed to fill the visible range. Each row is a template
+        // that is populated during the render phase
+        let row_count = (self.layer.frame.size.y / self.row_height) as usize + 1;
 
-            row.load_defaults();
+        for i in 0..row_count {
+            let rect = Rectangle::new(
+                (self.layer.frame.pos.x, self.layer.frame.pos.y + self.row_height * i as f32),
+                (self.layer.frame.size.x, self.row_height),
+            );
+            let row = ListBoxRow::new(rect);
             self.rows.push(row);
         }
         self.datasource = ds;
         self
     }
 
-    pub fn set_color(&mut self, color: &graphics::Color) {
-        self.layer.graphics.color = color.clone();
-    }
-
     pub fn get_visible_range(&self) -> Range<usize> {
-        let shift = self.scroll_offset.y / self.row_height;
+        let shift = self.scroll_offset / self.row_height;
         let start = shift.floor() as usize;
-
-        let row_count = {
-            if SMOOTH_SCROLL {
-                (self.layer.frame.h / self.row_height + shift.fract()).ceil() as usize
-            } else {
-                (self.layer.frame.h / self.row_height) as usize
-            }
-        };
+        let row_count = (self.layer.frame.size.y / self.row_height + shift.fract()).ceil() as usize;
+        // eprintln!("offset={:?} shift={:?}", self.scroll_offset, shift);
+        // eprintln!("start={:?} count={:?}", start, row_count);
         return start..(start + row_count);
     }
 }
@@ -129,17 +115,19 @@ impl TKDisplayable for ListBox {
         TypeId::of::<ListBox>()
     }
 
-    fn get_frame(&self) -> Rect {
+    fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
     }
 
     fn set_theme(&mut self, theme: &Theme) {
+        self.layer.color = theme.bg_color;
         for (_, row) in &mut self.rows.iter_mut().enumerate() {
             row.set_theme(&theme);
+            row.load_defaults();
         }
     }
 
-    fn get_perimeter_frame(&self) -> Option<Rect> {
+    fn get_perimeter_frame(&self) -> Option<Rectangle> {
         let perimeter = self.layer.offset_by(0.0, -self.row_height, 0.0, -self.row_height);
         Some(perimeter)
     }
@@ -154,7 +142,7 @@ impl TKDisplayable for ListBox {
     /// The ListBox should manage the UI state of its rows.
     /// The mouse state of a row should determine whether to reset or not.
     /// Otherwise, leave it alone?
-    fn update(&mut self) -> GameResult {
+    fn update(&mut self) -> TKResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {
@@ -164,31 +152,32 @@ impl TKDisplayable for ListBox {
 
         // Provide usize index values that are outside the range of the array
         // Q: If there's a better way of unwrapping these, please suggest.
-        let hover_index = self.hover_row.unwrap_or(self.rows.len() + 1);
-        let select_index = self.select_row.unwrap_or(self.rows.len() + 1);
+        let hover_index = self.hover_row.unwrap_or(self.datasource.len() + 1);
+        let select_index = self.select_row.unwrap_or(self.datasource.len() + 1);
 
         let range = self.get_visible_range();
+        let offset = range.start;
 
-        for (i, row) in &mut self.rows[range].iter_mut().enumerate() {
+        for (i, row) in &mut self.rows.iter_mut().enumerate() {
             &row.update()?;
-            if i == select_index {
-                match row.mouse_state {
+            if i + offset == select_index {
+                match row.layer.mouse_state {
                     MouseState::Select => {
                         if let Some(animation) = &row.layer.animation {
                             if animation.state == TweenState::Completed {
-                                row.mouse_state = MouseState::None;
+                                row.layer.mouse_state = MouseState::None;
                                 // row.layer.apply_updates(&row.defaults);
                                 row.layer.animation = None;
                                 self.select_row = None;
                             }
                         } else {
-                            row.mouse_state = MouseState::None;
+                            row.layer.mouse_state = MouseState::None;
                             // row.layer.apply_updates(&row.defaults);
                             row.layer.animation = None;
                         }
                     }
                     MouseState::Hover => {
-                        row.mouse_state = MouseState::Select;
+                        row.layer.mouse_state = MouseState::Select;
                         if let Some(transition) = &self.on_row_select {
                             if transition.seconds > 0.0 {
                                 let mut tween = Tween::with(i, &row.layer)
@@ -205,10 +194,10 @@ impl TKDisplayable for ListBox {
                     }
                     _ => (),
                 }
-            } else if i == hover_index {
-                match row.mouse_state {
+            } else if i + offset == hover_index {
+                match row.layer.mouse_state {
                     MouseState::None => {
-                        row.mouse_state = MouseState::Hover;
+                        row.layer.mouse_state = MouseState::Hover;
                         // show hover animation
                         if let Some(transition) = &self.on_row_hover {
                             if transition.seconds > 0.0 {
@@ -225,11 +214,11 @@ impl TKDisplayable for ListBox {
                     _ => (),
                 }
             } else {
-                match row.mouse_state {
+                match row.layer.mouse_state {
                     MouseState::None => {}
                     MouseState::Hover => {
                         // if i != hover_index {
-                        row.mouse_state = MouseState::None;
+                        row.layer.mouse_state = MouseState::None;
                         row.layer.apply_updates(&row.defaults); // FIXME: dry
                         row.layer.animation = None;
                         // }
@@ -241,50 +230,36 @@ impl TKDisplayable for ListBox {
         Ok(())
     }
 
-    fn render(&mut self, ctx: &mut Context) -> GameResult {
+    fn render(&mut self, theme: &Theme, window: &mut Window) -> TKResult {
         let frame = self.layer.frame;
-        let mut builder = graphics::MeshBuilder::new();
-        builder.rectangle(DrawMode::fill(), frame, self.layer.graphics.color);
+
+        // TODO: Render background?
 
         // Iterate through the rows that are in the visible range
         let range = self.get_visible_range();
-        let shift_y = self.scroll_offset.y % self.row_height;
+        let shift_y = self.scroll_offset % self.row_height;
+        let offset = range.start;
+        for (i, row) in &mut self.rows.iter().enumerate() {
+            let ypos = frame.pos.y - shift_y + self.row_height * i as f32;
+            let rect = Rectangle::new((frame.pos.x, ypos), (frame.size.x, self.row_height));
+            window.draw(&rect, Col(row.layer.color));
 
-        for (i, row) in &mut self.rows[range].iter_mut().enumerate() {
-            let ypos = {
-                if SMOOTH_SCROLL {
-                    frame.y - shift_y + self.row_height * i as f32
-                } else {
-                    frame.y + self.row_height * i as f32
-                }
-            };
-            let rect = Rect::new(frame.x, ypos, frame.w, self.row_height);
-            builder.rectangle(DrawMode::fill(), rect, row.layer.graphics.color);
-            if let Some(label) = &mut row.label {
-                label.render_inside(&rect, ctx)?;
+            if offset + i < self.datasource.len() {
+                let data = &self.datasource[offset + i];
+                row.render_with_text(&data, &rect, theme, window);
             }
         }
 
-        // Draw the border last since the rows will overwrite some of it.
-        if let Some(color) = self.layer.border_color {
-            builder.polygon(
-                DrawMode::stroke(self.layer.border_width),
-                &[
-                    Point2 { x: frame.x, y: frame.y },
-                    Point2 { x: frame.right(), y: frame.top() },
-                    Point2 { x: frame.right(), y: frame.bottom() },
-                    Point2 { x: frame.left(), y: frame.bottom() },
-                    Point2 { x: frame.x, y: frame.y },
-                ],
-                color,
-            )?;
+        let content_height = self.datasource.len() as f32 * self.row_height;
+        if let Some(rect) = UITools::get_scrollbar_frame(content_height, &self.layer.frame, self.scroll_offset) {
+            window.draw(&rect, Col(Color::from_hex(UITools::SCROLLBAR_COLOR)));
         }
 
-        let mesh = builder.build(ctx)?;
-        graphics::draw(ctx, &mesh, DrawParam::default())?;
-
-        // Draw queued text, which are queued inside the LabelView
-        graphics::draw_queued_text(ctx, graphics::DrawParam::default())?;
+        if let Some(color) = self.layer.border_color {
+            for line in self.layer.get_border_lines(self.layer.border_width) {
+                window.draw_ex(&line.with_thickness(line.t), Col(color), Transform::IDENTITY, 0);
+            }
+        }
 
         Ok(())
     }
@@ -305,37 +280,36 @@ impl TKResponder for ListBox {
         false
     }
 
-    fn handle_mouse_at(&mut self, x: f32, y: f32) -> bool {
+    fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
         let range = self.get_visible_range();
-
-        if self.layer.frame.contains(mint::Point2 { x, y }) {
-            let local_y = y - self.layer.frame.y;
+        if pt.overlaps_rectangle(&self.layer.frame) {
+            self.layer.mouse_state = MouseState::Hover;
+            let local_y = pt.y - self.layer.frame.pos.y;
             let mut index = (local_y / self.row_height).floor() as usize;
             index += range.start;
-            if index < self.rows.len() {
+            if index < self.datasource.len() {
+                eprintln!("hover index={:?} y={:?}", index, 0);
                 self.hover_row = Some(index);
                 return true;
             }
         }
-        false
-    }
-
-    fn handle_mouse_down(&mut self, _x: f32, _y: f32, _state: &mut TKState) -> bool {
+        self.layer.mouse_state = MouseState::None;
+        self.hover_row = None;
         false
     }
 
     /// Calculate whether x, y are in the rect bounds of any child row with maths.
     /// Identify the row by getting x, y offset from listbox origin.
-    fn handle_mouse_up(&mut self, x: f32, y: f32, state: &mut TKState) -> bool {
+    fn handle_mouse_down(&mut self, pt: &Vector, state: &mut TKState) -> bool {
         let range = self.get_visible_range();
 
-        if self.layer.frame.contains(mint::Point2 { x, y }) {
-            let local_y = y - self.layer.frame.y;
+        if pt.overlaps_rectangle(&self.layer.frame) {
+            let local_y = pt.y - self.layer.frame.pos.y;
             // example: row_height=20. If local_y=50, then it is row_index=2
             let mut index = (local_y / self.row_height).floor() as usize;
             index += range.start;
-            if index < self.rows.len() {
-                log::debug!("local_y={:?} clicked row={:?}", local_y, index);
+            log::debug!("local_y={:?} clicked row={:?}", local_y, index);
+            if index < self.datasource.len() {
                 state.row_target = Some(index);
                 self.select_row = Some(index);
                 return true;
@@ -345,11 +319,17 @@ impl TKResponder for ListBox {
     }
 
     /// Add or subtract from the layer content offset
-    fn handle_mouse_scroll(&mut self, _x: f32, y: f32, _state: &mut TKState) {
-        let upper_limit = self.datasource.len() as f32 * self.row_height - self.layer.frame.h;
-        let eval_y = ((self.scroll_offset.y + y) * SCROLL_FACTOR).max(0.0).min(upper_limit);
-        // log::debug!("-------------- self.scroll_offset.y={:?} y={:?}", self.scroll_offset.y, y);
-        self.scroll_offset.y = eval_y;
+    fn handle_mouse_scroll(&mut self, pt: &Vector, _state: &mut TKState) {
+        match self.layer.mouse_state {
+            MouseState::Hover => {
+                // Calculate upper_limit as the content size outside of the frame.
+                let upper_limit = self.datasource.len() as f32 * self.row_height - self.layer.frame.height();
+                let eval_y = ((self.scroll_offset - pt.y) * SCROLL_FACTOR).min(upper_limit);
+                eprintln!("pt.y={:?} eval_y={:?}", pt.y, eval_y);
+                self.scroll_offset = eval_y.max(0.0);
+            }
+            _ => (),
+        }
     }
 }
 
@@ -360,24 +340,26 @@ impl TKResponder for ListBox {
 pub struct ListBoxRow {
     pub row_id: usize, // this is optional
     pub layer: TweenLayer,
+    pub text: String,
     pub label: Option<LabelView>,
     pub defaults: Vec<Prop>,
     // hover_animation: Option<UITransition>,
-    mouse_state: MouseState,
+    // mouse_state: MouseState,
     // onclick: Option<Box<FnMut(TKAction, &mut TKState) + 'static>>,
 }
 
 impl ListBoxRow {
-    pub fn new(frame: Rect) -> Self {
-        let layer = TweenLayer::new(frame.clone(), DrawParam::new().color(graphics::WHITE));
+    pub fn new(frame: Rectangle) -> Self {
+        let layer = TweenLayer::new(frame);
 
         ListBoxRow {
             row_id: 0,
             layer: layer,
+            text: String::default(),
             label: None,
             defaults: Vec::new(),
             // hover_animation: None,
-            mouse_state: MouseState::None,
+            // mouse_state: MouseState::None,
             // onclick: None,
         }
     }
@@ -387,17 +369,12 @@ impl ListBoxRow {
         self
     }
 
-    pub fn with_text(mut self, text: &str) -> Self {
-        let frame = self.layer.inset_by(8.0, 3.0, 8.0, 3.0); // TODO: make configurable
-        let label = LabelView::new(&frame, text);
-        self.label = Some(label);
-        self
+    pub fn render_with_text(&self, text: &str, rect: &Rectangle, theme: &Theme, window: &mut Window) {
+        let style = FontStyle::new(theme.font_size, Color::BLACK);
+        let render = theme.font.render(text, &style).unwrap();
+        let frame = UITools::inset_left_middle(rect, &render.area(), 8.0);
+        window.draw(&render.area().constrain(&frame), Img(&render));
     }
-
-    // pub fn default_animation(mut self) -> Self {
-    //     self.set_hover_animation(vec![color(HexColors::AliceBlue)], 0.0);
-    //     self
-    // }
 }
 
 // *****************************************************************************************************
@@ -409,22 +386,19 @@ impl TKDisplayable for ListBoxRow {
         TypeId::of::<ListBoxRow>()
     }
 
-    fn get_frame(&self) -> Rect {
+    fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
     }
 
     fn set_theme(&mut self, theme: &Theme) {
-        if let Some(label) = &mut self.label {
-            label.layer.graphics.color = theme.fg_color;
-            label.layer.font = theme.font;
-        }
+        self.layer.color = theme.bg_color;
     }
 
     fn load_defaults(&mut self) {
         self.defaults = Tween::load_props(&self.layer);
     }
 
-    fn update(&mut self) -> GameResult {
+    fn update(&mut self) -> TKResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {
@@ -434,34 +408,15 @@ impl TKDisplayable for ListBoxRow {
         Ok(())
     }
 
-    // fn render(&mut self, ctx: &mut Context) -> GameResult {
-    //     let mesh = graphics::Mesh::new_rectangle(
-    //         ctx,
-    //         graphics::DrawMode::fill(),
-    //         self.layer.frame,
-    //         self.layer.graphics.color,
-    //     )?;
+    // Unused
+    fn render(&mut self, theme: &Theme, window: &mut Window) -> TKResult {
+        let style = FontStyle::new(theme.font_size, Color::BLACK);
+        let render = theme.font.render(&self.text, &style).unwrap();
+        window.draw(&render.area().with_center(self.layer.frame.center()), Img(&render));
 
-    //     let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
-
-    //     if let Some(label) = &mut self.label {
-    //         log::debug!("listboxrow frame={:?} text={:?}", self.layer.frame, label.string);
-    //         label.render_inside(&self.layer.frame, ctx)?;
-    //     }
-
-    //     Ok(())
-    // }
-
-    fn render_inside(&mut self, rect: &Rect, ctx: &mut Context) -> GameResult {
-        let mesh =
-            graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), rect.clone(), self.layer.graphics.color)?;
-
-        graphics::draw(ctx, &mesh, self.layer.graphics)?;
-
-        if let Some(label) = &mut self.label {
-            label.render_inside(&rect, ctx)?;
-        }
-
+        // if let Some(label) = &mut self.label {
+        //     label.render(theme, window)?;
+        // }
         Ok(())
     }
 }

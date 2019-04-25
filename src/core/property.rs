@@ -99,12 +99,7 @@ pub struct UIState {
 
 impl UIState {
     pub fn create(_id: (usize, usize), _props: Vec<Prop>) -> Self {
-        UIState {
-            id: _id,
-            props: _props,
-            progress: 0.0,
-            offset: None,
-        }
+        UIState { id: _id, props: _props, progress: 0.0, offset: None }
     }
 
     pub fn get_prop_value(&self, prop_id: u32) -> Prop {

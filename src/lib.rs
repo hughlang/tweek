@@ -6,13 +6,10 @@
 extern crate unwrap_to;
 extern crate cgmath;
 
-#[allow(dead_code)]
-#[allow(unused_variables)]
-#[allow(unused_imports)]
-#[allow(unused_mut)]
 extern crate ggez;
 extern crate glyph_brush;
 extern crate image;
+extern crate quicksilver;
 extern crate rand;
 extern crate uuid;
 
@@ -22,3 +19,5 @@ extern crate uuid;
 pub mod core;
 pub mod ggez_support;
 pub mod prelude;
+pub mod quicksilver_ui;
+pub mod shared;

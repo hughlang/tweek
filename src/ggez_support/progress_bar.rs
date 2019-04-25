@@ -24,12 +24,7 @@ impl ProgressBarView {
         let layer1 = TweenLayer::new(frame, DrawParam::new().color(graphics::BLACK));
         let layer2 = TweenLayer::new(frame, DrawParam::new().color(graphics::WHITE));
 
-        ProgressBarView {
-            bg_layer: layer1,
-            fg_layer: layer2,
-            bg_image: None,
-            progress: 0.0,
-        }
+        ProgressBarView { bg_layer: layer1, fg_layer: layer2, bg_image: None, progress: 0.0 }
     }
 
     /// This should be called in the update() part of the run loop with the latest

@@ -1,3 +1,5 @@
+> Notice: The Tweek library is currently undergoing major changes. We are currently migrating away from GGEZ, as they have decided to drop support for MacOS. Currently, the latest PR contains the successful migration of most features to Quicksilver. However, the code is still messy with experimental functions and unused code. This is a temporary state while we remove GGEZ support and work towards full wasm compatibility.
+
 # Tweek: A Tween Animation Kit for Rust
 
 "Tween" is a term that was well-known in the early days of web animation, primarily in Flash development. More specifically, it was popularized by the [Tween and Timeline animation tools from Greensock](https://greensock.com/docs). Originally created for Flash and ActionScript, the Tween tools made it easy for any developer to build rich animations with minimal effort. Later, as Flash usage declined, the Greensock team ported the entire codebase to Javascript and HTML.
@@ -10,7 +12,7 @@ Hence, this project aspires to deliver the same level of power and simplicity to
 However, the endgame is quite clear to me. Rust is currently the language of choice when targeting WebAssembly (aka, Wasm) and Wasm-enabled browsers. Specifically, I'm talking about pure WebGL graphics and not a hybrid solution that requires HTML. When this is achieved, it will be possible to deliver the rich animations that work in nearly all browsers and bring back the "write once, run anywhere" vision.
 
 ## Examples
-There are several demos you can try out in the examples directory that showcase various animation scenarios. Conveniently, most of them are bundled into a small set of files where you can browse demos with the Next and Previous buttons. 
+There are several demos you can try out in the examples directory that showcase various animation scenarios. Conveniently, most of them are bundled into a small set of files where you can browse demos with the Next and Previous buttons.
 
 * cargo run --example basics
 * cargo run --example demos
@@ -23,9 +25,9 @@ To learn more about these examples, please also read the following pages:
 
 ## Basic Usage
 
-* To start, make sure you are using the nightly Rust build for now. 
+* To start, make sure you are using the latest stable Rust version. Currently 1.34.0
 
-This is a sample of a simple animation that increases the size of rectangle graphic over time with a SineOut easing speed. It also repeats and has a yoyo effect. 
+This is a sample of a simple animation that increases the size of rectangle graphic over time with a SineOut easing speed. It also repeats and has a yoyo effect.
 
 ```rust
     let rect = Rect::new(xpos, ypos, 0.0, 20.0);
@@ -85,7 +87,7 @@ Naturally, these components also have Tweenable graphics, which provides "intern
 
 ### Performance
 
-* In release mode, frame rate is well over 120 fps. In debug mode, it is close to 60 fps, unless you are animating text. As an alternative, you can render your text as images and import them. 
+* In release mode, frame rate is well over 120 fps. In debug mode, it is close to 60 fps, unless you are animating text. As an alternative, you can render your text as images and import them.
 
 
 
@@ -113,4 +115,4 @@ More details to come.
 
 ## Author
 
-Hugh Lang 
+Hugh Lang

@@ -158,3 +158,10 @@ impl HexColors {
     pub const DarkSlateGray: u32 = 0x2F4F4F;
     pub const Black: u32 = 0x000000;
 }
+
+pub fn hex_to_rgb(c: u32) -> (u8, u8, u8) {
+    let rp = ((c & 0x00FF_0000u32) >> 16) as u8;
+    let gp = ((c & 0x0000_FF00u32) >> 8) as u8;
+    let bp = (c & 0x0000_00FFu32) as u8;
+    (rp, gp, bp)
+}

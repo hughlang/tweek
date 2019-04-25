@@ -24,11 +24,7 @@ pub struct ImageView {
 impl ImageView {
     pub fn new(frame: Rect, image: graphics::Image) -> Self {
         let layer = TweenLayer::new(frame, DrawParam::new());
-        ImageView {
-            layer: layer,
-            scale: 1.0,
-            image: image,
-        }
+        ImageView { layer: layer, scale: 1.0, image: image }
     }
 }
 
@@ -58,10 +54,7 @@ impl TKDisplayable for ImageView {
     }
 
     fn render(&mut self, ctx: &mut Context) -> GameResult {
-        let pt = Point2 {
-            x: self.layer.frame.x,
-            y: self.layer.frame.y,
-        };
+        let pt = Point2 { x: self.layer.frame.x, y: self.layer.frame.y };
         let drawparams = graphics::DrawParam::new()
             .dest(pt)
             .rotation(self.layer.graphics.rotation as f32)
@@ -72,14 +65,8 @@ impl TKDisplayable for ImageView {
     }
 
     fn render_inside(&mut self, rect: &Rect, ctx: &mut Context) -> GameResult {
-        let pt = Point2 {
-            x: rect.x + rect.w / 2.0,
-            y: rect.y + rect.h / 2.0,
-        };
-        let scale = Vector2 {
-            x: self.scale,
-            y: self.scale,
-        };
+        let pt = Point2 { x: rect.x + rect.w / 2.0, y: rect.y + rect.h / 2.0 };
+        let scale = Vector2 { x: self.scale, y: self.scale };
         let drawparams = graphics::DrawParam::new()
             .dest(pt)
             .scale(scale)

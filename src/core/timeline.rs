@@ -23,12 +23,7 @@ pub struct TweenRange {
 impl TweenRange {
     fn new(tween: Tween, start: f64) -> Self {
         let end = start + &tween.total_time();
-        TweenRange {
-            tween: Rc::new(RefCell::new(tween)),
-            start: start,
-            end: end,
-            state: TweenState::Pending,
-        }
+        TweenRange { tween: Rc::new(RefCell::new(tween)), start: start, end: end, state: TweenState::Pending }
     }
 }
 
@@ -108,7 +103,7 @@ impl Timeline {
 
     pub fn repeat(mut self, count: u32, delay: f64) -> Self {
         self.repeat_count = count;
-        self.repeat_delay = Duration::from_float_secs(delay);
+        self.repeat_delay = Duration::from_secs_f64(delay);
         self
     }
 
@@ -118,11 +113,7 @@ impl Timeline {
 
     pub fn total_time(&self) -> f64 {
         let floats: Vec<f64> = self.children.values().map(|x| x.end).collect();
-        if let Some(max) = floats
-            .iter()
-            .cloned()
-            .max_by(|a, b| a.partial_cmp(b).expect("Tried to compare a NaN"))
-        {
+        if let Some(max) = floats.iter().cloned().max_by(|a, b| a.partial_cmp(b).expect("Tried to compare a NaN")) {
             return max;
         }
         0.0
@@ -135,7 +126,7 @@ impl Playable for Timeline {
     fn play(&mut self) {
         self.tl_start = Instant::now();
         for (id, range) in &self.children {
-            let elapsed = self.tl_start.elapsed().as_float_secs();
+            let elapsed = self.tl_start.elapsed().as_secs_f64();
             if range.start <= elapsed && range.end > elapsed {
                 log::debug!("timeline play id={}", id);
                 let mut tween = range.tween.borrow_mut();
@@ -182,7 +173,7 @@ impl TimelineAware for Timeline {
     fn update(&mut self, ctx: &mut TKState) {
         for (_, range) in &self.children {
             //
-            let elapsed = self.tl_start.elapsed().as_float_secs();
+            let elapsed = self.tl_start.elapsed().as_secs_f64();
             if range.start <= elapsed && range.end > elapsed {
                 let mut tween = range.tween.borrow_mut();
                 match tween.state {
@@ -200,7 +191,7 @@ impl TimelineAware for Timeline {
                 ctx.events.append(&mut events);
             }
         }
-        ctx.elapsed_time = self.tl_start.elapsed().as_float_secs();
+        ctx.elapsed_time = self.tl_start.elapsed().as_secs_f64();
         ctx.total_time = self.total_time();
     }
 }

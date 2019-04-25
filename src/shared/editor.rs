@@ -1,19 +1,21 @@
 /// This provides services for view components that allow text editing.
 /// https://docs.rs/glyph_brush/0.4.1/glyph_brush/
-extern crate ggez;
-
 // #[allow(unused_imports)]
-use glyph_brush::rusttype::{self, point, Font as RTFont, Scale};
+use glyph_brush::rusttype::{self, point, Font as RTFont, GlyphId, PositionedGlyph, Scale};
 
 #[allow(unused_imports)]
 use glyph_brush::{
-    self, GlyphBrush, GlyphBrushBuilder, GlyphCalculator, GlyphCalculatorBuilder, GlyphCruncher,
-    GlyphPositioner, HorizontalAlign as HAlign, Layout, Section, SectionGeometry, SectionText,
-    VariedSection,
+    self, BrushAction, BrushError, Color, DefaultSectionHasher, FontId, GlyphBrush, GlyphBrushBuilder, GlyphCalculator,
+    GlyphCalculatorBuilder, GlyphCruncher, GlyphPositioner, HorizontalAlign as HAlign, Layout, Section,
+    SectionGeometry, SectionText, VariedSection,
 };
 use image::{imageops, DynamicImage, ImageBuffer, Rgba};
+use std::collections::HashSet;
 use std::f32;
 use std::ops::Range;
+
+#[allow(unused_imports)]
+use quicksilver::geom::{Line, Rectangle, Vector};
 
 const SPACE: char = ' ';
 static ROBOTO_REGULAR: &[u8] = include_bytes!("../../resources/Roboto-Regular.ttf");
@@ -41,10 +43,7 @@ impl Default for EditorContext {
         let font = RTFont::from_bytes(ROBOTO_REGULAR).unwrap();
         let glyph_calc = GlyphCalculatorBuilder::using_font(font.clone()).build();
 
-        let rect = rusttype::Rect {
-            min: rusttype::point(0.0, 0.0),
-            max: rusttype::point(1.0, 1.0),
-        };
+        let rect = rusttype::Rect { min: rusttype::point(0.0, 0.0), max: rusttype::point(1.0, 1.0) };
 
         EditorContext {
             raw_font: font,
@@ -93,10 +92,9 @@ impl EditorContext {
         self
     }
 
-    pub fn with_font_bytes(mut self, bytes: &'static [u8]) -> Self {
+    pub fn set_font_bytes(mut self, bytes: &'static [u8]) {
         let raw_font: RTFont<'static> = RTFont::from_bytes(bytes).unwrap();
         self.raw_font = raw_font;
-        self
     }
 
     pub fn set_font(&mut self, raw_font: RTFont<'static>) {
@@ -128,6 +126,11 @@ impl EditorContext {
             self.string.insert(self.cursor_pos, c);
             self.cursor_pos += 1;
         }
+        // log::debug!(
+        //     "Updated: string='{}' len={}",
+        //     self.string,
+        //     self.string.len()
+        // );
     }
 
     pub fn delete_char(&mut self) {
@@ -144,11 +147,7 @@ impl EditorContext {
             self.string.remove(self.cursor_pos);
             self.cursor_pos -= 1;
         }
-        log::debug!(
-            "Backspace: string='{}' len={}",
-            self.string,
-            self.string.len()
-        );
+        log::debug!("Backspace: string='{}' len={}", self.string, self.string.len());
     }
 
     pub fn move_cursor(&mut self, shift: i32) {
@@ -162,11 +161,7 @@ impl EditorContext {
                 self.cursor_pos -= 1;
             }
         }
-        log::debug!(
-            "cursor at={:?} string.len={:?}",
-            self.cursor_pos,
-            self.string.len()
-        );
+        log::debug!("cursor at={:?} string.len={:?}", self.cursor_pos, self.string.len());
     }
 }
 
@@ -231,13 +226,7 @@ impl TextFieldEditor {
         let mut pointer = 0 as usize;
         let mut metrics: Vec<(f32, f32, char)> = Vec::new();
         let mut last_data: (f32, f32) = (0.0, 0.0);
-        let space_w = self
-            .ctx
-            .raw_font
-            .glyph(SPACE)
-            .scaled(scale)
-            .h_metrics()
-            .advance_width;
+        let space_w = self.ctx.raw_font.glyph(SPACE).scaled(scale).h_metrics().advance_width;
 
         for c in self.ctx.string.chars() {
             if c != SPACE {
@@ -275,20 +264,14 @@ impl TextFieldEditor {
 
         let cursor_space = 0.0;
         if self.ctx.cursor_pos > self.ctx.metrics.len() {
-            log::debug!(
-                "PANIC! cursor_pos={:?} OOB metrics={:?}",
-                self.ctx.cursor_pos,
-                self.ctx.metrics.len()
-            );
+            log::debug!("PANIC! cursor_pos={:?} OOB metrics={:?}", self.ctx.cursor_pos, self.ctx.metrics.len());
             // TODO: return false or error so that text field can stop rendering
             return;
         }
 
         // Set default for easiest case
-        self.ctx.cursor_origin = (
-            self.ctx.frame.min.x + cursor_space,
-            self.ctx.frame.min.y + self.ctx.frame.height() / 2.0,
-        );
+        self.ctx.cursor_origin =
+            (self.ctx.frame.min.x + cursor_space, self.ctx.frame.min.y + self.ctx.frame.height() / 2.0);
         self.ctx.text_origin = (
             self.ctx.frame.min.x,
             self.ctx.frame.min.y + (self.ctx.frame.height() - self.ctx.text_size.1 as f32) / 2.0,
@@ -297,27 +280,16 @@ impl TextFieldEditor {
         if self.ctx.text_size.0 as f32 <= self.ctx.frame.width() {
             self.ctx.visible_range = 0..self.ctx.string.len();
             if self.ctx.cursor_pos == self.ctx.string.len() {
-                self.ctx.cursor_origin.0 =
-                    self.ctx.frame.min.x + self.ctx.text_size.0 as f32 + cursor_space;
+                self.ctx.cursor_origin.0 = self.ctx.frame.min.x + self.ctx.text_size.0 as f32 + cursor_space;
             } else {
-                self.ctx.cursor_origin.0 =
-                    self.ctx.frame.min.x + self.ctx.metrics[self.ctx.cursor_pos].0;
+                self.ctx.cursor_origin.0 = self.ctx.frame.min.x + self.ctx.metrics[self.ctx.cursor_pos].0;
             }
         } else {
             // log::debug!("text_size={:?} frame.w={:?}", self.text_size, self.frame.width());
             if self.ctx.cursor_pos == 0 {
                 // Either the field is not being edited or is at beginning.
-                if let Some(end) = self
-                    .ctx
-                    .metrics
-                    .iter()
-                    .position(|x| x.0 > self.ctx.frame.width())
-                {
-                    log::debug!(
-                        "Case 1: range={:?} cursor={:?}",
-                        self.ctx.visible_range,
-                        self.ctx.cursor_origin
-                    );
+                if let Some(end) = self.ctx.metrics.iter().position(|x| x.0 > self.ctx.frame.width()) {
+                    log::debug!("Case 1: range={:?} cursor={:?}", self.ctx.visible_range, self.ctx.cursor_origin);
                     self.ctx.visible_range = 0..end;
                 } else {
                     // Unsure what scenario this is.
@@ -332,9 +304,13 @@ impl TextFieldEditor {
                 // The field is being edited.
                 // Starting the from the right end of self.metrics, find the starting point where the
                 // x coordinate is less than the width of self.frame
-                if let Some(rev_index) = self.ctx.metrics.iter().rev().position(|x| {
-                    x.2 != SPACE && x.0 < self.ctx.text_size.0 as f32 - self.ctx.frame.width()
-                }) {
+                if let Some(rev_index) = self
+                    .ctx
+                    .metrics
+                    .iter()
+                    .rev()
+                    .position(|x| x.2 != SPACE && x.0 < self.ctx.text_size.0 as f32 - self.ctx.frame.width())
+                {
                     let start = self.ctx.string.len() - rev_index - 1;
                     self.ctx.visible_range = start..self.ctx.string.len();
                     // Determine offset width for range of text left of the view
@@ -345,9 +321,8 @@ impl TextFieldEditor {
                     if self.ctx.cursor_pos == self.ctx.string.len() {
                         self.ctx.cursor_origin.0 = self.ctx.frame.max.x;
                     } else {
-                        self.ctx.cursor_origin.0 = self.ctx.text_origin.0
-                            + self.ctx.metrics[self.ctx.cursor_pos].0
-                            - offset;
+                        self.ctx.cursor_origin.0 =
+                            self.ctx.text_origin.0 + self.ctx.metrics[self.ctx.cursor_pos].0 - offset;
                     }
                     log::debug!(
                         "Case 2: range={:?} cursor_x={:?} offset={} string_w={}",
@@ -428,11 +403,9 @@ impl TextFieldEditor {
         let glyphs = glyph_calc.glyphs(&varied);
 
         let buffer = self.ctx.font_size as u32;
-        let mut imgbuf = DynamicImage::new_rgba8(
-            self.ctx.frame.width() as u32 + buffer,
-            self.ctx.frame.height() as u32 + buffer,
-        )
-        .to_rgba();
+        let mut imgbuf =
+            DynamicImage::new_rgba8(self.ctx.frame.width() as u32 + buffer, self.ctx.frame.height() as u32 + buffer)
+                .to_rgba();
 
         // Loop through the glyphs in the text, positing each one on a line
         let mut last_y = 0 as u32;
@@ -448,9 +421,7 @@ impl TextFieldEditor {
                         x + bounding_box.min.x as u32,
                         y + bounding_box.min.y as u32,
                         // TODO: Make color customizable
-                        Rgba {
-                            data: [0, 0, 0, (v * 255.0) as u8],
-                        },
+                        Rgba { data: [0, 0, 0, (v * 255.0) as u8] },
                     )
                 });
             }
@@ -464,22 +435,12 @@ impl TextFieldEditor {
         let v_metrics = self.ctx.raw_font.v_metrics(scale);
 
         // FIXME: ypos is hard coded. It will panic/crash if glyph y is negative
-        let glyphs: Vec<_> = self
-            .ctx
-            .raw_font
-            .layout(text, scale, point(0.0, 10.0))
-            .collect();
+        let glyphs: Vec<_> = self.ctx.raw_font.layout(text, scale, point(0.0, 10.0)).collect();
 
         let glyphs_height = (v_metrics.ascent - v_metrics.descent).ceil() as u32;
         let glyphs_width = {
-            let min_x = glyphs
-                .first()
-                .map(|g| g.pixel_bounding_box().unwrap().min.x)
-                .unwrap();
-            let max_x = glyphs
-                .last()
-                .map(|g| g.pixel_bounding_box().unwrap().max.x)
-                .unwrap();
+            let min_x = glyphs.first().map(|g| g.pixel_bounding_box().unwrap().min.x).unwrap();
+            let max_x = glyphs.last().map(|g| g.pixel_bounding_box().unwrap().max.x).unwrap();
             (max_x - min_x) as u32
         };
 
@@ -498,9 +459,7 @@ impl TextFieldEditor {
                         x + bounding_box.min.x as u32,
                         y + bounding_box.min.y as u32,
                         // TODO: Make color customizable
-                        Rgba {
-                            data: [0, 0, 0, (v * 255.0) as u8],
-                        },
+                        Rgba { data: [0, 0, 0, (v * 255.0) as u8] },
                     )
                 });
             }
@@ -541,12 +500,7 @@ pub struct TextAreaEditor {
 impl Default for TextAreaEditor {
     fn default() -> Self {
         let ctx = EditorContext::default();
-        TextAreaEditor {
-            ctx: ctx,
-            full_render: None,
-            line_count: 1,
-            baselines: Vec::new(),
-        }
+        TextAreaEditor { ctx: ctx, full_render: None, line_count: 1, baselines: Vec::new() }
     }
 }
 
@@ -592,13 +546,7 @@ impl TextAreaEditor {
         let mut last_data: (f32, f32) = (0.0, 0.0);
 
         let scale = Scale::uniform(self.ctx.font_size);
-        let space_w = self
-            .ctx
-            .raw_font
-            .glyph(SPACE)
-            .scaled(scale)
-            .h_metrics()
-            .advance_width;
+        let space_w = self.ctx.raw_font.glyph(SPACE).scaled(scale).h_metrics().advance_width;
 
         for c in self.ctx.string.chars() {
             if c != SPACE {
@@ -612,22 +560,21 @@ impl TextAreaEditor {
                 break;
             }
         }
-
+        // log:trace!("metrics={:?}", metrics);
         self.ctx.metrics = metrics;
         // let y_data: Vec<f32> = xy_coords.iter().map(|xy| xy.1).collect();
         // self.ctx.baselines = y_data;
         // self.ctx.baselines.dedup();
         self.ctx.cursor_origin = (
             self.ctx.frame.min.x + self.ctx.metrics[self.ctx.cursor_pos].0,
-            self.ctx.frame.min.y + self.ctx.metrics[self.ctx.cursor_pos].1
-                - self.ctx.font_size / 2.0,
+            self.ctx.frame.min.y + self.ctx.metrics[self.ctx.cursor_pos].1 - self.ctx.font_size / 2.0,
         );
     }
 
     pub fn update_rendered_text(&mut self) {
         if self.ctx.string.len() == 0 {
             return;
-        };
+        }
         let mut glyph_calc = self.ctx.glyph_calc.cache_scope();
         let layout = Layout::default();
         let varied = VariedSection {
@@ -647,9 +594,7 @@ impl TextAreaEditor {
         let mut xy_coords: Vec<(f32, f32)> = Vec::new();
         let glyphs = glyph_calc.glyphs(&varied);
 
-        let mut imgbuf =
-            DynamicImage::new_rgba8(self.ctx.text_size.0 + 100, self.ctx.text_size.1 + 100)
-                .to_rgba();
+        let mut imgbuf = DynamicImage::new_rgba8(self.ctx.text_size.0 + 100, self.ctx.text_size.1 + 100).to_rgba();
 
         // Loop through the glyphs in the text, positing each one on a line
         for glyph in glyphs {
@@ -662,9 +607,7 @@ impl TextAreaEditor {
                         x + bounding_box.min.x as u32,
                         y + bounding_box.min.y as u32,
                         // TODO: Make color customizable
-                        Rgba {
-                            data: [0, 0, 0, (v * 255.0) as u8],
-                        },
+                        Rgba { data: [0, 0, 0, (v * 255.0) as u8] },
                     )
                 });
             }
@@ -676,13 +619,7 @@ impl TextAreaEditor {
         let mut last_data: (f32, f32) = (0.0, 0.0);
 
         let scale = Scale::uniform(self.ctx.font_size);
-        let space_w = self
-            .ctx
-            .raw_font
-            .glyph(SPACE)
-            .scaled(scale)
-            .h_metrics()
-            .advance_width;
+        let space_w = self.ctx.raw_font.glyph(SPACE).scaled(scale).h_metrics().advance_width;
 
         for c in self.ctx.string.chars() {
             if c != SPACE {
@@ -713,22 +650,192 @@ impl TextAreaEditor {
         self.ctx.has_changed = false;
         self.ctx.cursor_origin = (
             self.ctx.frame.min.x + self.ctx.metrics[self.ctx.cursor_pos].0,
-            self.ctx.frame.min.y + self.ctx.metrics[self.ctx.cursor_pos].1
-                - self.ctx.font_size / 2.0,
+            self.ctx.frame.min.y + self.ctx.metrics[self.ctx.cursor_pos].1,
         );
         self.ctx.text_origin = (self.ctx.frame.min.x, self.ctx.frame.min.y);
     }
 
     pub fn get_visible_text(&self, scroll_y: f32) -> Option<String> {
         let y1 = scroll_y;
-        let y2 = scroll_y + self.ctx.frame.height();
+        // Some letters extend below the baseline, so add a little extra
+        let y2 = scroll_y + self.ctx.frame.height() + self.ctx.font_size * 0.2;
         let filter = self.ctx.metrics.iter().filter(|m| m.1 > y1 && m.1 < y2);
         let results: String = filter.map(|m| m.2).collect();
         Some(results)
     }
 
+    pub fn get_wrapped_text(&self, scroll_y: f32) -> Option<String> {
+        let y1 = scroll_y;
+        let y2 = scroll_y + self.ctx.frame.height();
+        let filter = self.ctx.metrics.iter().filter(|m| m.1 > y1 && m.1 < y2);
+        // eprintln!("text={:?} y={:?}", filter, 0);
+        // eprintln!("y1={:?} y2={:?} count={}", y1, y2, 0);
+        let mut buffer: Vec<char> = Vec::new();
+        for m in filter {
+            if m.0 == 0.0 && buffer.len() > 0 {
+                buffer.push('\n');
+            }
+            buffer.push(m.2);
+        }
+        let result: String = buffer.into_iter().collect();
+        // eprintln!("count={:?} result={:?}", result.len(), result);
+        Some(result)
+    }
+
+    pub fn draw_visible_text(&mut self, scroll_y: f32) {
+        if let Some(string) = self.get_visible_text(scroll_y) {
+            // let glyphs = self.get_glyphs_for_text(&string);
+            let mut glyph_brush: GlyphBrush<'_, DefaultSectionHasher> =
+                GlyphBrushBuilder::using_font_bytes(ROBOTO_REGULAR).build();
+            let layout = Layout::default();
+            let varied = VariedSection {
+                layout: layout,
+                bounds: (self.ctx.frame.width(), self.ctx.frame.height()),
+                text: vec![SectionText {
+                    text: &string,
+                    scale: Scale::uniform(self.ctx.font_size),
+                    ..SectionText::default()
+                }],
+                ..VariedSection::default()
+            };
+            glyph_brush.queue(&varied);
+            // match glyph_brush.process_queued(
+            //     (1024, 768),
+            //     |rect, tex_data| {
+
+            //     },
+            //     |vertex_data| {
+            //         // into_vertex(vertex_data)
+            //         },
+            // ) {
+            //     Ok(BrushAction::Draw(vertices)) => {
+            //         // Draw new vertices.
+            //     }
+            //     Ok(BrushAction::ReDraw) => {
+            //         // Re-draw last frame's vertices unmodified.
+            //     }
+            //     Err(BrushError::TextureTooSmall { suggested }) => {
+            //         // Enlarge texture + glyph_brush texture cache and retry.
+            //     }
+            // }
+        }
+    }
+
+    // fn to_vertex(v: glyph_brush::GlyphVertex) -> DrawParam {
+    //     let src_rect = Rect {
+    //         x: v.tex_coords.min.x,
+    //         y: v.tex_coords.min.y,
+    //         w: v.tex_coords.max.x - v.tex_coords.min.x,
+    //         h: v.tex_coords.max.y - v.tex_coords.min.y,
+    //     };
+    //     // it LOOKS like pixel_coords are the output coordinates?
+    //     // I'm not sure though...
+    //     let dest_pt = Point2::new(v.pixel_coords.min.x as f32, v.pixel_coords.min.y as f32);
+    //     DrawParam::default()
+    //         .src(src_rect)
+    //         .dest(dest_pt)
+    //         .color(v.color.into())
+    // }
+
+    pub fn render_visible_text(&mut self, scroll_y: f32) -> Option<ImageBuffer<Rgba<u8>, Vec<u8>>> {
+        if let Some(string) = self.get_visible_text(scroll_y) {
+            // eprintln!("string={:?} y={:?}", &string, 0);
+            let mut glyph_calc = self.ctx.glyph_calc.cache_scope();
+            let layout = Layout::default();
+            let varied = VariedSection {
+                layout: layout,
+                bounds: (self.ctx.frame.width(), self.ctx.frame.height()),
+                text: vec![SectionText {
+                    text: &string,
+                    scale: Scale::uniform(self.ctx.font_size),
+                    ..SectionText::default()
+                }],
+                ..VariedSection::default()
+            };
+
+            let glyphs = glyph_calc.glyphs(&varied);
+            let mut imgbuf =
+                DynamicImage::new_rgba8(self.ctx.frame.width() as u32 + 20, self.ctx.frame.height() as u32 + 20)
+                    .to_rgba();
+
+            // Loop through the glyphs in the text, positing each one on a line
+            for glyph in glyphs {
+                if let Some(bounding_box) = glyph.pixel_bounding_box() {
+                    // if let Some(c) = self.glyph_id_to_char(&chars, glyph.id()) {
+                    //     eprintln!("c={:?} bb={:?}", c, bounding_box);
+                    // }
+                    // Draw the glyph into the image per-pixel by using the draw closure
+                    glyph.draw(|x, y, v| {
+                        imgbuf.put_pixel(
+                            // Offset the position by the glyph bounding box
+                            x + bounding_box.min.x as u32,
+                            y + bounding_box.min.y as u32,
+                            // TODO: Make color customizable
+                            Rgba { data: [0, 0, 0, (v * 255.0) as u8] },
+                        )
+                    });
+                }
+            }
+            return Some(imgbuf);
+        }
+        None
+    }
+
+    pub fn vertices_for_text(&mut self, scroll_y: f32) -> Vec<Vector> {
+        let mut vectors: Vec<Vector> = Vec::new();
+        if let Some(string) = self.get_visible_text(scroll_y) {
+            // eprintln!("string={:?} y={:?}", &string, 0);
+            let mut glyph_calc = self.ctx.glyph_calc.cache_scope();
+            let layout = Layout::default();
+            let varied = VariedSection {
+                layout: layout,
+                bounds: (self.ctx.frame.width(), self.ctx.frame.height()),
+                text: vec![SectionText {
+                    text: &string,
+                    scale: Scale::uniform(self.ctx.font_size),
+                    ..SectionText::default()
+                }],
+                ..VariedSection::default()
+            };
+
+            let glyphs = glyph_calc.glyphs(&varied);
+
+            for glyph in glyphs {
+                if let Some(bounding_box) = glyph.pixel_bounding_box() {
+                    glyph.draw(|x, y, v| {
+                        vectors.push(Vector { x: x as f32, y: y as f32 });
+                    });
+                }
+            }
+        }
+        vectors
+    }
+    fn _glyph_id_to_char(&self, chars: &HashSet<char>, id: GlyphId) -> Option<char> {
+        // let chars: HashSet<char> = self.ctx.string.chars().collect();
+        chars.iter().find(|c| self.ctx.raw_font.glyph(**c).id() == id).cloned()
+    }
+
+    pub fn get_glyphs_for_text(&self, text: &str) -> Vec<(PositionedGlyph, Color, FontId)> {
+        let font = RTFont::from_bytes(ROBOTO_REGULAR).unwrap();
+        let fonts = vec![font];
+        let glyphs = Layout::default().calculate_glyphs(
+            &fonts,
+            &SectionGeometry {
+                bounds: (self.ctx.frame.width(), self.ctx.frame.height()),
+                ..SectionGeometry::default()
+            },
+            &[SectionText { text: text, scale: Scale::uniform(self.ctx.font_size), ..SectionText::default() }],
+        );
+        glyphs
+    }
+
     pub fn get_text_origin(&self) -> (f32, f32) {
         self.ctx.text_origin
+    }
+
+    pub fn get_line_height(&self) -> f32 {
+        // TODO: handle hidpi factor
+        return self.ctx.font_size;
     }
 
     // *****************************************************************************************************
@@ -764,13 +871,7 @@ impl TextAreaEditor {
     // Render as image functions
     // *****************************************************************************************************
 
-    pub fn crop_cached_render(
-        &mut self,
-        x: u32,
-        y: u32,
-        w: u32,
-        h: u32,
-    ) -> Option<ImageBuffer<Rgba<u8>, Vec<u8>>> {
+    pub fn crop_cached_render(&mut self, x: u32, y: u32, w: u32, h: u32) -> Option<ImageBuffer<Rgba<u8>, Vec<u8>>> {
         if let Some(imgbuf) = &mut self.full_render {
             let subimg = imageops::crop(imgbuf, x, y, w, h);
             return Some(subimg.to_image());

@@ -90,6 +90,8 @@ impl TKState {
     }
 }
 
+pub type TKResult<T = ()> = Result<T, &'static str>;
+
 //-- Main -----------------------------------------------------------------------
 
 /// Tweek acts as a coordinator when multiple tween animations are added to a Timeline
@@ -101,10 +103,7 @@ pub struct Tweek {
 
 impl Tweek {
     pub fn new() -> Self {
-        Tweek {
-            subscribers: Vec::new(),
-            timelines: Vec::new(),
-        }
+        Tweek { subscribers: Vec::new(), timelines: Vec::new() }
     }
 
     pub fn add_timeline(&mut self, timeline: Timeline) {

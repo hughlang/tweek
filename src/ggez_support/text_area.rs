@@ -7,6 +7,7 @@
 extern crate ggez;
 
 use crate::core::*;
+use crate::shared::*;
 
 use ggez::event::{KeyCode, KeyMods};
 use ggez::graphics::{self, Align, Color, DrawParam, Rect, Text};
@@ -48,10 +49,8 @@ impl TextArea {
         let input_frame = layer.inset_by(10.0, 10.0, 10.0, 10.0);
         // log::debug!("outer frame={:?} input frame={:?}", frame, input_frame);
 
-        let mut editor = TextAreaEditor::default().with_frame(
-            (input_frame.x, input_frame.y),
-            (input_frame.w, input_frame.h),
-        );
+        let mut editor =
+            TextAreaEditor::default().with_frame((input_frame.x, input_frame.y), (input_frame.w, input_frame.h));
 
         // temporary hack to test scroll bar
         editor.ctx.frame.max.x = editor.ctx.frame.max.x - 10.0;
@@ -100,14 +99,8 @@ impl TextArea {
         self.editor.start_editing();
 
         let rect = &self.layer.offset_by(10.0, 10.0, 10.0, 10.0);
-        let pt1 = mint::Point2 {
-            x: rect.x,
-            y: rect.y,
-        };
-        let pt2 = mint::Point2 {
-            x: rect.x,
-            y: rect.y + rect.h,
-        };
+        let pt1 = mint::Point2 { x: rect.x, y: rect.y };
+        let pt2 = mint::Point2 { x: rect.x, y: rect.y + rect.h };
 
         let cursor = Cursor::new(pt1, pt2, 2.0).default_animation();
         self.cursor = Some(cursor);
@@ -188,10 +181,7 @@ impl TKDisplayable for TextArea {
         }
 
         let origin = self.editor.get_text_origin();
-        let text_origin = mint::Point2 {
-            x: origin.0,
-            y: origin.1,
-        };
+        let text_origin = mint::Point2 { x: origin.0, y: origin.1 };
         // log::debug!("origin={:?} text_size={:?}", origin, self.editor.text_size);
         self.editor.update_display();
 
@@ -200,31 +190,19 @@ impl TKDisplayable for TextArea {
 
             if let Some(text) = self.editor.get_visible_text(self.scroll_offset.y) {
                 let mut render_text = Text::new((text, self.layer.font, self.layer.font_size));
-                let bounds = mint::Point2 {
-                    x: self.editor.ctx.frame.width(),
-                    y: self.editor.ctx.frame.height(),
-                };
+                let bounds = mint::Point2 { x: self.editor.ctx.frame.width(), y: self.editor.ctx.frame.height() };
                 render_text.set_bounds(bounds, Align::Left);
 
                 // let (text_w, text_h) = render_text.dimensions(ctx);
                 // log::debug!("text_w={:?} text_h={:?}", text_w, text_h);
-                graphics::draw(
-                    ctx,
-                    &render_text,
-                    self.layer.graphics.dest(text_origin).color(graphics::BLACK),
-                )?;
+                graphics::draw(ctx, &render_text, self.layer.graphics.dest(text_origin).color(graphics::BLACK))?;
             }
 
             if let Some(cursor) = &mut self.cursor {
                 let cursor_pt = self.editor.ctx.cursor_origin;
                 let line_height = self.editor.ctx.font_size;
 
-                let c_frame = Rect::new(
-                    cursor_pt.0 + cursor_space,
-                    cursor_pt.1 - line_height / 2.0,
-                    10.0,
-                    line_height,
-                );
+                let c_frame = Rect::new(cursor_pt.0 + cursor_space, cursor_pt.1 - line_height / 2.0, 10.0, line_height);
                 // log::debug!("c_frame={:?} line_height={:?}", c_frame, line_height);
                 cursor.render_inside(&c_frame, ctx)?;
             }
@@ -237,12 +215,7 @@ impl TKDisplayable for TextArea {
             ) {
                 let (text_w, text_h) = imgbuf.dimensions();
                 // log::debug!("w={:?} h={:?}", text_w, text_h);
-                let img = graphics::Image::from_rgba8(
-                    ctx,
-                    text_w as u16,
-                    text_h as u16,
-                    imgbuf.into_raw().as_slice(),
-                )?;
+                let img = graphics::Image::from_rgba8(ctx, text_w as u16, text_h as u16, imgbuf.into_raw().as_slice())?;
                 // text_origin.y = input_frame.y + (input_frame.h - img.height() as f32) / 2.0;
                 // log::debug!("text_origin={:?} input_frame={:?}", text_origin, input_frame);
                 let drawparams = graphics::DrawParam::new().dest(text_origin);
@@ -254,17 +227,12 @@ impl TKDisplayable for TextArea {
         // Calculate height of scrollbar as ratio between viewport height and total text height
         let rect = self.layer.frame;
         let bar_h = (rect.h / self.editor.ctx.text_size.1 as f32).min(0.2) * rect.h;
-        let ypos = rect.y
-            + (self.scroll_offset.y / self.editor.ctx.text_size.1 as f32 * rect.h)
-                .min(rect.y + rect.h - bar_h);
+        let ypos =
+            rect.y + (self.scroll_offset.y / self.editor.ctx.text_size.1 as f32 * rect.h).min(rect.y + rect.h - bar_h);
 
         let frame = Rect::new(self.layer.frame.right() - 10.0, ypos, 10.0, bar_h);
-        let scrollbar = graphics::Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::fill(),
-            frame,
-            Color::from_rgb_u32(0xBBBBBB),
-        )?;
+        let scrollbar =
+            graphics::Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), frame, Color::from_rgb_u32(0xBBBBBB))?;
         graphics::draw(ctx, &scrollbar, self.layer.graphics)?;
 
         Ok(())

@@ -25,12 +25,7 @@ pub struct ButtonView {
 impl ButtonView {
     pub fn new(frame: Rect) -> Self {
         let layer = TweenLayer::new(frame, DrawParam::new());
-        ButtonView {
-            layer: layer,
-            label: None,
-            image: None,
-            onclick: None,
-        }
+        ButtonView { layer: layer, label: None, image: None, onclick: None }
     }
 
     pub fn with_title(mut self, text: &str) -> Self {
@@ -41,12 +36,7 @@ impl ButtonView {
     }
 
     pub fn with_image(mut self, image: graphics::Image, margin: f32) -> Self {
-        let rect = Rect::new(
-            0.0,
-            0.0,
-            self.layer.frame.h - margin,
-            self.layer.frame.h - margin,
-        );
+        let rect = Rect::new(0.0, 0.0, self.layer.frame.h - margin, self.layer.frame.h - margin);
         let fraction = rect.h / image.height() as f32;
         let mut img = ImageView::new(rect, image);
         img.scale = fraction;

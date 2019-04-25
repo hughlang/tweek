@@ -53,7 +53,7 @@ pub fn color(c: u32) -> Prop {
 }
 
 pub fn rotate(degrees: f64) -> Prop {
-    Prop::Rotate(FloatProp::new(degrees.to_radians()))
+    Prop::Rotate(FloatProp::new(degrees))
 }
 
 //-- Base -----------------------------------------------------------------------
@@ -139,6 +139,7 @@ impl Tween {
 
         for prop in prop_list {
             let start_prop = tweenable.get_prop(&prop);
+            log::debug!("Start prop: {:?}", start_prop);
             match start_prop {
                 Prop::None => {}
                 _ => {
@@ -193,20 +194,20 @@ impl Tween {
             animator.end_time = animator.start_time + animator.seconds;
             time += animator.seconds;
         }
-        self.duration = Duration::from_float_secs(time);
+        self.duration = Duration::from_secs_f64(time);
 
         self
     }
 
     // Not used yet
     pub fn delay(mut self, _seconds: f64) -> Self {
-        self.delay_s = Duration::from_float_secs(_seconds);
+        self.delay_s = Duration::from_secs_f64(_seconds);
         self
     }
 
     pub fn repeat(mut self, count: i32, delay: f64) -> Self {
         self.repeat_count = count;
-        self.repeat_delay = Duration::from_float_secs(delay);
+        self.repeat_delay = Duration::from_secs_f64(delay);
         self
     }
 
@@ -276,12 +277,11 @@ impl Tween {
 
         // If no limit, then only calculate one loop
         if self.repeat_count < 1 {
-            return time + self.delay_s.as_float_secs();
+            return time + self.delay_s.as_secs_f64();
         }
 
-        let total = time
-            + self.delay_s.as_float_secs()
-            + (self.repeat_count as f64) * (time + self.repeat_delay.as_float_secs());
+        let total =
+            time + self.delay_s.as_secs_f64() + (self.repeat_count as f64) * (time + self.repeat_delay.as_secs_f64());
 
         total
     }
@@ -291,8 +291,8 @@ impl Tween {
     pub fn update(&mut self) -> Option<UIState> {
         match self.state {
             TweenState::Running => {
-                let elapsed = self.started_at.elapsed().as_float_secs();
-                let total_seconds = self.duration.as_float_secs();
+                let elapsed = self.started_at.elapsed().as_secs_f64();
+                let total_seconds = self.duration.as_secs_f64();
                 for animator in &mut self.animators {
                     if self.time_scale > 0.0 {
                         if animator.start_time < elapsed && animator.end_time >= elapsed {
@@ -359,11 +359,7 @@ impl Tween {
             cleaned_props.push(Prop::Resize(sum_resize));
         }
 
-        let animator = Animator::create(
-            &(self.tween_id, self.animators.len()),
-            &self.start_props,
-            &cleaned_props,
-        );
+        let animator = Animator::create(&(self.tween_id, self.animators.len()), &self.start_props, &cleaned_props);
         self.animators.push(animator);
         self
     }
@@ -399,11 +395,7 @@ impl Tween {
             // c) Copy unchanged prop from start_state.props to end_state.props
 
             for begin_prop in begin_props {
-                let mut iter = animator
-                    .end_state
-                    .props
-                    .iter_mut()
-                    .filter(|x| x.prop_id() == begin_prop.prop_id());
+                let mut iter = animator.end_state.props.iter_mut().filter(|x| x.prop_id() == begin_prop.prop_id());
                 if let Some(end_prop) = iter.next() {
                     end_props.push(end_prop.clone());
                     keep_prop_ids.insert(begin_prop.prop_id());
@@ -454,11 +446,8 @@ impl Tween {
             animator.end_state.props = end_props.clone();
             begin_props = end_props.clone();
 
-            log::debug!(
-                "# start = {:?} \n# end   = {:?}",
-                &animator.start_state.props,
-                &animator.end_state.props
-            );
+            log::debug!("# start = {:?}", &animator.start_state.props);
+            log::debug!("# end   = {:?}", &animator.end_state.props);
         }
 
         // Step 2:
@@ -467,32 +456,19 @@ impl Tween {
         // props that have been mutated across all animators.
         for animator in &mut self.animators {
             // TODO: Implement FromIterator or whatever to make this less complex.
-            let mut iter = animator
-                .start_state
-                .props
-                .iter_mut()
-                .filter(|x| keep_prop_ids.contains(&x.prop_id()));
+            let mut iter = animator.start_state.props.iter_mut().filter(|x| keep_prop_ids.contains(&x.prop_id()));
             let mut start_props: Vec<Prop> = Vec::new();
             while let Some(prop) = iter.next() {
                 start_props.push(prop.clone());
             }
             animator.start_state.props = start_props;
 
-            let mut iter = animator
-                .end_state
-                .props
-                .iter_mut()
-                .filter(|x| keep_prop_ids.contains(&x.prop_id()));
+            let mut iter = animator.end_state.props.iter_mut().filter(|x| keep_prop_ids.contains(&x.prop_id()));
             let mut end_props: Vec<Prop> = Vec::new();
             while let Some(prop) = iter.next() {
                 end_props.push(prop.clone());
             }
             animator.end_state.props = end_props;
-            log::debug!(
-                "start: {:?} \nend  : {:?}",
-                &animator.start_state.props,
-                &animator.end_state.props
-            );
         }
     }
 }
@@ -528,11 +504,7 @@ impl Playable for Tween {
             TweenState::Idle => {
                 // If repeat_delay > 0, tween should wait until time elapsed passes it
                 if self.started_at.elapsed() > self.duration + self.repeat_delay {
-                    log::debug!(
-                        "repeats={:?} plays={:?}",
-                        self.repeat_count,
-                        self.play_count
-                    );
+                    log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
                     if self.repeat_count < 0 {
                         self.reset();
                     } else if self.play_count <= self.repeat_count as u32 {

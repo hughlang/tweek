@@ -27,6 +27,7 @@
 extern crate ggez;
 
 use crate::core::*;
+use crate::shared::*;
 
 use ggez::event::{KeyCode, KeyMods};
 use ggez::graphics::{self, Color, DrawParam, Rect, Text};
@@ -61,10 +62,8 @@ impl TextField {
     pub fn new(frame: Rect) -> Self {
         let layer = TweenLayer::new(frame, DrawParam::new().color(graphics::BLACK));
         let input_frame = layer.inset_by(10.0, 10.0, 10.0, 10.0);
-        let editor = TextFieldEditor::default().with_frame(
-            (input_frame.x, input_frame.y),
-            (input_frame.w, input_frame.h),
-        );
+        let editor =
+            TextFieldEditor::default().with_frame((input_frame.x, input_frame.y), (input_frame.w, input_frame.h));
         log::debug!("outer frame={:?} input frame={:?}", frame, input_frame);
         TextField {
             layer: TweenLayer::new(frame, DrawParam::new().color(graphics::BLACK)),
@@ -109,14 +108,8 @@ impl TextField {
         self.editor.start_editing();
 
         let rect = &self.layer.offset_by(10.0, 10.0, 10.0, 10.0);
-        let pt1 = mint::Point2 {
-            x: rect.x,
-            y: rect.y,
-        };
-        let pt2 = mint::Point2 {
-            x: rect.x,
-            y: rect.y + rect.h,
-        };
+        let pt1 = mint::Point2 { x: rect.x, y: rect.y };
+        let pt2 = mint::Point2 { x: rect.x, y: rect.y + rect.h };
 
         let cursor = Cursor::new(pt1, pt2, 2.0).default_animation();
         self.cursor = Some(cursor);
@@ -230,10 +223,7 @@ impl TKDisplayable for TextField {
         }
 
         let origin = self.editor.get_text_origin();
-        let text_origin = mint::Point2 {
-            x: origin.0,
-            y: origin.1,
-        };
+        let text_origin = mint::Point2 { x: origin.0, y: origin.1 };
         // log::debug!("origin={:?} text_size={:?}", origin, self.editor.text_size);
         self.editor.update_display();
         if self.is_editing {
@@ -244,23 +234,14 @@ impl TKDisplayable for TextField {
                 let render_text = Text::new((text, self.layer.font, self.layer.font_size));
                 // let (text_w, text_h) = render_text.dimensions(ctx);
                 // log::debug!("text_w={:?} text_h={:?}", text_w, text_h);
-                graphics::draw(
-                    ctx,
-                    &render_text,
-                    self.layer.graphics.dest(text_origin).color(graphics::BLACK),
-                )?;
+                graphics::draw(ctx, &render_text, self.layer.graphics.dest(text_origin).color(graphics::BLACK))?;
             }
 
             if let Some(cursor) = &mut self.cursor {
                 let cursor_pt = self.editor.ctx.cursor_origin;
                 let line_height = self.editor.get_line_height();
 
-                let c_frame = Rect::new(
-                    cursor_pt.0 + cursor_space,
-                    cursor_pt.1 - line_height / 2.0,
-                    10.0,
-                    line_height,
-                );
+                let c_frame = Rect::new(cursor_pt.0 + cursor_space, cursor_pt.1 - line_height / 2.0, 10.0, line_height);
                 // log::debug!("c_frame={:?} line_height={:?}", c_frame, line_height);
                 cursor.render_inside(&c_frame, ctx)?;
             }
@@ -285,11 +266,7 @@ impl TKDisplayable for TextField {
             if let Some(text) = self.editor.get_visible_text(0.0) {
                 let render_text = Text::new((text, self.layer.font, self.layer.font_size));
                 // render_text.set_bounds(bounds, Align::Left);
-                graphics::draw(
-                    ctx,
-                    &render_text,
-                    self.layer.graphics.dest(text_origin).color(graphics::BLACK),
-                )?;
+                graphics::draw(ctx, &render_text, self.layer.graphics.dest(text_origin).color(graphics::BLACK))?;
             }
         }
 
@@ -318,11 +295,7 @@ impl TKResponder for TextField {
         }
         if self.can_edit && c.is_ascii() {
             self.editor.insert_char(c);
-            log::debug!(
-                "string='{}' len={}",
-                self.editor.ctx.string,
-                self.editor.ctx.string.len()
-            );
+            log::debug!("string='{}' len={}", self.editor.ctx.string, self.editor.ctx.string.len());
         } else {
             // log::debug!("### non ascii={}", c);
         }

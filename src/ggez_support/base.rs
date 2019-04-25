@@ -96,12 +96,7 @@ pub trait TKResponder: TKDisplayable {
 
     /// TODO: Handle all kinds of command keys: backspace, enter, etc.
     /// A true response means the parent Scene or other entity should evaluate the response.
-    fn handle_key_command(
-        &mut self,
-        _code: KeyCode,
-        _keymods: KeyMods,
-        _ctx: &mut Context,
-    ) -> bool {
+    fn handle_key_command(&mut self, _code: KeyCode, _keymods: KeyMods, _ctx: &mut Context) -> bool {
         false
     }
 }

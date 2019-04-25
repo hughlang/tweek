@@ -1,37 +1,35 @@
-/// Cursor used in text input controls
+/// Cursor – an animated cursor used in text editors
 ///
-///
-extern crate ggez;
-
-use crate::core::*;
-
-use ggez::graphics::{self, Rect};
-use ggez::mint;
-use ggez::{Context, GameResult};
-use std::any::TypeId;
-use std::collections::HashMap;
+extern crate quicksilver;
 
 use super::*;
+use crate::core::*;
+
+#[allow(unused_imports)]
+use quicksilver::{
+    geom::{Line, Rectangle, Shape, Transform, Vector},
+    graphics::{Background::Col, Color, Image},
+    lifecycle::{run, Settings, State, Window},
+};
+
+use std::any::TypeId;
+
+use std::collections::HashMap;
 
 pub struct Cursor {
     pub layer: TweenLayer,
-    // line: Option<graphics::Mesh>,
     defaults: HashMap<u32, Prop>,
 }
 
 impl Cursor {
     /// Create a new cursor at the specified points and line_width. A Rect is created so that any motion tweening
     /// can be applied.
-    pub fn new(pt1: mint::Point2<f32>, pt2: mint::Point2<f32>, line_width: f32) -> Self {
-        let rect = Rect::new(pt1.x, pt1.y, (pt2.x - pt1.x).abs(), (pt2.y - pt1.y).abs());
-        let mut layer = TweenLayer::new(rect, graphics::DrawParam::new().color(graphics::BLACK));
+    pub fn new(pt1: Vector, pt2: Vector, line_width: f32) -> Self {
+        let rect = Rectangle::new((pt1.x, pt1.y), ((pt2.x - pt1.x).abs(), (pt2.y - pt1.y).abs()));
+        let mut layer = TweenLayer::new(rect);
         layer.stroke = line_width;
 
-        Cursor {
-            layer: layer,
-            // line: None,
-            defaults: HashMap::new(),
-        }
+        Cursor { layer: layer, defaults: HashMap::new() }
     }
 
     /// Simple way of getting a default animation. You can skip this and call start_animation
@@ -60,6 +58,19 @@ impl Cursor {
         &tween.play();
         self.layer.animation = Some(tween);
     }
+
+    /// Render the cursor given an origin point where y is the baseline for the current line.
+    /// The font_size is approximately the line height, but the actual characters are shorter
+    /// than that, so the height and position of the cursor should consider that.
+    /// The ideal cursor should have a top position near the top of the line extending above
+    /// the tallest character and extend below the baseline.
+    pub fn render_at_point(&self, pt: &Vector, theme: &Theme, window: &mut Window) {
+        let cursor_height = theme.font_size;
+        let y2 = pt.y + cursor_height * 0.2;
+        let y1 = y2 - cursor_height;
+        let line = Line::new((pt.x, y1), (pt.x, y2)).with_thickness(2.0);
+        window.draw_ex(&line.with_thickness(line.t), Col(Color::BLACK), Transform::IDENTITY, 9);
+    }
 }
 
 impl TKDisplayable for Cursor {
@@ -67,7 +78,7 @@ impl TKDisplayable for Cursor {
         TypeId::of::<Cursor>()
     }
 
-    fn get_frame(&self) -> Rect {
+    fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
     }
 
@@ -77,21 +88,13 @@ impl TKDisplayable for Cursor {
         // }
     }
 
-    fn update(&mut self) -> GameResult {
+    fn update(&mut self) -> TKResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {
                 self.layer.apply_updates(&update.props);
             }
         }
-        Ok(())
-    }
-
-    /// This render method expects the TextField/parent to tell it where the cursor render
-    fn render_inside(&mut self, rect: &Rect, ctx: &mut Context) -> GameResult {
-        let points = vec![mint::Point2 { x: rect.x, y: rect.y }, mint::Point2 { x: rect.x, y: rect.bottom() }];
-        let mesh = graphics::Mesh::new_line(ctx, &points, self.layer.stroke, self.layer.graphics.color)?;
-        let _result = graphics::draw(ctx, &mesh, self.layer.graphics);
         Ok(())
     }
 }

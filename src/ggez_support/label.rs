@@ -74,26 +74,17 @@ impl TKDisplayable for LabelView {
 
     /// The rect parameter should already be inset from the outer parent frame
     fn render_inside(&mut self, rect: &Rect, ctx: &mut Context) -> GameResult {
-        self.text = graphics::Text::new((
-            self.string.clone(),
-            self.layer.font.clone(),
-            self.layer.font_size,
-        ));
+        self.text = graphics::Text::new((self.string.clone(), self.layer.font.clone(), self.layer.font_size));
 
         let (width, height) = self.text.dimensions(ctx);
         let origin = match self.align {
-            TextAlign::Left => Point2 {
-                x: rect.x,
-                y: rect.y + (rect.h - height as f32) / 2.0,
-            },
-            TextAlign::Center => Point2 {
-                x: rect.x + (rect.w - width as f32) / 2.0,
-                y: rect.y + (rect.h - height as f32) / 2.0,
-            },
-            TextAlign::Right => Point2 {
-                x: rect.x + (rect.w - width as f32) / 2.0,
-                y: rect.y + (rect.h - height as f32) / 2.0,
-            }, // FIXME
+            TextAlign::Left => Point2 { x: rect.x, y: rect.y + (rect.h - height as f32) / 2.0 },
+            TextAlign::Center => {
+                Point2 { x: rect.x + (rect.w - width as f32) / 2.0, y: rect.y + (rect.h - height as f32) / 2.0 }
+            }
+            TextAlign::Right => {
+                Point2 { x: rect.x + (rect.w - width as f32) / 2.0, y: rect.y + (rect.h - height as f32) / 2.0 }
+            } // FIXME
         };
 
         // NOTE: The queue_text method is used here, so draw_queued_text needs to be called later.
