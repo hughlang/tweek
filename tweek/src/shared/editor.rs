@@ -18,7 +18,7 @@ use std::ops::Range;
 use quicksilver::geom::{Line, Rectangle, Vector};
 
 const SPACE: char = ' ';
-static ROBOTO_REGULAR: &[u8] = include_bytes!("../../resources/Roboto-Regular.ttf");
+static ROBOTO_REGULAR: &[u8] = include_bytes!("../../static/Roboto-Regular.ttf");
 
 pub trait Editor {}
 
