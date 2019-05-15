@@ -37,7 +37,7 @@ const BUTTON_GAP: f32 = 20.0;
 /// Notable differences from animating a standalone Tween:
 /// * Don't call tween.play().  Instead, call tweek.play() after adding one or more timelines to it.
 /// * Don't call tween.tick().  Instead, call tweek.update() in the run loop.
-/// * The player buttons are instances of ggez_support::ButtonView, which implement Displayable and thus have update()
+/// * The player buttons are instances of ggez_support::Button, which implement Displayable and thus have update()
 /// and render() functions. They are also wrappers for the Tweenable GGLayer, so they support internal Tween animations.
 /// They also implement TKResponder, so they support the update() method which allows a TKState
 /// object to be passed around and mutated.
@@ -46,13 +46,13 @@ struct StageHelper {}
 #[allow(dead_code)]
 #[allow(unused_mut)]
 impl StageHelper {
-    fn build_player_buttons(ctx: &mut Context) -> GameResult<Vec<ButtonView>> {
+    fn build_player_buttons(ctx: &mut Context) -> GameResult<Vec<Button>> {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
 
         let _font = graphics::Font::new(ctx, "/Roboto-Regular.ttf")?;
 
-        let mut buttons: Vec<ButtonView> = Vec::with_capacity(3);
+        let mut buttons: Vec<Button> = Vec::with_capacity(3);
         let mut xpos = (screen_w - BAR_WIDTH) / 2.0;
 
         let ypos = screen_h - 60.0;
@@ -92,9 +92,9 @@ impl StageHelper {
         ctx: &mut Context,
         file: &str,
         frame: graphics::Rect,
-    ) -> GameResult<ButtonView> {
+    ) -> GameResult<Button> {
         let icon = graphics::Image::new(ctx, file.to_string())?;
-        let mut button = ButtonView::new(frame).with_image(icon, 4.0);
+        let mut button = Button::new(frame).with_image(icon, 4.0);
         button.set_color(&graphics::Color::from_rgb_u32(0x999999));
         button.set_hover_animation(&[color(0xFF8920)], 0.1);
         Ok(button)
@@ -241,7 +241,7 @@ struct MainState {
     tweek: Tweek,
     tk_state: TKState,
     items: Vec<Item>,
-    buttons: Vec<ButtonView>,
+    buttons: Vec<Button>,
     progress_bar: ProgressBarView,
 }
 

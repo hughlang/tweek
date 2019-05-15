@@ -1,7 +1,5 @@
 /// Cursor – an animated cursor used in text editors
 ///
-extern crate quicksilver;
-
 use super::*;
 use crate::core::*;
 
@@ -69,6 +67,11 @@ impl Cursor {
         let y2 = pt.y + cursor_height * 0.2;
         let y1 = y2 - cursor_height;
         let line = Line::new((pt.x, y1), (pt.x, y2)).with_thickness(2.0);
+        window.draw_ex(&line.with_thickness(line.t), Col(Color::BLACK), Transform::IDENTITY, 9);
+    }
+
+    pub fn render_line(&self, pt1: &Vector, pt2: &Vector, _theme: &Theme, window: &mut Window) {
+        let line = Line::new(*pt1, *pt2).with_thickness(2.0);
         window.draw_ex(&line.with_thickness(line.t), Col(Color::BLACK), Transform::IDENTITY, 9);
     }
 }

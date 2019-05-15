@@ -1,6 +1,4 @@
 /// Tweek Basics demo with Quicksilver
-extern crate quicksilver;
-extern crate tweek;
 use tweek::prelude::*;
 
 mod demo_helper;
@@ -21,141 +19,68 @@ struct DemoBuilder {}
 #[allow(unused_mut)]
 #[allow(unused_variables)]
 impl DemoBuilder {
-    fn demo_square_1(screen: Vector) -> Vec<Item> {
-        let item_id = 1;
+    /// This demo shows a collection of dots rotating around in a circle
+    fn build_dots_demo(screen: Vector) -> (Timeline, Vec<Item>) {
         let draw_area = StageHelper::get_draw_area(screen);
-        let rect = Rectangle::new((draw_area.pos.x, 200.0), (80.0, 80.0));
-        let mut item1 = Item::new(item_id, ShapeType::Rectangle(rect));
-        item1.layer.color = Color::RED;
+        let center_pt = Vector { x: screen.x / 2.0, y: screen.y / 2.0 };
+        let start_pt = center_pt - Vector::new(0.0, 100.0);
 
-        let target_x = draw_area.pos.x + draw_area.size.x - 120.0;
-        let mut tween1 = Tween::with(item_id, &item1.layer)
-            .to(&[position(target_x as f64, 400.0), size(120.0, 120.0), color(HexColors::Gold)])
-            .duration(1.0)
-            .ease(Ease::SineInOut)
-            .repeat(9, 0.2)
-            .yoyo();
+        let dot_radius = 10.0;
+        let scene_radius = 96.0;
+        let dot_count = 8;
 
-        &tween1.play();
-        item1.tween = Some(tween1);
-        vec![item1]
+        let mut items: Vec<Item> = Vec::with_capacity(dot_count);
+        let mut tweens: Vec<Tween> = Vec::with_capacity(dot_count);
+
+        for i in 0..dot_count {
+            let item_id = i + 10 as usize;
+
+            let mut item1 = Item::new(item_id, ShapeType::Circle(start_pt, dot_radius));
+            item1.layer.color = Color::RED;
+            item1.layer.offset_pt = center_pt;
+            let alpha = 1.0 - (i as f32 / dot_count as f32) / 2.0;
+            item1.layer.color.a = alpha;
+
+            let tween1 = Tween::with(item_id, &item1.layer)
+                .to(&[rotate(360.0)])
+                .duration(1.8)
+                .ease(Ease::SineInOut)
+                .repeat(-1, 0.8);
+            items.push(item1);
+            tweens.push(tween1)
+        }
+
+        let timeline = Timeline::add(tweens).stagger(0.12);
+        (timeline, items)
     }
 
-    fn demo_circle_1(screen: Vector) -> Vec<Item> {
-        let draw_area = StageHelper::get_draw_area(screen);
-        let center_pt = Vector { x: screen.x / 2.0 - 100.0, y: screen.y / 2.0 };
-
-        let item_id = 2;
-        // Add a circle
-        let mut item2 = Item::new(item_id, ShapeType::Circle(center_pt, 40.0));
-        item2.layer.color = Color::from_hex("#CD09AA");
-
-        let mut tween2 = Tween::with(item_id, &item2.layer)
-            .to(&[size(200.0, 200.0), alpha(0.9)])
-            .duration(4.0)
-            .to(&[position(700.0, draw_area.pos.y as f64 + 40.0), size(100.0, 100.0), alpha(0.8)])
-            .duration(0.2)
-            .ease(Ease::SineIn)
-            .to(&[position((draw_area.pos.x + draw_area.size.x) as f64, 200.0), size(50.0, 50.0), alpha(0.7)])
-            .duration(0.2)
-            .to(&[position(650.0, (draw_area.pos.y + draw_area.size.y) as f64), size(20.0, 20.0), alpha(0.6)])
-            .duration(0.2)
-            .to(&[position(400.0, 300.0), size(5.0, 5.0), alpha(0.2)])
-            .duration(0.5)
-            .repeat(-1, 2.0);
-
-        &tween2.play();
-        item2.tween = Some(tween2);
-        vec![item2]
-    }
-
-    fn demo_image_1(screen: Vector) -> Vec<Item> {
-        let draw_area = StageHelper::get_draw_area(screen);
-
-        let item_id = 3;
-        let image = Image::from_bytes(include_bytes!("../../static/tile.png")).unwrap();
-        let rect = Rectangle::new((draw_area.pos.x, 400.0), (100.0, 100.0));
-        let mut item3 = Item::new(item_id, ShapeType::Image(rect));
-        item3.image = Some(image);
-        // item3.layer.graphics.offset = Point2 { x: 0.5, y: 0.5 };
-
-        let mut tween3 = Tween::with(item_id, &item3.layer)
-            .to(&[shift_x(draw_area.width() as f64), rotate(360.0)])
-            .duration(3.0)
-            .ease(Ease::BounceOut)
-            .repeat(5, 0.5);
-
-        &tween3.play();
-        item3.tween = Some(tween3);
-
-        vec![item3]
-    }
-
-    fn demo_rectangle_1(screen: Vector) -> Vec<Item> {
-        let draw_area = StageHelper::get_draw_area(screen);
-        let rect = Rectangle::new((draw_area.pos.x + 80.0, draw_area.pos.y), (20.0, 20.0));
-
-        let w = 640.0 as f64;
-        let h = 400.0 as f64;
-
-        let item_id = 1;
-        let mut item1 = Item::new(item_id, ShapeType::Rectangle(rect));
-        let (r, g, b) = hex_to_rgb(HexColors::HotPink);
-        item1.layer.color = Color::from_rgba(r, g, b, 1.0);
-
-        let mut tween1 = Tween::with(item_id, &item1.layer)
-            .to(&[size(w, 20.0)])
-            .duration(1.0)
-            .ease(Ease::ElasticIn)
-            .to(&[size(20.0, 20.0), shift_x(w - 20.0)])
-            .duration(1.0)
-            .ease(Ease::ElasticOut)
-            .to(&[size(20.0, h)])
-            .duration(1.0)
-            .ease(Ease::BackIn)
-            .to(&[size(20.0, 20.0), shift_y(h - 20.0)])
-            .duration(1.0)
-            .ease(Ease::BackOut)
-            .to(&[size(w, 20.0), shift_x(-w + 20.0)])
-            .duration(1.0)
-            .ease(Ease::BounceIn)
-            .to(&[size(20.0, 20.0)])
-            .duration(1.0)
-            .ease(Ease::BounceOut)
-            .to(&[size(20.0, h), shift_y(-h + 20.0)])
-            .duration(1.0)
-            .ease(Ease::SineIn)
-            .to(&[size(20.0, 20.0)])
-            .duration(1.0)
-            .ease(Ease::SineOut)
-            .repeat(-1, 0.2);
-
-        &tween1.play();
-        item1.tween = Some(tween1);
-        vec![item1]
-    }
     /// ********************************************************************************
     /// This is a template for creating a new animation.
     /// Copy it and try out different animation techniques.
     /// Add an entry to the Demo enum below to make it part of the Next/Previous cycle.
-    fn empty_template(screen: Vector) -> (Vec<Item>) {
+    fn empty_template(screen: Vector) -> (Timeline, Vec<Item>) {
         let draw_area = StageHelper::get_draw_area(screen);
 
         // =====================================================
         // Create item and tween here
         // =====================================================
+        let mut items: Vec<Item> = Vec::new();
+        let mut tweens: Vec<Tween> = Vec::new();
 
-        vec![]
+        // =====================================================
+        // Create items and tweens here and append results
+        // =====================================================
+
+        let timeline = Timeline::add(tweens);
+
+        (timeline, items)
     }
 }
 
 #[allow(dead_code)]
 #[derive(Copy, Clone, Debug)]
 enum Demo {
-    Square1,
-    Circle1,
-    Image1,
-    Rectangle1,
+    DotCircle,
 }
 
 #[allow(dead_code)]
@@ -164,13 +89,14 @@ struct MainState {
     grid: Grid,
     screen: Vector,
     theme: Theme,
-    items: Vec<Item>,
-    buttons: Vec<ButtonView>,
+    tweek: Tweek,
     tk_state: TKState,
+    items: Vec<Item>,
+    buttons: Vec<Button>,
     demo_index: usize,
     demo_list: Vec<Demo>,
     show_fps: bool,
-    // buttons: Vec<ButtonView>,
+    // buttons: Vec<Button>,
 }
 
 impl MainState {
@@ -183,20 +109,18 @@ impl MainState {
             grid,
             screen,
             theme,
+            tweek: Tweek::new(),
+            tk_state: TKState::new(),
             items: Vec::new(),
             buttons: buttons,
-            tk_state: TKState::new(),
             demo_index: 0,
             demo_list: Vec::new(),
             show_fps: false,
         };
 
-        s.demo_list.push(Demo::Square1);
-        s.demo_list.push(Demo::Circle1);
-        s.demo_list.push(Demo::Image1);
-        s.demo_list.push(Demo::Rectangle1);
+        s.demo_list.push(Demo::DotCircle);
 
-        s.demo_index = 2;
+        s.demo_index = 0;
         let demo = s.demo_list[s.demo_index].clone();
         s.load_demo(screen, &demo);
         Ok(s)
@@ -204,13 +128,17 @@ impl MainState {
 
     fn load_demo(&mut self, screen: Vector, demo: &Demo) {
         self.tk_state.commands.clear();
-        let items = match demo {
-            Demo::Square1 => DemoBuilder::demo_square_1(screen),
-            Demo::Circle1 => DemoBuilder::demo_circle_1(screen),
-            Demo::Image1 => DemoBuilder::demo_image_1(screen),
-            Demo::Rectangle1 => DemoBuilder::demo_rectangle_1(screen),
+        let (timeline, items) = match demo {
+            Demo::DotCircle => DemoBuilder::build_dots_demo(screen),
             // _ => DemoBuilder::empty_template(screen),
         };
+        let mut tweek = Tweek::new();
+        tweek.add_timeline(timeline);
+        &tweek.play();
+
+        let tk_state = TKState::new();
+        self.tk_state = tk_state;
+        self.tweek = tweek;
         self.items = items;
     }
 }
@@ -247,9 +175,12 @@ impl State for MainState {
                 _ => (),
             }
         }
+        self.tweek.update(&mut self.tk_state);
+
         for item in &mut self.items {
-            item.update();
+            item.timeline_update(&mut self.tweek);
         }
+
         for button in &mut self.buttons {
             let _ = button.update();
         }
@@ -310,8 +241,11 @@ impl State for MainState {
 // The main isn't that important in Quicksilver: it just serves as an entrypoint into the event
 // loop
 fn main() {
-    std::env::set_var("RUST_LOG", "main=debug,tweek=debug");
+    std::env::set_var("RUST_LOG", "main=trace,tweek=debug");
+
+    #[cfg(not(target_arch = "wasm32"))]
     env_logger::builder().default_format_timestamp(false).default_format_module_path(false).init();
+
     let screen = Vector::new(1024, 768);
     run_with("Tweek Basics", screen, Settings::default(), || MainState::new(screen));
 }

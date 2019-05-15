@@ -1,15 +1,13 @@
 /// A Timeline represents a group of Tween animations that each have a start and stop time in seconds
 /// in the overall timeline.
-extern crate ggez;
-
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::time::{Duration, Instant};
 
 use super::property::*;
 use super::tweek::*;
 use super::tween::*;
+use super::{current_time, elapsed_time};
 
 //-- Base -----------------------------------------------------------------------
 
@@ -35,9 +33,9 @@ impl TweenRange {
 pub struct Timeline {
     children: HashMap<usize, TweenRange>,
     tween_ids: Vec<usize>,
-    tl_start: Instant,
+    tl_start: f64,
     pub repeat_count: u32,
-    pub repeat_delay: Duration,
+    pub repeat_delay: f64,
     pub loop_forever: bool,
 }
 
@@ -46,9 +44,9 @@ impl Timeline {
         Timeline {
             children: HashMap::new(),
             tween_ids: Vec::new(),
-            tl_start: Instant::now(),
+            tl_start: current_time(),
             repeat_count: 0,
-            repeat_delay: Duration::from_secs(0),
+            repeat_delay: 0.0,
             loop_forever: false,
         }
     }
@@ -103,7 +101,7 @@ impl Timeline {
 
     pub fn repeat(mut self, count: u32, delay: f64) -> Self {
         self.repeat_count = count;
-        self.repeat_delay = Duration::from_secs_f64(delay);
+        self.repeat_delay = delay;
         self
     }
 
@@ -124,9 +122,9 @@ impl Playable for Timeline {
     /// The Timeline play method should only play the tweens where the start time
     /// is not greater than the current elapsed time.
     fn play(&mut self) {
-        self.tl_start = Instant::now();
+        self.tl_start = current_time();
         for (id, range) in &self.children {
-            let elapsed = self.tl_start.elapsed().as_secs_f64();
+            let elapsed = elapsed_time(self.tl_start);
             if range.start <= elapsed && range.end > elapsed {
                 log::debug!("timeline play id={}", id);
                 let mut tween = range.tween.borrow_mut();
@@ -148,7 +146,7 @@ impl Playable for Timeline {
     fn pause(&mut self) {}
 
     fn reset(&mut self) {
-        self.tl_start = Instant::now();
+        self.tl_start = current_time();
         for (_, range) in &self.children {
             let mut tween = range.tween.borrow_mut();
             (&mut *tween).reset();
@@ -173,7 +171,7 @@ impl TimelineAware for Timeline {
     fn update(&mut self, ctx: &mut TKState) {
         for (_, range) in &self.children {
             //
-            let elapsed = self.tl_start.elapsed().as_secs_f64();
+            let elapsed = elapsed_time(self.tl_start);
             if range.start <= elapsed && range.end > elapsed {
                 let mut tween = range.tween.borrow_mut();
                 match tween.state {
@@ -191,7 +189,7 @@ impl TimelineAware for Timeline {
                 ctx.events.append(&mut events);
             }
         }
-        ctx.elapsed_time = self.tl_start.elapsed().as_secs_f64();
+        ctx.elapsed_time = elapsed_time(self.tl_start);
         ctx.total_time = self.total_time();
     }
 }

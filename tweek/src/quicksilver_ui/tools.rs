@@ -16,6 +16,15 @@ impl UITools {
     pub const SCROLLBAR_WIDTH: f32 = 10.0;
     pub const SCROLLBAR_COLOR: &'static str = "#BBBBBB";
 
+    // pub const TEXT_KEY_COMMANDS: &[Key] = &[
+    //     Key::Back,
+    //     Key::Tab,
+    //     Key::Left,
+    //     Key::Right,
+    //     Key::Return,
+    //     Key::Escape,
+    // ];
+
     pub fn scrollable_types() -> Vec<TypeId> {
         vec![
             // TypeId::of::<ListBox>(),
@@ -31,6 +40,7 @@ impl UITools {
     pub fn inset_rect(rect: &Rectangle, left: f32, top: f32, right: f32, bottom: f32) -> Rectangle {
         Rectangle::new((rect.x() + left, rect.y() + top), (rect.width() - left - right, rect.height() - top - bottom))
     }
+
     pub fn inset_left_middle(rect: &Rectangle, object: &Rectangle, margin: f32) -> Rectangle {
         let y = rect.y() + (rect.height() - object.height()) / 2.0;
         Rectangle::new((rect.x() + margin, y), (rect.width() - margin * 2.0, object.height()))

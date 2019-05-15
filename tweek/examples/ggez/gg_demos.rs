@@ -341,7 +341,7 @@ struct MainState {
     tweek: Tweek,
     tk_state: TKState,
     items: Vec<Item>,
-    buttons: Vec<ButtonView>,
+    buttons: Vec<Button>,
     demo_index: usize,
     demo_list: Vec<Demo>,
     show_fps: bool,

@@ -6,18 +6,17 @@
 extern crate unwrap_to;
 extern crate cgmath;
 
-extern crate ggez;
 extern crate glyph_brush;
 extern crate image;
 extern crate quicksilver;
 extern crate rand;
 extern crate uuid;
 
-// pub use crate::core::*;
-// pub use crate::ggez::*;
+#[cfg(target_arch = "wasm32")]
+#[macro_use]
+extern crate stdweb;
 
 pub mod core;
-pub mod ggez_support;
 pub mod prelude;
 pub mod quicksilver_ui;
 pub mod shared;

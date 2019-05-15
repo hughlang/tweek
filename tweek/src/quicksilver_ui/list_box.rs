@@ -100,8 +100,8 @@ impl ListBox {
         let shift = self.scroll_offset / self.row_height;
         let start = shift.floor() as usize;
         let row_count = (self.layer.frame.size.y / self.row_height + shift.fract()).ceil() as usize;
-        // eprintln!("offset={:?} shift={:?}", self.scroll_offset, shift);
-        // eprintln!("start={:?} count={:?}", start, row_count);
+        // log::debug!("offset={:?} shift={:?}", self.scroll_offset, shift);
+        // log::debug!("start={:?} count={:?}", start, row_count);
         return start..(start + row_count);
     }
 }
@@ -288,7 +288,7 @@ impl TKResponder for ListBox {
             let mut index = (local_y / self.row_height).floor() as usize;
             index += range.start;
             if index < self.datasource.len() {
-                eprintln!("hover index={:?} y={:?}", index, 0);
+                log::debug!("hover index={:?} y={:?}", index, 0);
                 self.hover_row = Some(index);
                 return true;
             }
@@ -325,7 +325,7 @@ impl TKResponder for ListBox {
                 // Calculate upper_limit as the content size outside of the frame.
                 let upper_limit = self.datasource.len() as f32 * self.row_height - self.layer.frame.height();
                 let eval_y = ((self.scroll_offset - pt.y) * SCROLL_FACTOR).min(upper_limit);
-                eprintln!("pt.y={:?} eval_y={:?}", pt.y, eval_y);
+                log::debug!("pt.y={:?} eval_y={:?}", pt.y, eval_y);
                 self.scroll_offset = eval_y.max(0.0);
             }
             _ => (),
@@ -341,7 +341,7 @@ pub struct ListBoxRow {
     pub row_id: usize, // this is optional
     pub layer: TweenLayer,
     pub text: String,
-    pub label: Option<LabelView>,
+    pub label: Option<Label>,
     pub defaults: Vec<Prop>,
     // hover_animation: Option<UITransition>,
     // mouse_state: MouseState,

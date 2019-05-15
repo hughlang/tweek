@@ -10,6 +10,7 @@ use super::theme::Theme;
 use quicksilver::{
     geom::{Rectangle, Vector},
     graphics::{Background::Col, Color, Font},
+    input::{ButtonState, Key, MouseButton, MouseCursor},
     lifecycle::{Event, Window},
 };
 
@@ -17,6 +18,7 @@ pub enum DisplayEvent {
     Activate,
     Deactivate,
     Ready,
+    Resize(Vector),
 }
 
 /// This trait lives in qs_support because it is heavily tied into quicksilver.
@@ -59,11 +61,15 @@ pub trait TKDisplayable {
 
 impl TKDisplayable {}
 
-/// This trait is implemented by ButtonView and other controls to conveniently handle mouse
+/// This trait is implemented by Button and other controls to conveniently handle mouse
 /// events in a game/animation runloop. The mutable TKState parameter allows the developer
 /// to arbitrarily add u32 values to specify that a specific action should be handled in
 /// another part of the code.
 pub trait TKResponder: TKDisplayable {
+    fn get_text_content(&self) -> Option<String> {
+        None
+    }
+
     fn has_focus(&self) -> bool {
         false
     }
@@ -93,12 +99,7 @@ pub trait TKResponder: TKDisplayable {
 
     // TODO: Handle all kinds of command keys: backspace, enter, etc.
     // A true response means the parent Scene or other entity should evaluate the response.
-    // fn handle_key_command(
-    //     &mut self,
-    //     _code: KeyCode,
-    //     _keymods: KeyMods,
-    //     _ctx: &mut Context,
-    // ) -> bool {
-    //     false
-    // }
+    fn handle_key_command(&mut self, _key: &Key, _window: &mut Window) -> bool {
+        false
+    }
 }

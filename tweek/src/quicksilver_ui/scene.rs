@@ -4,24 +4,15 @@ use crate::core::*;
 use std::any::TypeId;
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::f32;
 use std::rc::Rc;
 
 #[allow(unused_imports)]
 use quicksilver::{
     geom::{Rectangle, Vector},
     graphics::{Background::Col, Color, Font},
+    input::{Key, MouseButton, MouseCursor},
     lifecycle::{Event, Window},
 };
-
-// pub const TEXT_KEY_COMMANDS: &[KeyCode] = &[
-//     KeyCode::Back,
-//     KeyCode::Tab,
-//     KeyCode::Left,
-//     KeyCode::Right,
-//     KeyCode::Return,
-//     KeyCode::Escape,
-// ];
 
 pub struct Scene {
     pub layer: TweenLayer,
@@ -53,7 +44,7 @@ impl Scene {
     // provide it's type_id() and therefore allow the system to know how to handle different
     // object types.
     // pub fn prepare(mut self) -> Self {
-    //     self.types_map.insert(TypeId::of::<ButtonView>(), "ButtonView".to_string());
+    //     self.types_map.insert(TypeId::of::<Button>(), "Button".to_string());
     //     self.types_map.insert(TypeId::of::<ListBox>(), "ListBox".to_string());
     //     self
     // }
@@ -172,7 +163,7 @@ impl TKResponder for Scene {
             let mut control = cell.borrow_mut();
             let focus = (&mut *control).handle_mouse_down(pt, state);
             if focus {
-                self.active_control_idx = Some(i);
+                self.next_control_idx = Some(i);
                 return true;
             }
         }
@@ -180,7 +171,7 @@ impl TKResponder for Scene {
     }
 
     fn handle_mouse_up(&mut self, pt: &Vector, state: &mut TKState) -> bool {
-        for (i, cell) in &mut self.controls.iter().enumerate() {
+        for (_, cell) in &mut self.controls.iter().enumerate() {
             let mut control = cell.borrow_mut();
             let focus = (&mut *control).handle_mouse_up(pt, state);
             if focus {
@@ -206,35 +197,35 @@ impl TKResponder for Scene {
     }
 
     // #[allow(unused_assignments)]
-    // fn handle_key_command(&mut self, code: KeyCode, keymods: KeyMods, window: &mut Window) -> bool {
-    //     if let Some(active_idx) = self.active_control_idx {
-    //         let controls_count = self.controls.len();
-    //         let cell = &mut self.controls[active_idx];
-    //         let mut control = cell.borrow_mut();
-    //         let handled = (&mut *control).handle_key_command(code, keymods, ctx);
-    //         if handled {
-    //             match code {
-    //                 KeyCode::Tab => {
-    //                     // if textfield, try to advance to next field.
-    //                     let mut next_idx = usize::max_value();
-    //                     if active_idx + 1 == controls_count {
-    //                         next_idx = 0;
-    //                     } else {
-    //                         next_idx = active_idx + 1;
-    //                     }
-    //                     if next_idx != active_idx {
-    //                         log::debug!("next_idx={:?} WAS={:?}", next_idx, active_idx);
-    //                         self.next_control_idx = Some(next_idx);
-    //                     }
-    //                 }
-    //                 KeyCode::Return => {}
-    //                 _ => (),
-    //             }
-    //             return true;
-    //         }
-    //     } else {
-    //         // TODO: Check other listeners
-    //     }
-    //     false
-    // }
+    fn handle_key_command(&mut self, key: &Key, window: &mut Window) -> bool {
+        if let Some(active_idx) = self.active_control_idx {
+            let controls_count = self.controls.len();
+            let cell = &mut self.controls[active_idx];
+            let mut control = cell.borrow_mut();
+            let handled = (&mut *control).handle_key_command(key, window);
+            if handled {
+                match key {
+                    Key::Tab => {
+                        let next_idx;
+                        if active_idx + 1 == controls_count {
+                            next_idx = 0;
+                        } else {
+                            next_idx = active_idx + 1;
+                        }
+                        if next_idx != active_idx {
+                            log::debug!("next_idx={:?} WAS={:?}", next_idx, active_idx);
+                            self.next_control_idx = Some(next_idx);
+                        }
+                        return true;
+                    }
+                    Key::Return => {}
+                    _ => (),
+                }
+                return true;
+            }
+        } else {
+            // TODO: Check other listeners
+        }
+        false
+    }
 }

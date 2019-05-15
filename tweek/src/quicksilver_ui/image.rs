@@ -4,7 +4,7 @@ use crate::core::*;
 
 use quicksilver::{
     geom::{Rectangle, Shape, Transform, Vector},
-    graphics::{Background::Img, Color, Image},
+    graphics::{Background::Img, Image},
     lifecycle::Window,
 };
 
@@ -52,7 +52,7 @@ impl TKDisplayable for ImageView {
         Ok(())
     }
 
-    fn render(&mut self, theme: &Theme, window: &mut Window) -> TKResult {
+    fn render(&mut self, _theme: &Theme, window: &mut Window) -> TKResult {
         let scale_w = self.layer.frame.size.x / self.image.area().width();
         let scale_h = self.layer.frame.size.y / self.image.area().height();
         let scale = Vector { x: scale_w, y: scale_h };

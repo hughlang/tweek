@@ -1,4 +1,4 @@
-> Notice: The Tweek library is currently undergoing major changes. We are currently migrating away from GGEZ, as they have decided to drop support for MacOS. Currently, the latest PR contains the successful migration of most features to Quicksilver. However, the code is still messy with experimental functions and unused code. This is a temporary state while we remove GGEZ support and work towards full wasm compatibility.
+> Notice: The Tweek library is currently undergoing major changes. We have removed support for GGEZ, as they have decided to drop support for MacOS. In the current version 0.2.0, we have successfully migrated to Quicksilver. However, some of the examples have not been migrated yet. Specifically, the timelines
 
 # Tweek: A Tween Animation Kit for Rust
 
@@ -14,13 +14,14 @@ However, the endgame is quite clear to me. Rust is currently the language of cho
 ## Examples
 There are several demos you can try out in the examples directory that showcase various animation scenarios. Conveniently, most of them are bundled into a small set of files where you can browse demos with the Next and Previous buttons.
 
-* cargo run --example basics
-* cargo run --example demos
+* Basic Tween animations
+    * cargo run --example basics
+* Work-in-progress GUI library
+    * cargo run --example gui
 
 To learn more about these examples, please also read the following pages:
 
 * [Basics](docs/1-basics.md)
-* [Timelines](docs/2-timelines.md)
 
 
 ## Basic Usage
@@ -45,9 +46,6 @@ This is a sample of a simple animation that increases the size of rectangle grap
 
 The best place to experiment with animations is in the gg_demos.rs example file, which showcases several animation scenarios.
 
-## Compatibility and Integration
-Tweek is designed to be a crate library that is used in conjunction with other Rust graphics libraries and game engines. The first supported platform is the excellent [GGEZ game engine](https://ggez.rs/), which is both advanced and mature, even though it is still being developed.
-
 
 ### Tweenable wrapper
 Tweek provides a trait called *Tweenable* that makes it simple to add support for other graphics frameworks. Implementing it is pretty minimal. Here is a copy of the trait code itself. Essentially, it requires that you implement a wrapper around your basic graphics object(s) so that the system can read or write a specified "Prop" value.
@@ -64,17 +62,17 @@ pub trait Tweenable {
 }
 ```
 
-And this is the [TweenLayer wrapper for ggez that implements Tweenable](https://github.com/wasm-network/tweek-rust/blob/master/src/ggez_support/layer.rs). It reads and writes the values you specify.
+And this is the [TweenLayer wrapper for Quicksilver that implements Tweenable](https://github.com/wasm-network/tweek-rust/blob/master/src/quicksilver_ui/layer.rs). It reads and writes the values you specify.
 
 
 ### UI Components
 
-By itself, the Tweenable trait provides the basic support needed for Tweek integration. However, it's hard to resist going further and adding as many helpers and utilities to make UI building easier. And so, Tweek provides a number of experimental View components in the ggez_support folder. Things like buttons, labels, images, and a progress bar. This could easily be a complete UI library in the future. You can create your own.
+By itself, the Tweenable trait provides the basic support needed for Tweek integration. However, it's hard to resist going further and adding as many helpers and utilities to make UI building easier. And so, Tweek provides a number of experimental View components in the quicksilver_ui folder. Things like buttons, labels, images, and a progress bar. These are almost done, but not very pretty yet.
 
-Naturally, these components also have Tweenable graphics, which provides "internal tweening" capabilities for different behaviors. For example, the ButtonView struct can animate a color change for the *on hover* event, like this:
+Naturally, these components also have Tweenable graphics, which provides "internal tweening" capabilities for different behaviors. For example, the Button struct can animate a color change for the *on hover* event, like this:
 
 ```rust
-        let mut button = ButtonView::new(frame).with_title("Previous");
+        let mut button = Button::new(frame).with_title("Previous");
         button.set_color(&Color::from_rgb_u32(HexColors::Tan));
         button.set_hover_animation(&[color(HexColors::Chocolate)], 0.1);
         button.set_onclick(move |_action, tk| {
@@ -84,10 +82,9 @@ Naturally, these components also have Tweenable graphics, which provides "intern
 
 
 
-
 ### Performance
 
-* In release mode, frame rate is well over 120 fps. In debug mode, it is close to 60 fps, unless you are animating text. As an alternative, you can render your text as images and import them.
+* In release mode, frame rate is well over 120 fps. In debug mode, it is close to 60 fps.
 
 
 
@@ -96,9 +93,8 @@ Naturally, these components also have Tweenable graphics, which provides "intern
 
 ### Known Issues
 
-**MacOS**
+* GPU rendering of text is working, but may still be buggy.
 
-* A screen scaling and offset issue exists in ggez and only 1024x768 window size works accurately.
 
 ### Unit Tests (TODO)
 

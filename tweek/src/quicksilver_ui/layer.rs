@@ -1,7 +1,5 @@
 /// TweenLayer for Quicksilver
 ///
-extern crate quicksilver;
-
 use super::*;
 use crate::core::*;
 
@@ -26,12 +24,13 @@ pub enum MouseState {
 
 //-- Main -----------------------------------------------------------------------
 
-/// This is a wrapper for the ggez properties that are tweenable. It is used as a convenient substitute
+/// This is a wrapper for the quicksilver properties that are tweenable. It is used as a convenient substitute
 /// for having to manage multiple tweenables per displayed asset.
 pub struct TweenLayer {
     pub frame: Rectangle,
     pub original: Rectangle,
     pub rotation: f32,
+    pub offset_pt: Vector,
     pub defaults: Vec<Prop>,
     pub color: Color,
     pub theme: Option<Theme>,
@@ -51,6 +50,7 @@ impl TweenLayer {
             frame: frame,
             original: frame,
             rotation: 0.0,
+            offset_pt: Vector::ZERO,
             theme: None,
             defaults: Vec::new(),
             color: Color::WHITE,
@@ -71,12 +71,13 @@ impl TweenLayer {
                     self.mouse_state = MouseState::Hover;
 
                     if let Some(transition) = &self.on_hover {
-                        if transition.seconds > 0.0 {
-                            let mut tween = Tween::with(0, self).to(&transition.props).duration(transition.seconds);
+                        let trans = transition.clone(); // See https://github.com/rust-lang/rust/issues/59159
+                        if trans.seconds > 0.0 {
+                            let mut tween = Tween::with(0, self).to(&trans.props).duration(trans.seconds);
                             &tween.play();
                             self.animation = Some(tween);
                         } else {
-                            self.apply_updates(&transition.props.clone());
+                            self.apply_updates(&trans.props);
                         }
                     }
                 }

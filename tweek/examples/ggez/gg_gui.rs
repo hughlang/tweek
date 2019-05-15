@@ -154,7 +154,7 @@ struct MainState {
     scene: Scene,
     theme: Theme,
     frames: usize,
-    buttons: Vec<ButtonView>,
+    buttons: Vec<Button>,
     tk_state: TKState,
     demo_index: usize,
     demo_list: Vec<Demo>,

@@ -14,30 +14,30 @@ use super::*;
 //-- Button -----------------------------------------------------------------------
 
 #[allow(dead_code)]
-pub struct ButtonView {
+pub struct Button {
     pub layer: TweenLayer,
-    pub label: Option<LabelView>,
+    pub label: Option<Label>,
     pub image: Option<Image>,
     onclick: Option<Box<FnMut(TKAction, &mut TKState) + 'static>>,
 }
 
-impl ButtonView {
+impl Button {
     pub fn new(frame: Rectangle) -> Self {
         let layer = TweenLayer::new(frame);
-        ButtonView { layer: layer, label: None, image: None, onclick: None }
+        Button { layer: layer, label: None, image: None, onclick: None }
     }
 
     pub fn with_text(mut self, text: &str) -> Self {
         let rect = self.layer.inset_by(8.0, 4.0, 8.0, 4.0);
-        let label = LabelView::new(&rect, text);
+        let label = Label::new(&rect, text);
         self.label = Some(label);
         self
     }
 
-    pub fn with_image(mut self, image: Image, _margin: f32) -> Self {
+    pub fn with_image(mut self, _image: Image, _margin: f32) -> Self {
         let rect = self.layer.inset_by(8.0, 4.0, 8.0, 4.0);
         // let rect = Rectangle::new((0.0, 0.0), (self.layer.frame.width() - margin, self.layer.frame.height() - margin));
-        let label = LabelView::new(&rect, "");
+        let label = Label::new(&rect, "");
         self.label = Some(label);
         // let fraction = rect.h / image.source_height() as f32;
         // let mut img = ImageView::new(rect, image);
@@ -59,12 +59,12 @@ impl ButtonView {
 }
 
 // *****************************************************************************************************
-// ButtonView :: Displayable
+// Button :: Displayable
 // *****************************************************************************************************
 
-impl TKDisplayable for ButtonView {
+impl TKDisplayable for Button {
     fn get_type_id(&self) -> TypeId {
-        TypeId::of::<ButtonView>()
+        TypeId::of::<Button>()
     }
 
     fn get_frame(&self) -> Rectangle {
@@ -108,10 +108,10 @@ impl TKDisplayable for ButtonView {
 }
 
 // *****************************************************************************************************
-// ButtonView :: TKResponder
+// Button :: TKResponder
 // *****************************************************************************************************
 
-impl TKResponder for ButtonView {
+impl TKResponder for Button {
     fn handle_mouse_up(&mut self, pt: &Vector, state: &mut TKState) -> bool {
         if pt.overlaps_rectangle(&self.layer.frame) {
             log::debug!("Click at: x={} y={}", pt.x, pt.y);

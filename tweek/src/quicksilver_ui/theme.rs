@@ -20,25 +20,27 @@ pub struct Theme {
     pub button_bg_color: Color,
     pub button_fg_color: Color,
     pub border_color: Color,
+    pub border_width: f32,
     pub focus_color: Color,
     pub unfocus_color: Color,
 }
 
 impl Theme {
-    pub fn new(font: Font) -> Self {
-        let bytes: &[u8] = &[];
+    pub fn new(bytes: &'static [u8]) -> Self {
+        let font = Font::from_slice(bytes).unwrap();
 
         Theme {
             font: font,
             font_bytes: bytes.into(),
-            font_size: 14.0,
+            font_size: 16.0,
             title_font: None,
-            title_font_size: 16.0,
+            title_font_size: 18.0,
             bg_color: Color::WHITE,
             fg_color: Color::BLACK,
             button_bg_color: Color::WHITE,
             button_fg_color: Color::BLACK,
             border_color: Color::from_hex("#AAAAAA"),
+            border_width: 1.0,
             focus_color: Color::YELLOW,
             unfocus_color: Color::from_hex("#CCCCCC"),
         }

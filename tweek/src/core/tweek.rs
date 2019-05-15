@@ -1,7 +1,5 @@
 /// Tweek acts as the coordinator when there are multiple tweens being animated with one or more timelines.
 ///
-extern crate ggez;
-
 use std::cell::RefCell;
 use std::rc::Rc;
 

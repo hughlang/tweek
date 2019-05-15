@@ -62,11 +62,11 @@ impl StageHelper {
         Grid { lines, color }
     }
 
-    pub fn make_next_prev_buttons(screen: &Vector, theme: &Theme) -> Vec<ButtonView> {
+    pub fn make_next_prev_buttons(screen: &Vector, theme: &Theme) -> Vec<Button> {
         const BUTTON_WIDTH: f32 = 90.0;
         const BUTTON_HEIGHT: f32 = 40.0;
 
-        let mut buttons: Vec<ButtonView> = Vec::with_capacity(2);
+        let mut buttons: Vec<Button> = Vec::with_capacity(2);
         let xpos = 30.0;
         let ypos = 30.0;
 
@@ -74,7 +74,7 @@ impl StageHelper {
         // ---- Previous ---------------------
         let frame = Rectangle::new((30.0, ypos), (BUTTON_WIDTH, BUTTON_HEIGHT));
         // let image = theme.font.render("Previous", &style).unwrap();
-        let mut button = ButtonView::new(frame).with_text("Previous");
+        let mut button = Button::new(frame).with_text("Previous");
 
         let (r, g, b) = hex_to_rgb(HexColors::Tan);
         button.set_color(&Color::from_rgba(r, g, b, 1.0));
@@ -87,7 +87,7 @@ impl StageHelper {
         // ---- Next ---------------------
         let frame = Rectangle::new((screen.x - BUTTON_WIDTH - 30.0, ypos), (BUTTON_WIDTH, BUTTON_HEIGHT));
         // let image = theme.font.render("Next", &style).unwrap();
-        let mut button = ButtonView::new(frame).with_text("Next");
+        let mut button = Button::new(frame).with_text("Next");
 
         let (r, g, b) = hex_to_rgb(HexColors::Tan);
         button.set_color(&Color::from_rgba(r, g, b, 1.0));
@@ -101,8 +101,8 @@ impl StageHelper {
     }
 
     pub fn load_theme() -> Theme {
-        let font = Font::from_slice(ROBOTO_REGULAR).unwrap();
-        let mut theme = Theme::new(font);
+        let mut theme = Theme::new(ROBOTO_REGULAR);
+        theme.font_size = 18.0;
         theme.font_bytes = ROBOTO_REGULAR.into();
         theme.bg_color = Color::from_hex("#FFFFEE");
 
@@ -112,9 +112,9 @@ impl StageHelper {
         theme
     }
 
-    pub fn make_fps_counter(screen: &Vector, theme: &Theme) -> LabelView {
+    pub fn make_fps_counter(screen: &Vector, theme: &Theme) -> Label {
         let frame = Rectangle::new((30.0, screen.y - 60.0), (60.0, 30.0));
-        let mut label = LabelView::new(&frame, "0 FPS");
+        let mut label = Label::new(&frame, "0 FPS");
         label.set_theme(theme);
         label
     }
@@ -173,12 +173,20 @@ impl Item {
         }
     }
 
+    pub fn timeline_update(&mut self, tweek: &mut Tweek) {
+        if let Some(update) = tweek.get_update(&self.id) {
+            self.layer.apply_updates(&update.props);
+        }
+    }
+
     pub fn render(&mut self, window: &mut Window) {
         match self.shape {
             ShapeType::Circle(_, _) => {
                 let r = self.layer.frame.size.x / 2.0;
                 let pt = Vector { x: self.layer.frame.pos.x + r, y: self.layer.frame.pos.y + r };
-                window.draw(&Circle::new(pt, r), Col(self.layer.color));
+                let circle = Circle::new(pt, r).with_center(self.layer.offset_pt);
+                // window.draw(&circle, Col(self.layer.color));
+                window.draw_ex(&circle, Col(self.layer.color), Transform::rotate(self.layer.rotation), 1);
             }
             ShapeType::Image(_) => match &self.image {
                 Some(image) => {

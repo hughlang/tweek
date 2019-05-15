@@ -66,20 +66,20 @@ impl ShapeHelper {
 
     /// This creates the Next and Previous buttons that make it easy to load and view animations.
     /// The set_onclick method appends a u32 value that is evaluated in the run loop update() method.
-    pub fn make_next_prev_buttons(ctx: &mut Context) -> GameResult<Vec<ButtonView>> {
+    pub fn make_next_prev_buttons(ctx: &mut Context) -> GameResult<Vec<Button>> {
         const BUTTON_WIDTH: f32 = 90.0;
         const BUTTON_HEIGHT: f32 = 40.0;
         let screen_w = ctx.conf.window_mode.width;
 
         let font = graphics::Font::new(ctx, "/Roboto-Bold.ttf")?;
 
-        let mut buttons: Vec<ButtonView> = Vec::with_capacity(2);
+        let mut buttons: Vec<Button> = Vec::with_capacity(2);
         let xpos = 30.0;
         let ypos = 30.0;
 
         // ---- Previous ---------------------
         let frame = Rect::new(30.0, ypos, BUTTON_WIDTH, BUTTON_HEIGHT);
-        let mut button = ButtonView::new(frame).with_title("Previous");
+        let mut button = Button::new(frame).with_title("Previous");
         button.set_color(&Color::from_rgb_u32(HexColors::Tan));
         button.set_hover_animation(&[color(HexColors::Chocolate)], 0.1);
         button.set_onclick(move |_action, tk| {
@@ -94,7 +94,7 @@ impl ShapeHelper {
             BUTTON_WIDTH,
             BUTTON_HEIGHT,
         );
-        let mut button = ButtonView::new(frame).with_title("Next");
+        let mut button = Button::new(frame).with_title("Next");
         button.set_color(&Color::from_rgb_u32(HexColors::Tan));
         button.set_hover_animation(&[color(HexColors::Chocolate)], 0.1);
         button.set_onclick(move |_action, state| {
@@ -105,11 +105,11 @@ impl ShapeHelper {
         Ok(buttons)
     }
 
-    pub fn make_fps_counter(ctx: &mut Context) -> GameResult<LabelView> {
+    pub fn make_fps_counter(ctx: &mut Context) -> GameResult<Label> {
         let screen_w = ctx.conf.window_mode.width;
         let screen_h = ctx.conf.window_mode.height;
         let frame = Rect::new(30.0, screen_h - 60.0, 60.0, 30.0);
-        let label = LabelView::new(&frame, "0 FPS");
+        let label = Label::new(&frame, "0 FPS");
 
         Ok(label)
     }

@@ -105,7 +105,7 @@ struct MainState {
     frames: usize,
     items: Vec<Item>,
     inputs: Vec<TextField>,
-    buttons: Vec<ButtonView>,
+    buttons: Vec<Button>,
     tk_state: TKState,
     demo_index: usize,
     demo_list: Vec<Demo>,

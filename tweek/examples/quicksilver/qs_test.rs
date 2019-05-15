@@ -1,36 +1,34 @@
 // Draw some multi-colored geometry to the screen
 // This is a good place to get a feel for the basic structure of a Quicksilver app
-extern crate quicksilver;
-extern crate tweek;
 use tweek::prelude::*;
 
 mod demo_helper;
 use demo_helper::*;
 
+#[allow(unused_imports)]
 use quicksilver::{
     geom::{Circle, Line, Rectangle, Transform, Triangle, Vector},
-    graphics::{create_immi_ctx, Background::Col, Color, Font, ImmiRender, ImmiStatus},
+    graphics::{Background::Col, Color, Font},
     lifecycle::{run, Settings, State, Window},
     Result,
 };
 
-use immi::{
-    widgets::{image_button, label, Interaction},
-    Alignment,
-};
 
 // A unit struct that we're going to use to run the Quicksilver functions
 // If we wanted to store persistent state, we would put it in here.
+#[allow(dead_code)]
 struct DrawTest {
-    ui_state: immi::UiState,
     theme: Theme,
 }
 
+#[allow(dead_code)]
+#[allow(unused_variables)]
+#[allow(unused_mut)]
 impl State for DrawTest {
     // Initialize the struct
     fn new() -> Result<DrawTest> {
         let theme = StageHelper::load_theme();
-        let test = DrawTest { ui_state: Default::default(), theme: theme };
+        let test = DrawTest { theme: theme };
         Ok(test)
     }
 
@@ -47,9 +45,6 @@ impl State for DrawTest {
             Transform::rotate(45) * Transform::scale((0.5, 0.5)),
             0,
         );
-        let ui_status = ImmiStatus::new(window);
-        let mut ui_render = ImmiRender::new_with_window(window, &self.theme.font);
-        let ui_context = create_immi_ctx(ui_status, &mut ui_render)
             // Only take up half the screen with the immi widgets
             // .rescale(0.5, 0.5, &Alignment::center())
             ;

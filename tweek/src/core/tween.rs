@@ -1,17 +1,16 @@
 /// This is the core Tween model and functions.
-extern crate ggez;
 extern crate uuid;
 
 use cgmath::*;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
-use std::time::{Duration, Instant};
 use uuid::Uuid;
 
 use super::animator::*;
 use super::ease::*;
 use super::property::*;
 use super::tweek::*;
+use super::{current_time, elapsed_time};
 
 //-- Helpers -----------------------------------------------------------------------
 
@@ -93,13 +92,13 @@ pub enum AnimType {
 pub struct Tween {
     pub tween_id: usize,
     pub global_id: String,
-    pub delay_s: Duration,
-    pub started_at: Instant,
-    pub duration: Duration,
+    pub delay_s: f64,
+    pub started_at: f64,
+    pub duration: f64,
     pub state: TweenState,
     pub play_count: u32,
     pub repeat_count: i32, // -1 = forever. If > 0, decrement after each play until 0
-    pub repeat_delay: Duration,
+    pub repeat_delay: f64,
     pub loop_forever: bool,
     pub time_scale: f64,
     pub anim_type: AnimType,
@@ -114,13 +113,13 @@ impl Tween {
         Tween {
             tween_id: 0,
             global_id: uuid.to_string(),
-            delay_s: Duration::from_secs(0),
-            started_at: Instant::now(),
-            duration: Duration::from_secs(0),
+            delay_s: 0.0,
+            started_at: 0.0,
+            duration: 0.0,
             state: TweenState::Pending,
             play_count: 0,
             repeat_count: 0,
-            repeat_delay: Duration::from_secs(0),
+            repeat_delay: 0.0,
             loop_forever: false,
             time_scale: 1.0,
             anim_type: AnimType::Normal,
@@ -194,20 +193,20 @@ impl Tween {
             animator.end_time = animator.start_time + animator.seconds;
             time += animator.seconds;
         }
-        self.duration = Duration::from_secs_f64(time);
+        self.duration = time;
 
         self
     }
 
     // Not used yet
-    pub fn delay(mut self, _seconds: f64) -> Self {
-        self.delay_s = Duration::from_secs_f64(_seconds);
+    pub fn delay(mut self, seconds: f64) -> Self {
+        self.delay_s = seconds;
         self
     }
 
     pub fn repeat(mut self, count: i32, delay: f64) -> Self {
         self.repeat_count = count;
-        self.repeat_delay = Duration::from_secs_f64(delay);
+        self.repeat_delay = delay;
         self
     }
 
@@ -277,22 +276,22 @@ impl Tween {
 
         // If no limit, then only calculate one loop
         if self.repeat_count < 1 {
-            return time + self.delay_s.as_secs_f64();
+            return time + self.delay_s;
         }
 
-        let total =
-            time + self.delay_s.as_secs_f64() + (self.repeat_count as f64) * (time + self.repeat_delay.as_secs_f64());
+        let total = time + self.delay_s + (self.repeat_count as f64) * (time + self.repeat_delay);
 
         total
     }
 
     /// When this is called from a parent Timeline, it needs...
     /// When playing in reverse, the time_scale is < 0, so the playhead needs to be opposite
+    // self.started_at.elapsed().as_secs_f64()
     pub fn update(&mut self) -> Option<UIState> {
         match self.state {
             TweenState::Running => {
-                let elapsed = self.started_at.elapsed().as_secs_f64();
-                let total_seconds = self.duration.as_secs_f64();
+                let elapsed = elapsed_time(self.started_at);
+                let total_seconds = self.duration;
                 for animator in &mut self.animators {
                     if self.time_scale > 0.0 {
                         if animator.start_time < elapsed && animator.end_time >= elapsed {
@@ -479,7 +478,8 @@ impl Playable for Tween {
             self.sync_animators();
         }
 
-        self.started_at = Instant::now();
+        self.started_at = current_time();
+        log::debug!(">>> started_at={}", self.started_at);
         self.state = TweenState::Running;
     }
 
@@ -489,7 +489,7 @@ impl Playable for Tween {
         let mut events: Vec<TKEvent> = Vec::new();
         match self.state {
             TweenState::Running => {
-                if self.started_at.elapsed() > self.duration {
+                if elapsed_time(self.started_at) > self.duration {
                     self.play_count += 1;
                     if self.play_count > self.repeat_count as u32 {
                         // If repeat_count is zero, tween is Completed.
@@ -503,7 +503,7 @@ impl Playable for Tween {
             }
             TweenState::Idle => {
                 // If repeat_delay > 0, tween should wait until time elapsed passes it
-                if self.started_at.elapsed() > self.duration + self.repeat_delay {
+                if elapsed_time(self.started_at) > self.duration + self.repeat_delay {
                     log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
                     if self.repeat_count < 0 {
                         self.reset();
@@ -539,7 +539,7 @@ impl Playable for Tween {
             }
         }
         self.state = TweenState::Running;
-        self.started_at = Instant::now();
+        self.started_at = current_time();
     }
 }
 

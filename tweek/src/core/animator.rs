@@ -51,7 +51,6 @@ impl Animator {
     #[allow(unused_assignments)]
     pub fn update(&self, playhead: f64, time_scale: f64) -> UIState {
         let mut props: Vec<Prop> = Vec::new();
-        // let mut elapsed = 0.0 as f64;
         let mut progress = 0.0 as f64;
         if time_scale > 0.0 {
             progress = playhead / self.seconds * time_scale;
@@ -60,7 +59,7 @@ impl Animator {
         }
         let ratio = self.ease.clone().get_ratio(progress as f32);
         progress = ratio as f64;
-
+        // log::trace!("progress={} playhead={} total secs={}", progress, playhead, self.seconds);
         for (i, prop) in self.start_state.props.iter().enumerate() {
             if prop == &self.end_state.props[i] {
                 log::trace!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);

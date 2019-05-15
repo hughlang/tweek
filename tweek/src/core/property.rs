@@ -111,7 +111,7 @@ impl UIState {
     }
 }
 
-/// The UITransition struct is used to carry animation instructions for "internal tweening" of objects like ButtonView
+/// The UITransition struct is used to carry animation instructions for "internal tweening" of objects like Button
 /// It contains the Props and the duration in seconds for the animation.
 #[derive(Debug, Clone)]
 pub struct UITransition {

@@ -208,7 +208,7 @@ struct MainState {
     grid: graphics::Mesh,
     frames: usize,
     items: Vec<Item>,
-    buttons: Vec<ButtonView>,
+    buttons: Vec<Button>,
     tk_state: TKState,
     demo_index: usize,
     demo_list: Vec<Demo>,

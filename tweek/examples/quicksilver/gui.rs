@@ -1,5 +1,4 @@
 /// Tweek GUI demos based on Quicksilver
-extern crate quicksilver;
 extern crate tweek;
 use tweek::prelude::*;
 
@@ -43,8 +42,23 @@ impl SceneBuilder {
         let mut scene = Scene::new(&frame);
 
         let text: String = include_str!("../../static/lipsum.txt").into();
+        let mut xpos = 200.0;
+        let mut ypos = 200.0;
 
-        let frame = Rectangle::new((200.0, 200.0), (300.0, 200.0));
+        let frame = Rectangle::new((xpos, ypos), (150.0, 40.0));
+        let mut textfield = TextField::new(frame, true);
+        textfield.set_placeholder("Enter email address");
+        scene.controls.push(Rc::new(RefCell::new(textfield)));
+
+        xpos += 170.0;
+        let frame = Rectangle::new((xpos, ypos), (150.0, 40.0));
+        let mut textfield = TextField::new(frame, true);
+        textfield.set_placeholder("Enter password");
+        scene.controls.push(Rc::new(RefCell::new(textfield)));
+
+        ypos += 80.0;
+
+        let frame = Rectangle::new((xpos, ypos), (320.0, 200.0));
         let mut textarea = TextArea::new(frame, true);
         // textarea.set_color(&Color::from_rgb_u32(HexColors::White));
         textarea.set_text(&text);
@@ -82,13 +96,14 @@ struct MainState {
     screen: Vector,
     scene: Scene,
     theme: Theme,
-    buttons: Vec<ButtonView>,
+    buttons: Vec<Button>,
     tk_state: TKState,
     demo_index: usize,
     demo_list: Vec<Demo>,
     show_fps: bool,
-    fps_view: LabelView,
+    fps_view: Label,
     frames: usize,
+    is_running: bool,
 }
 
 impl MainState {
@@ -106,9 +121,10 @@ impl MainState {
             tk_state: TKState::new(),
             demo_index: 0,
             demo_list: Vec::new(),
-            show_fps: true,
+            show_fps: false,
             fps_view: fps,
             frames: 0,
+            is_running: false,
         };
 
         s.demo_list.push(Demo::ListBox);
@@ -124,7 +140,7 @@ impl MainState {
         let mut scene = match demo {
             Demo::ListBox => SceneBuilder::load_listbox_scene(screen),
             Demo::TextEditor => SceneBuilder::load_text_edit_scene(screen),
-            _ => SceneBuilder::empty_template(screen),
+            // _ => SceneBuilder::empty_template(screen),
         };
         scene.set_theme(&self.theme);
         self.scene = scene;
@@ -138,6 +154,10 @@ impl State for MainState {
     }
 
     fn update(&mut self, window: &mut Window) -> Result<()> {
+        // if !self.is_running {
+        //     self.scene.notify(&DisplayEvent::Ready, window);
+        //     self.is_running = true;
+        // }
         if let Some(click_id) = self.tk_state.click_target {
             self.tk_state.click_target = None;
             match click_id {
@@ -190,15 +210,19 @@ impl State for MainState {
         if self.show_fps {
             self.frames += 1;
             if (self.frames % 20) == 0 {
-                println!("FPS: {}", window.current_fps());
+                log::debug!("FPS: {}", window.current_fps());
             }
         }
 
         Ok(())
     }
 
+    #[allow(unused_assignments)]
     fn event(&mut self, event: &Event, window: &mut Window) -> Result<()> {
         match event {
+            Event::Focused => {
+                log::debug!("size={:?} y={:?}", window.screen_size(), 0);
+            }
             Event::MouseMoved(pt) => {
                 let mut hover: bool;
                 for button in &mut self.buttons {
@@ -231,7 +255,9 @@ impl State for MainState {
                 Key::Escape => {
                     window.close();
                 }
-                _ => (),
+                _ => {
+                    self.scene.handle_key_command(key, window);
+                }
             },
             Event::Typed(c) => {
                 self.scene.handle_key_press(*c, window);
@@ -246,8 +272,12 @@ impl State for MainState {
 // loop
 fn main() {
     std::env::set_var("RUST_LOG", "main=debug,tweek=debug");
+
+    #[cfg(not(target_arch = "wasm32"))]
     env_logger::builder().default_format_timestamp(false).default_format_module_path(false).init();
+    #[cfg(not(target_arch = "wasm32"))]
     color_backtrace::install();
+
     let screen = Vector::new(1024, 768);
     run_with("Tweek UI", screen, Settings::default(), || MainState::new(screen));
 }

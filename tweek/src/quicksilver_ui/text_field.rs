@@ -1,4 +1,29 @@
-/// TextArea – A simple scrollable text box with editor functionality
+/// TextField – A simple scrollable text box with editor functionality
+/// This is a single-line text input field that can handle most of the standard use cases:
+/// * On click, display the cursor
+/// * On ascii input, insert character at current cursor position
+/// * On backspace, delete character left of cursor position
+/// * On left arrow, move cursor before previous character
+/// * On right arrow, move cursor to right if not at end position
+///
+/// View mode vs. Edit mode:
+/// * The initial state of the textfield is view mode and is_editing=false. There may be pre-existing
+/// text or if blank, there may be placeholder text. All content is left aligned and text that is
+/// wider than the textfield must be truncated.
+/// * In edit mode, the textfield will either start with no content or previously entered content.
+/// If placeholder text exists for an empty field, it will be hidden. If previous text exists, it will
+/// be displayed left-aligned and the cursor will be at the beginning. Later, this may change with all
+/// text selected. (like mobile browser url field)
+///
+/// The challenge of cursor positioning:
+/// * When cursor is at end, get width of rendered text and place cursor there.
+///   – If size of rendered text is larger than width of input_frame, anchor text input to right side.
+///     Also, calculate the approximate number of characters to display left of the cursor, since there
+///     is no easy means of masking rendered text. Also shorter text means better performance.
+/// * If cursor is inserting within the string, a temporary buffer is
+/// TODO:
+/// * Hyperlink fieldtype
+/// * Password fieldtype
 ///
 use super::*;
 use crate::core::*;
@@ -7,29 +32,27 @@ use crate::shared::*;
 #[allow(unused_imports)]
 use quicksilver::{
     geom::{Rectangle, Shape, Transform, Vector},
-    graphics::{Background::Col, Background::Img, Color, FontStyle, Image, PixelFormat},
+    graphics::{Background::Col, Background::Img, Color, FontStyle, Image},
     input::{Key, MouseCursor},
     lifecycle::Window,
 };
 
-pub use glyph_brush::HorizontalAlign as HAlign;
 use std::any::TypeId;
-use std::ops::Range;
 
-//-- TextArea -----------------------------------------------------------------------
+//-- TextField -----------------------------------------------------------------------
 
 #[allow(dead_code)]
 #[allow(unused_variables)]
 #[allow(unused_imports)]
 #[allow(unused_mut)]
-pub struct TextArea {
+pub struct TextField {
     pub layer: TweenLayer,
     pub placeholder: Option<String>,
     pub cursor: Option<Cursor>,
     input_frame: Rectangle,
     image_text: Option<Image>,
     text_size: (u32, u32),
-    editor: TextAreaEditor,
+    editor: TextFieldEditor,
     is_editing: bool,
     is_hovering: bool,
     can_edit: bool,
@@ -37,7 +60,7 @@ pub struct TextArea {
     scroll_offset: Vector,
 }
 
-impl TextArea {
+impl TextField {
     pub fn new(frame: Rectangle, can_edit: bool) -> Self {
         // FIXME: The default() does not load a font and therefore requires a font to be set in set_theme()
         let layer = TweenLayer::new(frame);
@@ -45,14 +68,11 @@ impl TextArea {
         let input_frame = layer.inset_by(10.0, 10.0, 10.0, 10.0);
         // log::debug!("outer frame={:?} input frame={:?}", frame, input_frame);
 
-        let mut editor = TextAreaEditor::default()
+        let mut editor = TextFieldEditor::default()
             .with_frame((input_frame.x(), input_frame.y()), (input_frame.width(), input_frame.height()));
-
-        // temporary hack to test scroll bar
-        editor.ctx.frame.max.x = editor.ctx.frame.max.x - 10.0;
         editor.ctx.debug = true;
 
-        TextArea {
+        TextField {
             layer: TweenLayer::new(frame),
             placeholder: None,
             cursor: None,
@@ -72,6 +92,10 @@ impl TextArea {
         self.editor.ctx.string = text.to_string();
     }
 
+    pub fn set_placeholder(&mut self, text: &str) {
+        self.placeholder = Some(text.to_string());
+    }
+
     pub fn set_color(&mut self, color: &Color) {
         self.layer.color = color.clone();
     }
@@ -80,18 +104,8 @@ impl TextArea {
         return &self.editor.ctx.string;
     }
 
-    pub fn get_visible_rows(&self) -> Range<usize> {
-        let row_height = self.editor.ctx.font_size;
-        let shift = self.scroll_offset.y / row_height;
-        let start = shift.floor() as usize;
-
-        let row_count = (self.layer.frame.height() / row_height + shift.fract()).ceil() as usize;
-        return start..(start + row_count);
-    }
-
     fn start_editing(&mut self) {
-        log::debug!("TextArea start_editing");
-
+        log::debug!("TextField start_editing");
         self.layer.mouse_state = MouseState::Focus;
         self.is_editing = true;
         self.editor.ctx.start_editing();
@@ -104,16 +118,16 @@ impl TextArea {
     }
 
     fn stop_editing(&mut self) {
+        log::debug!("TextField stop_editing");
         self.is_editing = false;
-        self.cursor = None;
         self.image_text = None;
-        self.editor.update_rendered_text();
+        self.cursor = None;
     }
 }
 
-impl TKDisplayable for TextArea {
+impl TKDisplayable for TextField {
     fn get_type_id(&self) -> TypeId {
-        TypeId::of::<TextArea>()
+        TypeId::of::<TextField>()
     }
 
     fn get_frame(&self) -> Rectangle {
@@ -123,16 +137,25 @@ impl TKDisplayable for TextArea {
     fn set_theme(&mut self, theme: &Theme) {
         self.layer.color = theme.bg_color;
         self.editor.ctx.font_size = theme.font_size;
+
+        // let font = FontCollection::from_bytes(&theme.font_bytes)
+        //     .unwrap()
+        //     .into_font()
+        //     .unwrap();
+
+        // let font = RTFont::from_bytes(&*theme.font_bytes).unwrap();
+
+        // if
+        // self.editor.ctx.set_font_bytes(theme.font_bytes.clone_into());
+        // let bytes: &[u8] = &*theme.font_bytes;
+        // let font = RTFont::from_bytes(bytes);
+        // if font.is_ok() {
+        //     self.editor.ctx.set_font(font.unwrap());
+        // }
         if theme.border_width > 0.0 {
             self.layer.border_width = theme.border_width;
             self.layer.border_color = Some(theme.border_color);
         }
-        // self.layer.font = theme.font;
-        // self.layer.font_size = theme.font_size;
-        // self.editor.ctx.set_font_bytes(theme.font_bytes.into();
-        // if let Some(raw_font) = &theme.raw_font {
-        //     self.editor.ctx.set_font(raw_font.clone());
-        // }
     }
 
     fn get_perimeter_frame(&self) -> Option<Rectangle> {
@@ -151,9 +174,8 @@ impl TKDisplayable for TextArea {
             DisplayEvent::Ready => {
                 self.editor.ctx.gpu_text.setup_gpu();
                 if self.get_text().len() > 0 {
-                    self.editor.update_rendered_text();
+                    self.editor.ctx.update_metrics();
                 }
-                // self.start_editing();
             }
             DisplayEvent::Resize(_screen_size) => {}
         }
@@ -172,55 +194,49 @@ impl TKDisplayable for TextArea {
         Ok(())
     }
 
-    #[allow(unused_mut)]
+    // #[allow(unused_mut)]
     fn render(&mut self, theme: &Theme, window: &mut Window) -> TKResult {
         window.draw(&self.layer.frame, Col(self.layer.color));
 
-        if self.get_text().len() == 0 {
-            return Ok(());
-        }
-
         if self.is_editing {
-            self.editor.update_textarea();
-            let cursor_space = 0.0;
+            self.editor.update_textfield();
+            let style = FontStyle::new(theme.font_size, Color::BLUE);
             if self.get_text().len() > 0 {
-                if let Some(text) = self.editor.get_visible_text(self.scroll_offset.y) {
-                    let style = FontStyle::new(theme.font_size, Color::BLUE);
+                if let Some(text) = self.editor.get_visible_text(0.0) {
                     let _ = self.editor.ctx.gpu_text.draw_text(&text, &style, &self.input_frame, window);
                 }
             }
             if let Some(cursor) = &mut self.cursor {
-                let cursor_pt =
-                    Vector::new(self.editor.ctx.cursor_origin.0 + cursor_space, self.editor.ctx.cursor_origin.1);
-                cursor.render_at_point(&cursor_pt, &theme, window);
+                let x = self.editor.ctx.cursor_origin.0;
+                let y1 = self.input_frame.y() + (self.input_frame.height() - self.editor.ctx.font_size) / 2.0;
+                let y2 = self.input_frame.y() + (self.input_frame.height() + self.editor.ctx.font_size) / 2.0;
+                cursor.render_line(&Vector::new(x, y1), &Vector::new(x, y2), &theme, window);
                 // log::debug!("frame={:?} cursor={:?}", self.input_frame, cursor_pt);
             }
         } else {
-            if let Some(img) = &self.image_text {
-                window.draw(&img.area().constrain(&self.input_frame), Img(&img));
+            if self.get_text().len() > 0 {
+                if let Some(img) = &self.image_text {
+                    window.draw(&img.area().constrain(&self.input_frame), Img(&img));
+                } else {
+                    if let Some(text) = self.editor.get_visible_text(0.0) {
+                        let style = FontStyle::new(theme.font_size, Color::BLACK);
+                        let img = theme.font.render(&text, &style).unwrap();
+                        window.draw(&img.area().constrain(&self.input_frame), Img(&img));
+                        self.image_text = Some(img);
+                    }
+                }
             } else {
-                if let Some(imgbuf) = self.editor.crop_cached_render(
-                    0,
-                    self.scroll_offset.y as u32,
-                    self.editor.ctx.frame.width() as u32,
-                    self.editor.ctx.frame.height() as u32,
-                ) {
-                    let (text_w, text_h) = imgbuf.dimensions();
-                    // log::debug!("image text w={:?} h={:?}", text_w, text_h);
-                    let img: Image =
-                        Image::from_raw(imgbuf.into_raw().as_slice(), text_w, text_h, PixelFormat::RGBA).unwrap();
+                if let Some(img) = &self.image_text {
+                    window.draw(&img.area().constrain(&self.input_frame), Img(&img));
+                } else if let Some(text) = &self.placeholder {
+                    let style = FontStyle::new(theme.font_size, Color::from_hex("#AAAAAA"));
+                    let img = theme.font.render(&text, &style).unwrap();
                     window.draw(&img.area().constrain(&self.input_frame), Img(&img));
                     self.image_text = Some(img);
                 } else {
-                    log::debug!("NO IMAGE x={:?} y={:?}", 0, 0);
+                    log::debug!("No cached image and no placeholder text");
                 }
             }
-        }
-
-        // Render scrollbar
-        let content_height = self.editor.ctx.text_size.1 as f32;
-        if let Some(rect) = UITools::get_scrollbar_frame(content_height, &self.layer.frame, self.scroll_offset.y) {
-            window.draw(&rect, Col(Color::from_hex(UITools::SCROLLBAR_COLOR)));
         }
 
         // Draw border
@@ -234,7 +250,7 @@ impl TKDisplayable for TextArea {
     }
 }
 
-impl TKResponder for TextArea {
+impl TKResponder for TextField {
     fn get_text_content(&self) -> Option<String> {
         Some(self.get_text().to_owned())
     }
@@ -252,7 +268,7 @@ impl TKResponder for TextArea {
             self.editor.ctx.insert_char(c);
             self.image_text = None;
         } else {
-            // log::debug!("### non ascii={}", c);
+            log::debug!("### non ascii={}", c);
         }
     }
 
@@ -273,10 +289,8 @@ impl TKResponder for TextArea {
                 return true;
             }
             Key::Return => {
-                if self.is_editing && self.can_edit {
-                    self.editor.ctx.insert_char('\n');
-                    self.image_text = None;
-                }
+                self.stop_editing();
+                return true;
             }
             _ => (),
         }
@@ -305,7 +319,6 @@ impl TKResponder for TextArea {
             let upper_limit = self.editor.ctx.text_size.1 as f32 - self.layer.frame.height();
             let eval_y = (self.scroll_offset.y - pt.y).max(0.0).min(upper_limit);
             self.scroll_offset.y = eval_y;
-            self.image_text = None;
         }
     }
 }

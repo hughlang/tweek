@@ -4,7 +4,7 @@ use crate::core::*;
 
 use quicksilver::{
     geom::{Rectangle, Shape},
-    graphics::{Background::Img, Color, Font, FontStyle, Image},
+    graphics::{Background::Img, Color, FontStyle, Image},
     lifecycle::Window,
 };
 
@@ -14,17 +14,17 @@ use super::*;
 
 //-- Label -----------------------------------------------------------------------
 
-pub struct LabelView {
+pub struct Label {
     pub layer: TweenLayer,
     pub text: String,
     pub content: Option<Image>,
 }
 
-impl LabelView {
+impl Label {
     pub fn new(frame: &Rectangle, text: &str) -> Self {
         let layer = TweenLayer::new(frame.clone());
 
-        LabelView { layer: layer, text: text.to_string(), content: None }
+        Label { layer: layer, text: text.to_string(), content: None }
     }
 
     pub fn set_color(&mut self, color: &Color) {
@@ -32,9 +32,9 @@ impl LabelView {
     }
 }
 
-impl TKDisplayable for LabelView {
+impl TKDisplayable for Label {
     fn get_type_id(&self) -> TypeId {
-        TypeId::of::<LabelView>()
+        TypeId::of::<Label>()
     }
 
     fn get_frame(&self) -> Rectangle {
