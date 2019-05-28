@@ -1,2 +1,60 @@
-[workspace]
-members = ["tweek"]
+[package]
+name = "tweek-rust"
+description = "A tween animation library for Rust"
+version = "0.2.0"
+authors = ["Hugh Lang <hughlang@gmail.com>"]
+keywords = ["animation", "graphics", "gui"]
+license = "LGPL"
+readme = "README.md"
+repository = "https://github.com/wasm-network/tweek-rust"
+exclude = ["static/*"]
+edition = "2018"
+
+[lib]
+name = "tweek"
+path = "src/lib.rs"
+
+# [[example]]
+# name = "test"
+# path = "examples/quicksilver/qs_test.rs"
+
+[[example]]
+name = "basics"
+path = "examples/quicksilver/basics.rs"
+
+[[example]]
+name = "timelines"
+path = "examples/quicksilver/timelines.rs"
+
+[[example]]
+name = "gui"
+path = "examples/quicksilver/gui.rs"
+
+[dependencies]
+cgmath = "0.17.0"
+log = "0.4"
+rand = "0.6"
+lazy_static = "1.3.0"
+unwrap_to = "0.1.0"
+image = { version = "0.21", default-features = false, features = ["png_codec"] }
+glyph_brush = "0.4"
+# glyph_brush = { path = "../glyph-brush/glyph-brush" }
+# cassowary = "^0.3.0"
+
+[dependencies.quicksilver]
+default-features = false
+features = ["fonts", "complex_shapes"]
+# path = "../../quicksilver"
+git = "https://github.com/hughlang/quicksilver"
+branch = "modular_gl"
+
+[dependencies.uuid]
+version = "0.7"
+features = ["v4", "stdweb"]
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+stdweb = "0.4.12"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger = "0.6"
+color-backtrace = { version = "0.1" }
