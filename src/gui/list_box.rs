@@ -1,6 +1,7 @@
 /// ListBox
 ///
 use crate::core::*;
+use crate::shared::*;
 
 #[allow(unused_imports)]
 use quicksilver::{
@@ -142,7 +143,7 @@ impl TKDisplayable for ListBox {
     /// The ListBox should manage the UI state of its rows.
     /// The mouse state of a row should determine whether to reset or not.
     /// Otherwise, leave it alone?
-    fn update(&mut self) -> TKResult {
+    fn update(&mut self, window: &mut Window) -> TKResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {
@@ -159,7 +160,7 @@ impl TKDisplayable for ListBox {
         let offset = range.start;
 
         for (i, row) in &mut self.rows.iter_mut().enumerate() {
-            &row.update()?;
+            &row.update(window)?;
             if i + offset == select_index {
                 match row.layer.mouse_state {
                     MouseState::Select => {
@@ -398,7 +399,7 @@ impl TKDisplayable for ListBoxRow {
         self.defaults = Tween::load_props(&self.layer);
     }
 
-    fn update(&mut self) -> TKResult {
+    fn update(&mut self, _window: &mut Window) -> TKResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {

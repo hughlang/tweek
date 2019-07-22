@@ -195,7 +195,7 @@ impl TKDisplayable for TextField {
         }
     }
 
-    fn update(&mut self) -> TKResult {
+    fn update(&mut self, window: &mut Window) -> TKResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {
@@ -203,7 +203,7 @@ impl TKDisplayable for TextField {
             }
         }
         if let Some(cursor) = &mut self.cursor {
-            cursor.update()?;
+            cursor.update(window)?;
         }
         Ok(())
     }

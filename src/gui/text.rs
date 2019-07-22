@@ -1,11 +1,12 @@
 /// The Text view displays live text (as opposed to Label, which displays rendered text as image)
 ///
 use crate::core::*;
+use crate::shared::*;
 
 use glyph_brush::HorizontalAlign as HAlign;
 
 use quicksilver::{
-    geom::Rectangle,
+    geom::{Rectangle, Vector},
     graphics::{Color, DrawTask},
     lifecycle::Window,
 };
@@ -49,12 +50,6 @@ impl Text {
         self.layer.color = color.clone();
     }
 
-    // pub fn get_content_size(&self) -> Vector {
-    //     if let Some(task) = self.draw_task {
-    //         return Vector::new(task.content_size.0, task.content_size.0);
-    //     }
-    //     (0.0, 0.0)
-    // }
 }
 
 impl TKDisplayable for Text {
@@ -66,13 +61,20 @@ impl TKDisplayable for Text {
         return self.layer.frame;
     }
 
+    fn get_content_size(&self) -> Vector {
+        if let Some(task) = &self.draw_task {
+            return Vector::new(task.content_size.0, task.content_size.1);
+        }
+        Vector::new(0.0, 0.0)
+    }
+
     fn set_theme(&mut self, _theme: &Theme) {
         // if let Some(label) = &mut self.label {
         //     label.layer.graphics.color = theme.fg_color;
         // }
     }
 
-    fn update(&mut self) -> TKResult {
+    fn update(&mut self, _window: &mut Window) -> TKResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {

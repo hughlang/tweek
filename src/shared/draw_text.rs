@@ -53,7 +53,6 @@ impl DrawText {
     }
 
     pub fn activate(&mut self) {
-        log::debug!("==Activate=======================================================");
         let (width, height) = self.glyph_brush.texture_dimensions();
 
         if let Some(texture) = &mut self.texture {
@@ -110,6 +109,9 @@ impl DrawText {
         let mut task = DrawTask::new(texture_idx);
 
         self.glyph_brush.queue(&section);
+        let text_size = self.glyph_brush.texture_dimensions();
+        task.content_size = (text_size.0 as f32, text_size.1 as f32);
+
         let mut brush_action;
         loop {
             brush_action = self.glyph_brush.process_queued(

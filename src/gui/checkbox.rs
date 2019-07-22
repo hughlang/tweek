@@ -64,15 +64,6 @@ impl Checkbox {
         self.onclick = Some(Box::new(cb));
     }
 
-    pub fn get_content_size(&self) -> Vector {
-        if let Some(img) = &self.image_text {
-            // let text_frame = UITools::inset_left_middle(&self.layer.frame, &img.area(), 30.0);
-            Vector::new(40.0 + img.area().width(), self.layer.frame.height())
-        } else {
-            self.layer.frame.size
-        }
-    }
-
     pub fn update_frame(&mut self, frame: Rectangle) {
         self.layer.frame = frame;
     }
@@ -150,6 +141,14 @@ impl TKDisplayable for Checkbox {
         return self.layer.frame;
     }
 
+    fn get_content_size(&self) -> Vector {
+        if let Some(img) = &self.image_text {
+            Vector::new(40.0 + img.area().width(), self.layer.frame.height())
+        } else {
+            self.layer.frame.size
+        }
+    }
+
     /// Change the font, color, and size
     fn set_theme(&mut self, theme: &Theme) {
         let style = FontStyle::new(theme.font_size, Color::BLACK);
@@ -161,7 +160,7 @@ impl TKDisplayable for Checkbox {
         self.image_text = Some(img);
     }
 
-    fn update(&mut self) -> TKResult {
+    fn update(&mut self, _window: &mut Window) -> TKResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {

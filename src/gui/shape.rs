@@ -1,5 +1,6 @@
 /// The ShapeView is simple shape holder with some Tweenable support
-///
+/// Warning: A ShapeView object will render above objects in Quicksilver's window.mesh because of the
+/// ordering of DrawTasks.
 use crate::core::*;
 
 use quicksilver::{
@@ -65,7 +66,7 @@ impl TKDisplayable for ShapeView {
         }
     }
 
-    fn update(&mut self) -> TKResult {
+    fn update(&mut self, _window: &mut Window) -> TKResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {

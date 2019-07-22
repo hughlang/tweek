@@ -249,7 +249,7 @@ impl State for MainState {
             item.update();
         }
         for button in &mut self.buttons {
-            let _ = button.update();
+            let _ = button.update(window);
         }
 
         Ok(())

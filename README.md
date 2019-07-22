@@ -62,12 +62,12 @@ pub trait Tweenable {
 }
 ```
 
-And this is the [TweenLayer wrapper for Quicksilver that implements Tweenable](https://github.com/wasm-network/tweek-rust/blob/master/src/quicksilver_ui/layer.rs). It reads and writes the values you specify.
+And this is the [TweenLayer wrapper for Quicksilver that implements Tweenable](https://github.com/wasm-network/tweek-rust/blob/master/src/ui/layer.rs). It reads and writes the values you specify.
 
 
 ### UI Components
 
-By itself, the Tweenable trait provides the basic support needed for Tweek integration. However, it's hard to resist going further and adding as many helpers and utilities to make UI building easier. And so, Tweek provides a number of experimental View components in the quicksilver_ui folder. Things like buttons, labels, images, and a progress bar. These are almost done, but not very pretty yet.
+By itself, the Tweenable trait provides the basic support needed for Tweek integration. However, it's hard to resist going further and adding as many helpers and utilities to make UI building easier. And so, Tweek provides a number of experimental View components in the ui folder. Things like buttons, labels, images, and a progress bar. These are almost done, but not very pretty yet.
 
 Naturally, these components also have Tweenable graphics, which provides "internal tweening" capabilities for different behaviors. For example, the Button struct can animate a color change for the *on hover* event, like this:
 

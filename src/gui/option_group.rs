@@ -154,7 +154,7 @@ impl TKDisplayable for OptionGroup {
         }
     }
 
-    fn update(&mut self) -> TKResult {
+    fn update(&mut self, _window: &mut Window) -> TKResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {

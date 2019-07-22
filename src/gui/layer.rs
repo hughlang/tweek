@@ -2,6 +2,7 @@
 ///
 use super::*;
 use crate::core::*;
+use crate::shared::*;
 
 #[allow(unused_imports)]
 use quicksilver::{
@@ -27,6 +28,7 @@ pub enum MouseState {
 /// This is a wrapper for the quicksilver properties that are tweenable. It is used as a convenient substitute
 /// for having to manage multiple tweenables per displayed asset.
 pub struct TweenLayer {
+    pub id: u32,
     pub frame: Rectangle,
     pub original: Rectangle,
     pub rotation: f32,
@@ -49,6 +51,7 @@ impl TweenLayer {
     pub fn new(frame: Rectangle) -> Self {
         let font_style = FontStyle::new(14.0, Color::BLACK);
         TweenLayer {
+            id: 0,
             frame: frame,
             original: frame,
             rotation: 0.0,

@@ -98,9 +98,9 @@ impl TKDisplayable for Toolbar {
         }
     }
 
-    fn update(&mut self) -> TKResult {
+    fn update(&mut self, window: &mut Window) -> TKResult {
         for btn in &mut self.buttons {
-            btn.update()?;
+            btn.update(window)?;
         }
 
         if let Some(tween) = &mut self.layer.animation {

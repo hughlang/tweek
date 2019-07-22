@@ -111,6 +111,7 @@ impl Tweek {
     /// See: https://www.ralfj.de/projects/rust-101/part12.html
     /// This method should be called by a Timeline that wants to receive callbacks from
     /// Tweek.
+    /// FIXME: UNUSED
     pub fn add_subscriber<C>(&mut self, cb: C)
     where
         C: Fn(TKEvent, &mut TKState) + 'static,
@@ -123,6 +124,7 @@ impl Tweek {
     /// to Tweek and then re-publish them back to the Timeline which has added itself as
     /// the subscribers list.
     /// Same as add_tween but without the lifetime marks
+    /// FIXME: UNUSED
     pub fn register_tween(&mut self, tween: &mut Tween) {
         let subscribers = self.subscribers.clone();
         // let timelines = self.timelines.
@@ -138,6 +140,7 @@ impl Tweek {
 impl Playable for Tweek {
     fn play(&mut self) {
         for tl in &self.timelines {
+            // TODO: Combine into one statement
             let mut timeline = tl.borrow_mut();
             (&mut *timeline).play();
         }

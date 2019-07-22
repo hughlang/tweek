@@ -23,22 +23,42 @@ pub enum ButtonState {
 pub struct Button {
     pub layer: TweenLayer,
     pub label: Option<Label>,
-    pub image: Option<Image>,
+    pub text: Option<Text>,
+    pub icon: Option<Image>,
     onclick: Option<Box<FnMut(TKAction, &mut TKState) + 'static>>,
 }
 
 impl Button {
     pub fn new(frame: Rectangle) -> Self {
-        let layer = TweenLayer::new(frame);
-        Button { layer: layer, label: None, image: None, onclick: None }
+        let mut layer = TweenLayer::new(frame);
+        layer.color.a = 0.0;  // Button background color default is transparent
+        Button { layer: layer, label: None, text: None, icon: None, onclick: None }
+    }
+
+    pub fn id(mut self, id: u32) -> Self {
+        self.layer.id = id;
+        self
     }
 
     pub fn with_text(mut self, text: &str) -> Self {
-        let rect = self.layer.inset_by(8.0, 4.0, 8.0, 4.0);
-        let label = Label::new(&rect, text);
+        // let rect = self.layer.inset_by(8.0, 4.0, 8.0, 4.0);
+        let label = Label::new(&self.layer.frame, text);
         self.label = Some(label);
         self
     }
+
+    pub fn set_text(&mut self, text: &str) {
+        let label = Label::new(&self.layer.frame, text);
+        self.label = Some(label);
+    }
+
+    pub fn set_image(&mut self, image: Image) {
+        self.icon = Some(image);
+    }
+
+    // fn update_layout(&mut self) {
+
+    // }
 
     // pub fn with_image(mut self, _image: Image, _margin: f32) -> Self {
     //     let rect = self.layer.inset_by(8.0, 4.0, 8.0, 4.0);
@@ -62,6 +82,10 @@ impl Button {
     {
         self.onclick = Some(Box::new(cb));
     }
+
+    pub fn onclick_action(&mut self) {
+
+    }
 }
 
 // *****************************************************************************************************
@@ -77,6 +101,10 @@ impl TKDisplayable for Button {
         return self.layer.frame;
     }
 
+    fn get_content_size(&self) -> Vector {
+        self.layer.frame.size
+    }
+
     fn set_origin(&mut self, origin: &Vector) {
         self.layer.frame.pos.x = origin.x;
         self.layer.frame.pos.y = origin.y;
@@ -84,6 +112,7 @@ impl TKDisplayable for Button {
         if let Some(label) = &mut self.label {
             label.layer.frame.pos.x = origin.x;
             label.layer.frame.pos.y = origin.y;
+            eprintln!("button={:?} label={:?}", self.layer.frame, label.layer.frame);
         }
     }
 
@@ -105,7 +134,7 @@ impl TKDisplayable for Button {
         }
     }
 
-    fn update(&mut self) -> TKResult {
+    fn update(&mut self, _window: &mut Window) -> TKResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {
@@ -116,8 +145,10 @@ impl TKDisplayable for Button {
     }
 
     fn render(&mut self, theme: &mut Theme, window: &mut Window) -> TKResult {
-        window.draw(&self.layer.frame, Col(self.layer.color));
-
+        if self.layer.color.a > 0.0 {
+            window.draw(&self.layer.frame, Col(self.layer.color));
+        }
+        // eprintln!("render button at {:?}", self.layer.frame);
         if let Some(label) = &mut self.label {
             label.render(theme, window)?;
         }
@@ -132,7 +163,9 @@ impl TKDisplayable for Button {
     }
 
     fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
-        return self.layer.handle_mouse_over(pt);
+        let hover = self.layer.handle_mouse_over(pt);
+        // if hover { eprintln!("Button hover at pt={:?}", pt) }
+        hover
     }
 }
 

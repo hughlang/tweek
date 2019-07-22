@@ -9,11 +9,19 @@ use std::rc::Rc;
 
 use quicksilver::{
     geom::{Rectangle, Shape, Transform, Vector},
-    graphics::{Background::Col, Color},
+    graphics::{Background::Col, Background::Img, Color, Image, PixelFormat},
     input::{ButtonState, Key, MouseButton, MouseCursor},
     lifecycle::{run_with, Event, Settings, State, Window},
     Error, Result,
 };
+// use glyph_brush::{self};
+
+use image::{imageops, DynamicImage, GenericImageView, ImageBuffer, Rgba};
+
+#[allow(dead_code)]
+const BUTTON_1: usize = 101;
+const BUTTON_2: usize = 102;
+const BUTTON_3: usize = 103;
 
 struct SceneBuilder {}
 
@@ -241,6 +249,39 @@ impl SceneBuilder {
         scene
     }
 
+    fn load_panels_scene(screen: Vector) -> Scene {
+        const BUTTON_WIDTH: f32 = 80.0;
+        const BUTTON_HEIGHT: f32 = 40.0;
+        let frame = Rectangle::new((0.0, 0.0), (screen.x, screen.y));
+        let mut scene = Scene::new(&frame);
+
+        let mut xpos = 200.0;
+        let mut ypos = 200.0;
+
+        // let (r, g, b) = hex_to_rgb(HexColors::Tan);
+        let frame = Rectangle::new((xpos, ypos), (BUTTON_WIDTH, BUTTON_HEIGHT));
+
+        let mut button = Button::new(frame).with_text("Basic");
+        button.set_color(&Color::from_hex("#1E90FF"));
+        button.set_hover_animation(&[color(HexColors::SteelBlue)], 0.1);
+        button.set_onclick(move |_action, tk| {
+            tk.click_target = Some(BUTTON_1);
+        });
+        scene.controls.push(Rc::new(RefCell::new(button)));
+
+        let frame = Rectangle::new((xpos, screen.y), (200.0, 200.0));
+        let fill_color = Color::from_hex("#CD5C5C");
+        let line_color = Color::from_hex("#FFD700");
+        let mut circle =
+            DrawShape::circle(&frame.center(), &frame.width() / 2.0, Some(fill_color), Some(line_color), 2.0);
+        let mut shape = ShapeView::new(frame).with_mesh(&mut circle);
+        scene.views.push(Rc::new(RefCell::new(shape)));
+
+
+
+        scene
+    }
+
     /// ********************************************************************************
     /// This is a template for creating a new animation.
     /// Copy it and try out different animation techniques.
@@ -265,6 +306,7 @@ enum Demo {
     TextEditor,
     FormInputs,
     Shapes,
+    Modals,
 }
 
 #[allow(dead_code)]
@@ -306,8 +348,9 @@ impl MainState {
         s.demo_list.push(Demo::TextEditor);
         s.demo_list.push(Demo::FormInputs);
         s.demo_list.push(Demo::Shapes);
+        s.demo_list.push(Demo::Modals);
 
-        s.demo_index = 0;
+        s.demo_index = 5;
         let demo = s.demo_list[s.demo_index].clone();
         s.load_demo(screen, &demo);
         Ok(s)
@@ -320,6 +363,7 @@ impl MainState {
             Demo::TextEditor => SceneBuilder::load_text_edit_scene(screen),
             Demo::FormInputs => SceneBuilder::load_form_inputs_scene(screen),
             Demo::Shapes => SceneBuilder::load_shapes_scene(screen),
+            Demo::Modals => SceneBuilder::load_panels_scene(screen),
             // _ => SceneBuilder::empty_template(screen),
         };
         scene.set_theme(&self.theme);
@@ -358,13 +402,24 @@ impl State for MainState {
                     &self.load_demo(window.screen_size(), next);
                     return Ok(());
                 }
+                BUTTON_1 => {
+                    // eprintln!("BUTTON_1 x={:?} y={:?}", 0, 0);
+                    let frame = Rectangle::new((200.0, 600.0), (200.0, 200.0));
+                    let imgbuf = window.capture(&frame, PixelFormat::RGBA);
+                    let (text_w, text_h) = imgbuf.dimensions();
+                    // log::debug!("image text w={:?} h={:?}", text_w, text_h);
+                    // let img: Image =
+                    //     Image::from_raw(imgbuf.into_raw().as_slice(), text_w, text_h, PixelFormat::RGBA).unwrap();
+                    // window.draw(&img.area().constrain(&frame), Img(&img));
+
+                }
                 _ => (),
             }
         }
-        let _ = self.scene.update();
+        let _ = self.scene.update(window);
 
         for button in &mut self.buttons {
-            let _ = button.update();
+            let _ = button.update(window);
         }
 
         Ok(())
@@ -401,6 +456,7 @@ impl State for MainState {
                         break;
                     }
                 }
+                // FIXME: This hover value overrides previous result.
                 hover = self.scene.handle_mouse_at(pt);
                 if hover {
                     window.set_cursor(MouseCursor::Hand);
@@ -412,6 +468,8 @@ impl State for MainState {
                 self.scene.handle_mouse_down(&window.mouse().pos(), &mut self.tk_state);
             }
             Event::MouseButton(MouseButton::Left, ButtonState::Released) => {
+                self.scene.handle_mouse_up(&window.mouse().pos(), &mut self.tk_state);
+
                 for button in &mut self.buttons {
                     if button.handle_mouse_up(&window.mouse().pos(), &mut self.tk_state) {
                         break;

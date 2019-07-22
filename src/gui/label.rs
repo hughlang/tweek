@@ -3,7 +3,7 @@
 use crate::core::*;
 
 use quicksilver::{
-    geom::{Rectangle, Shape},
+    geom::{Rectangle, Shape, Vector},
     graphics::{Background::Img, Color, FontStyle, Image},
     lifecycle::Window,
 };
@@ -24,7 +24,7 @@ impl Label {
     pub fn new(frame: &Rectangle, text: &str) -> Self {
         let layer = TweenLayer::new(frame.clone());
 
-        Label { layer: layer, text: text.to_string(), content: None }
+        Label { layer: layer, text: text.to_owned(), content: None }
     }
 
     pub fn set_color(&mut self, color: &Color) {
@@ -41,13 +41,22 @@ impl TKDisplayable for Label {
         return self.layer.frame;
     }
 
-    fn set_theme(&mut self, _theme: &Theme) {
+    fn get_content_size(&self) -> Vector {
+        if let Some(image) = &self.content {
+            return image.area().size;
+        }
+        Vector::new(0.0, 0.0)
+    }
+
+
+    fn set_theme(&mut self, theme: &Theme) {
+        self.layer.color = theme.fg_color;
         // if let Some(label) = &mut self.label {
         //     label.layer.graphics.color = theme.fg_color;
         // }
     }
 
-    fn update(&mut self) -> TKResult {
+    fn update(&mut self, _window: &mut Window) -> TKResult {
         if let Some(tween) = &mut self.layer.animation {
             tween.tick();
             if let Some(update) = tween.update() {
@@ -61,7 +70,7 @@ impl TKDisplayable for Label {
         if let Some(image) = &self.content {
             window.draw(&image.area().with_center(self.layer.frame.center()), Img(&image));
         } else {
-            let style = FontStyle::new(theme.font_size, Color::BLACK);
+            let style = FontStyle::new(theme.font_size, self.layer.color);
             let image_text = theme.font.render(&self.text, &style).unwrap();
             window.draw(&image_text.area().with_center(self.layer.frame.center()), Img(&image_text));
             self.content = Some(image_text);

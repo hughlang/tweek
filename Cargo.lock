@@ -1270,7 +1270,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "quicksilver"
 version = "0.3.11"
-source = "git+https://github.com/hughlang/quicksilver?branch=modular_gl#a028dfcac08d694a75b1b463df7ebc4a25691203"
+source = "git+https://github.com/hughlang/quicksilver?branch=modular_gl#e9701e0263124c5dc66744483551ea425697ad58"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1884,7 +1884,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tweek-rust"
+name = "tweek"
 version = "0.2.0"
 dependencies = [
  "cgmath 0.17.0 (registry+https://github.com/rust-lang/crates.io-index)",

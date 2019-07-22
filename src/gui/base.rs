@@ -37,6 +37,9 @@ pub trait TKDisplayable {
 
     fn get_frame(&self) -> Rectangle;
 
+    fn get_content_size(&self) -> Vector {
+        Vector::new(0.0, 0.0)
+    }
     /// This trait method should set the specified theme to the TweenLayer and
     /// to apply the colors and fonts for each Displayable object.
     /// This is the default action. Uncomment this line or apply the them to a child Displayable property
@@ -56,7 +59,7 @@ pub trait TKDisplayable {
 
     fn layout(&mut self, _origin: Vector, _theme: &Theme) {}
 
-    fn update(&mut self) -> TKResult {
+    fn update(&mut self, _window: &mut Window) -> TKResult {
         Ok(())
     }
 

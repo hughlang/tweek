@@ -8,8 +8,6 @@ use quicksilver::{
     Result,
 };
 
-use std::ops::Div;
-
 static ROBOTO_REGULAR: &[u8] = include_bytes!("../../static/Roboto-Regular.ttf");
 static ROBOTO_BOLD: &[u8] = include_bytes!("../../static/Roboto-Bold.ttf");
 

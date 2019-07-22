@@ -59,9 +59,9 @@ impl TKDisplayable for ProgressBarView {
         // }
     }
 
-    fn update(&mut self) -> TKResult {
-        Ok(())
-    }
+    // fn update(&mut self, _window: &mut Window) -> TKResult {
+    //     Ok(())
+    // }
 
     fn render(&mut self, _theme: &mut Theme, window: &mut Window) -> TKResult {
         window.draw(&self.bg_layer.frame, Col(self.bg_layer.color));

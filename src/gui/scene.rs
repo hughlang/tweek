@@ -1,9 +1,9 @@
 use super::*;
 use crate::core::*;
+use crate::shared::*;
 
 use std::any::TypeId;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 #[allow(unused_imports)]
@@ -24,7 +24,6 @@ pub struct Scene {
     next_control_idx: Option<usize>,
     frames: usize,
     fps_text: Option<Text>,
-    pub types_map: HashMap<TypeId, String>,
 }
 
 impl Scene {
@@ -40,7 +39,6 @@ impl Scene {
             next_control_idx: None,
             frames: 0,
             fps_text: None,
-            types_map: HashMap::new(),
         }
     }
 
@@ -57,14 +55,17 @@ impl Scene {
         }
     }
 
-    // This is an experimental means of differentiating different types. Each Displayable should
-    // provide it's type_id() and therefore allow the system to know how to handle different
-    // object types.
-    // pub fn prepare(mut self) -> Self {
-    //     self.types_map.insert(TypeId::of::<Button>(), "Button".to_string());
-    //     self.types_map.insert(TypeId::of::<ListBox>(), "ListBox".to_string());
-    //     self
-    // }
+    fn animate(&mut self, window: &mut Window) -> TKResult {
+
+        for cell in &mut self.controls {
+            (cell.borrow_mut()).update(window)?;
+        }
+        for cell in &mut self.views {
+            (cell.borrow_mut()).update(window)?;
+        }
+        Ok(())
+    }
+
 }
 
 impl TKDisplayable for Scene {
@@ -78,50 +79,42 @@ impl TKDisplayable for Scene {
 
     fn set_theme(&mut self, theme: &Theme) {
         for cell in &mut self.controls {
-            let mut control = cell.borrow_mut();
-            (&mut *control).set_theme(theme);
+            (cell.borrow_mut()).set_theme(theme);
         }
         for cell in &mut self.views {
-            let mut view = cell.borrow_mut();
-            (&mut *view).set_theme(theme);
+            (cell.borrow_mut()).set_theme(theme);
         }
     }
 
     fn notify(&mut self, event: &DisplayEvent) {
         for cell in &mut self.controls {
-            let mut control = cell.borrow_mut();
-            (&mut *control).notify(event);
+            (cell.borrow_mut()).notify(event);
         }
         for cell in &mut self.views {
-            let mut view = cell.borrow_mut();
-            (&mut *view).notify(event);
+            (cell.borrow_mut()).notify(event);
         }
     }
 
-    fn update(&mut self) -> TKResult {
+    fn update(&mut self, window: &mut Window) -> TKResult {
         // Awkwardly, check if another control will become active and first try to
         // deactivate the previous control. Then activate the next one
         if let Some(next_idx) = self.next_control_idx {
             if let Some(last_idx) = self.active_control_idx {
                 if last_idx != next_idx {
                     let cell = &mut self.controls[last_idx];
-                    let mut control = cell.borrow_mut();
-                    (&mut *control).notify(&DisplayEvent::Deactivate);
+                    (cell.borrow_mut()).notify(&DisplayEvent::Deactivate);
                 }
             }
             let cell = &mut self.controls[next_idx];
-            let mut control = cell.borrow_mut();
-            (&mut *control).notify(&DisplayEvent::Activate);
+            (cell.borrow_mut()).notify(&DisplayEvent::Activate);
             self.active_control_idx = Some(next_idx);
             self.next_control_idx = None;
         }
         for cell in &mut self.controls {
-            let mut control = cell.borrow_mut();
-            (&mut *control).update()?;
+            (cell.borrow_mut()).update(window)?;
         }
         for cell in &mut self.views {
-            let mut view = cell.borrow_mut();
-            (&mut *view).update()?;
+            (cell.borrow_mut()).update(window)?;
         }
         Ok(())
     }
@@ -132,14 +125,12 @@ impl TKDisplayable for Scene {
     fn render(&mut self, theme: &mut Theme, window: &mut Window) -> TKResult {
         let mut mask_areas: Vec<Rectangle> = Vec::new();
 
-        for cell in &mut self.views {
-            let mut view = cell.borrow_mut();
-            (&mut *view).render(theme, window)?;
+        for cell in &self.views {
+            (cell.borrow_mut()).render(theme, window)?;
         }
-        for cell in &mut self.controls {
+        for cell in &self.controls {
             let mut control = cell.borrow_mut();
             if let Some(perimeter) = (&control).get_perimeter_frame() {
-                // log::debug!("perimeter={:?}", perimeter);
                 let mut blocks = UITools::get_perimeter_blocks(&(&control).get_frame(), &perimeter);
                 mask_areas.append(&mut blocks);
             }
@@ -159,15 +150,20 @@ impl TKDisplayable for Scene {
             }
             text.render(theme, window)?;
         }
+
         Ok(())
     }
 
     fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
-        // let out = format!("handle_mouse_at {:?}", pt);
-        // debug_log(&out);
+        // TODO: Verify if hover is handled ok
+        for cell in &mut self.controls {
+            let hover = (cell.borrow_mut()).handle_mouse_at(pt);
+            if hover {
+                return true;
+            }
+        }
         for cell in &mut self.views {
-            let mut control = cell.borrow_mut();
-            let hover = (&mut *control).handle_mouse_at(pt);
+            let hover = (cell.borrow_mut()).handle_mouse_at(pt);
             if hover {
                 return true;
             }
@@ -183,8 +179,7 @@ impl TKResponder for Scene {
 
     fn handle_mouse_down(&mut self, pt: &Vector, state: &mut TKState) -> bool {
         for (i, cell) in &mut self.controls.iter().enumerate() {
-            let mut control = cell.borrow_mut();
-            let focus = (&mut *control).handle_mouse_down(pt, state);
+            let focus = (cell.borrow_mut()).handle_mouse_down(pt, state);
             if focus {
                 self.next_control_idx = Some(i);
                 return true;
@@ -195,8 +190,7 @@ impl TKResponder for Scene {
 
     fn handle_mouse_up(&mut self, pt: &Vector, state: &mut TKState) -> bool {
         for (_, cell) in &mut self.controls.iter().enumerate() {
-            let mut control = cell.borrow_mut();
-            let focus = (&mut *control).handle_mouse_up(pt, state);
+            let focus = (cell.borrow_mut()).handle_mouse_up(pt, state);
             if focus {
                 return true;
             }
@@ -206,26 +200,22 @@ impl TKResponder for Scene {
 
     fn handle_mouse_scroll(&mut self, pt: &Vector, state: &mut TKState) {
         for cell in &mut self.controls {
-            let mut control = cell.borrow_mut();
-            (&mut *control).handle_mouse_scroll(pt, state);
+            (cell.borrow_mut()).handle_mouse_scroll(pt, state);
         }
     }
 
     fn handle_key_press(&mut self, c: char, window: &mut Window) {
         if let Some(active_idx) = self.active_control_idx {
             let cell = &mut self.controls[active_idx];
-            let mut control = cell.borrow_mut();
-            (&mut *control).handle_key_press(c, window);
+            (cell.borrow_mut()).handle_key_press(c, window);
         }
     }
 
-    // #[allow(unused_assignments)]
     fn handle_key_command(&mut self, key: &Key, window: &mut Window) -> bool {
         if let Some(active_idx) = self.active_control_idx {
             let controls_count = self.controls.len();
             let cell = &mut self.controls[active_idx];
-            let mut control = cell.borrow_mut();
-            let handled = (&mut *control).handle_key_command(key, window);
+            let handled = (cell.borrow_mut()).handle_key_command(key, window);
             if handled {
                 match key {
                     Key::Tab => {
@@ -236,7 +226,7 @@ impl TKResponder for Scene {
                             next_idx = active_idx + 1;
                         }
                         if next_idx != active_idx {
-                            log::debug!("next_idx={:?} WAS={:?}", next_idx, active_idx);
+                            // log::debug!("next_idx={:?} WAS={:?}", next_idx, active_idx);
                             self.next_control_idx = Some(next_idx);
                         }
                         return true;

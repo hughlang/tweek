@@ -1,1 +1,1 @@
-pub use crate::{core::*, quicksilver_ui::*, shared::*};
+pub use crate::{core::*, gui::*, shared::*};

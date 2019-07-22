@@ -1,5 +1,5 @@
 [package]
-name = "tweek-rust"
+name = "tweek"
 description = "A tween animation library for Rust"
 version = "0.2.0"
 authors = ["Hugh Lang <hughlang@gmail.com>"]
@@ -44,7 +44,7 @@ glyph_brush = "0.4"
 [dependencies.quicksilver]
 default-features = false
 features = ["fonts", "complex_shapes"]
-# path = "../../quicksilver"
+# path = "../quicksilver"
 git = "https://github.com/hughlang/quicksilver"
 branch = "modular_gl"
 
