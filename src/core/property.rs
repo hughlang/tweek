@@ -1,27 +1,97 @@
 /// This file contains most of the model objects used to read and write values in Tweenable objects.
 ///
+use super::ease::*;
+use crate::events::*;
+use std::fmt;
 use cgmath::*;
 
-pub type FloatProp = Vector1<f64>;
+/*
+The following type aliases are used for human readable names for cgmath Vector types that are used in the
+Animator for interpolation math.
+ */
+/// A single float value
+pub type FloatProp = Vector1<f32>;
+/// A triplet of float values for RGB colors in the range 0 to 255. Float is used for consistency, instead of int
 pub type ColorRGB = Vector3<f32>;
+/// Represents four values of RGBA. Currently unused
 pub type ColorRGBA = Vector4<f32>;
-pub type Point2D = Vector2<f64>;
-pub type Frame2D = Vector2<f64>;
-pub type Bezier = Vector4<f64>;
+/// Float values for x-y coordinates
+pub type Point2D = Vector2<f32>;
+/// Float values for width and height
+pub type Frame2D = Vector2<f32>;
+/// Unused. Intended for bezier curve paths. TODO?
+pub type Bezier = Vector4<f32>;
 
 /// The Prop enum contains a cgmath::Vector instance that is interpolated in the Animator update() method
 /// based on the initial and target Prop values of the same type.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum Prop {
+    /// The None type means that the requested Prop value does not exist in the object of specific code logic
     None,
+    /// The transparency of an object in the range 0.0 to 1.0
     Alpha(FloatProp),
-    Color(ColorRGB),
+    /// Property with RGB values as f32 values in range 0 to 255
+    Color(ColorRGBA),
+    /// The position of an object as x-y coordinates
     Position(Point2D),
+    /// The rotation of an object in degrees with range 0.0 to 360.0
     Rotate(FloatProp),
+    /// The size of an object as w-h values
     Size(Frame2D),
-    Shift(Point2D),  // offset the position by the specified x and y values
-    Resize(Frame2D), // offset the size by the specified w and h values
+    /// A special type to represent the position offset by the specified x-y values
+    /// This is translated into a Position type during Tween pre-processing
+    Shift(Point2D),
+    /// A special type to represent the resize offset. Not really useful yet.
+    /// Translates to a Size type during Tween pre-processing
+    Resize(Frame2D),
+    /// A special type used to apply a border as an animation directive
+    Border(Option<ColorRGBA>, FloatProp),
+    /// Tint color refers to the foreground color of some nested objects (ie, Text)
+    Tint(ColorRGBA),
 }
+
+impl fmt::Debug for Prop {
+    /// Special debug output that trims the extra Vector wrappers.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Prop::Alpha(val) => {
+                write!(f, "Alpha({:.2})", val[0])
+            },
+            Prop::Color(rgba) => {
+                write!(f, "Color({}, {}, {}) Alpha({})", rgba[0], rgba[1], rgba[2], rgba[3])
+            }
+            Prop::Tint(rgba) => {
+                write!(f, "Color({}, {}, {}) Alpha({})", rgba[0], rgba[1], rgba[2], rgba[3])
+            }
+            Prop::Rotate(val) => {
+                write!(f, "Rotate({:.2})", val[0])
+            },
+            Prop::Position(pos) => {
+                write!(f, "Position({:.2}, {:.2})", pos[0], pos[1])
+            }
+            Prop::Size(size) => {
+                write!(f, "Size({:.2}, {:.2})", size[0], size[1])
+            }
+            Prop::Border(rgba, width) => {
+                if let Some(rgba) = rgba {
+                    write!(f, "Border(width({}), color({}, {}, {}) alpha({}))", width[0], rgba[0], rgba[1], rgba[2], rgba[3])
+                } else {
+                    write!(f, "Border(None)")
+                }
+            }
+            Prop::Shift(pos) => {
+                write!(f, "Shift({:.2}, {:.2})", pos[0], pos[1])
+            }
+            Prop::Resize(size) => {
+                write!(f, "Resize({:.2}, {:.2})", size[0], size[1])
+            }
+            _ => {
+                write!(f, "{:?}", self)
+            }
+        }
+    }
+}
+
 
 impl Eq for Prop {}
 
@@ -37,6 +107,8 @@ impl Prop {
             Prop::Size(_) => 5,
             Prop::Shift(_) => 6,
             Prop::Resize(_) => 7,
+            Prop::Border(_, _) => 8,
+            Prop::Tint(_) => 9,
         }
     }
 
@@ -47,12 +119,14 @@ impl Prop {
     pub fn from_prop_id(id: u32) -> Prop {
         match id {
             1 => Prop::Alpha(FloatProp::zero()),
-            2 => Prop::Color(ColorRGB::zero()),
+            2 => Prop::Color(ColorRGBA::zero()),
             3 => Prop::Position(Point2D::zero()),
             4 => Prop::Rotate(FloatProp::zero()),
             5 => Prop::Size(Frame2D::zero()),
             6 => Prop::Shift(Point2D::zero()),
             7 => Prop::Resize(Frame2D::zero()),
+            8 => Prop::Border(None, FloatProp::zero()),
+            9 => Prop::Tint(ColorRGBA::zero()),
             _ => Prop::None,
         }
     }
@@ -63,20 +137,14 @@ impl Prop {
     pub fn get_prop_list() -> Vec<Prop> {
         let list = vec![
             Prop::Alpha(FloatProp::zero()),
-            Prop::Color(ColorRGB::zero()),
+            Prop::Color(ColorRGBA::zero()),
             Prop::Position(Point2D::zero()),
             Prop::Rotate(FloatProp::zero()),
             Prop::Size(Frame2D::zero()),
+            Prop::Border(None, FloatProp::zero()),
+            Prop::Tint(ColorRGBA::zero()),
         ];
         list
-
-        // let mut results: Vec<Prop> = Vec::new();
-        // results.push(Prop::Alpha(FloatProp::zero()));
-        // results.push(Prop::Color(ColorRGB::zero()));
-        // results.push(Prop::Position(Point2D::zero()));
-        // results.push(Prop::Rotate(FloatProp::zero()));
-        // results.push(Prop::Size(Frame2D::zero()));
-        // results
     }
 
     /// Somewhat hacky, but useful helper method that defines which Props have parent props
@@ -89,39 +157,65 @@ impl Prop {
     }
 }
 
-#[derive(Default, Debug, Clone)]
-pub struct UIState {
-    pub id: (usize, usize),
+/// A wrapper to hold an array of Props used in Animator for Tween animation
+#[derive(Debug, Clone)]
+pub struct PropSet {
+    /// Array of Props based on user-specified animation directives
     pub props: Vec<Prop>,
-    pub progress: f64,
-    pub offset: Option<Point2D>,
+    /// Duration in seconds
+    pub duration: f64,
+    /// Delay in seconds
+    pub delay: f64,
+    /// Easing formula
+    pub ease: Ease,
+    // /// Number of times to repeat.
+    // pub repeat_count: u32,
+    // /// Seconds between repeat
+    // pub repeat_delay: f64,
+    // /// repeats forever
+    // pub repeat_loop: bool,
+    /// The type of transition
+    pub event: TweenType, // Because type is a reserved word
 }
 
-impl UIState {
-    pub fn create(_id: (usize, usize), _props: Vec<Prop>) -> Self {
-        UIState { id: _id, props: _props, progress: 0.0, offset: None }
+impl Default for PropSet {
+    fn default() -> Self {
+        PropSet {
+            props: Vec::new(),
+            duration: 0.0,
+            delay: 0.0,
+            ease: Ease::Linear,
+            event: TweenType::None,
+        }
+    }
+}
+
+impl PropSet {
+    /// Constructor
+    pub fn new(props: Vec<Prop>, secs: f64) -> Self {
+        PropSet {
+            props: props,
+            duration: secs,
+            delay: 0.0,
+            ease: Ease::Linear,
+            event: TweenType::Generic,
+        }
     }
 
+    /// Builder method to define the TweenType type.
+    pub fn for_type(mut self, evt:TweenType) -> Self { self.event = evt; self }
+    /// Builder method to set the delay
+    pub fn delay(mut self, secs: f64) -> Self { self.delay = secs; self }
+    /// Builder method to set the ease formula
+    pub fn ease(mut self, ease: Ease) -> Self { self.ease = ease; self }
+
+    /// Get a specific Prop based on the numeric prop_id
     pub fn get_prop_value(&self, prop_id: u32) -> Prop {
         let mut iter = self.props.iter().filter(|x| x.prop_id() == prop_id);
-        if let Some(item) = &iter.next() {
-            return *item.clone();
+        if let Some(item) = iter.next() {
+            return *item;
         }
         Prop::None
-    }
-}
-
-/// The UITransition struct is used to carry animation instructions for "internal tweening" of objects like Button
-/// It contains the Props and the duration in seconds for the animation.
-#[derive(Debug, Clone)]
-pub struct UITransition {
-    pub props: Vec<Prop>,
-    pub seconds: f64,
-}
-
-impl UITransition {
-    pub fn new(props: Vec<Prop>, seconds: f64) -> Self {
-        UITransition { props, seconds }
     }
 }
 

@@ -1,13 +1,14 @@
 /// Checkbox
 ///
 use crate::core::*;
-use crate::shared::*;
+use crate::tools::*;
+use crate::events::*;
 
 use quicksilver::{
     geom::{Line, Rectangle, Shape, Vector},
     graphics::{
         Background::{Col, Img},
-        Color, DrawTask, FontStyle, Image,
+        Color, MeshTask, Image,
     },
     lifecycle::Window,
 };
@@ -15,61 +16,66 @@ use std::any::TypeId;
 
 use super::*;
 
+/// Enum to define the style of the checkbox/radio
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum CheckStyle {
+    /// Simple box with X
     X,
+    /// A circular radio button
     Radio,
+    /// A checkmark. Currently unused
     Check,
-    Fill(f32), // f32 is the inset margin for the fill
+    /// A box that is filled with a solid box when checked
+    /// The f32 param is the inset margin for the fill
+    Fill(f32),
 }
 
 //-- Checkbox -----------------------------------------------------------------------
 
+/// A Checkbox
 #[allow(dead_code)]
 pub struct Checkbox {
-    pub layer: TweenLayer,
+    /// Base layer
+    pub layer: Layer,
+    /// Text to display next to checkbox
     pub text: String,
+    /// Is it checked?
     pub is_checked: bool,
+    /// The style of the checkbox: X, radio, check mark, filled
     pub check_style: CheckStyle,
+    /// Previously rendered text
     image_text: Option<Image>,
-    onclick: Option<Box<FnMut(TKAction, &mut TKState) + 'static>>,
 }
 
 impl Checkbox {
+    /// Constructor
     pub fn new(frame: Rectangle) -> Self {
-        let layer = TweenLayer::new(frame);
-        // let box_frame = Rectangle::new((0.0, 0.0), (20.0, 20.0));
-        // let box_frame = UITools::position_left_middle(&frame, &box_frame, 5.0);
+        let layer = Layer::new(frame);
 
         Checkbox {
-            layer: layer,
+            layer,
             text: String::default(),
             is_checked: false,
             check_style: CheckStyle::X,
             image_text: None,
-            onclick: None,
         }
     }
 
+    /// Builder method to set the text
     pub fn with_text(mut self, text: &str, is_checked: bool) -> Self {
         self.text = text.to_owned();
         self.is_checked = is_checked;
         self
     }
 
-    pub fn set_onclick<C>(&mut self, cb: C)
-    where
-        C: FnMut(TKAction, &mut TKState) + 'static,
-    {
-        self.onclick = Some(Box::new(cb));
-    }
-
+    /// Method used by OptionGroup to adjust position of checkbox options based on the OptionGroupLayout
     pub fn update_frame(&mut self, frame: Rectangle) {
         self.layer.frame = frame;
     }
 
-    fn render_at(&mut self, frame: &Rectangle, _theme: &Theme, window: &mut Window) -> TKResult {
-        window.draw(frame, Col(self.layer.color));
+    /// Public render method that can be called by OptionGroup. Currently the default method for the Displayable render() method
+    fn render_at(&mut self, frame: &Rectangle, theme: &mut Theme, window: &mut Window) {
+        self.layer.draw_background(window);
 
         let stroke = 1.0;
         let stroke_color = Color::BLACK;
@@ -96,7 +102,7 @@ impl Checkbox {
             CheckStyle::Radio => {
                 let mut mesh =
                     DrawShape::circle(&box_frame.center(), &box_frame.width() / 2.0, None, Some(Color::BLACK), 1.0);
-                let mut task = DrawTask::new(0);
+                let mut task = MeshTask::new(0);
                 task.vertices.append(&mut mesh.vertices);
                 task.triangles.append(&mut mesh.triangles);
                 window.add_task(task);
@@ -109,7 +115,7 @@ impl Checkbox {
                         None,
                         0.0,
                     );
-                    let mut task = DrawTask::new(0);
+                    let mut task = MeshTask::new(0);
                     task.vertices.append(&mut mesh.vertices);
                     task.triangles.append(&mut mesh.triangles);
                     window.add_task(task);
@@ -118,13 +124,25 @@ impl Checkbox {
             _ => {}
         }
 
+
         if let Some(img) = &self.image_text {
             let y = frame.y() + (frame.height() - img.area().height()) / 2.0;
             let text_frame = Rectangle::new((frame.x() + 30.0, y), (frame.width() - 30.0, img.area().height()));
             window.draw(&img.area().constrain(&text_frame), Img(&img));
-        }
+        } else {
+            if let Some(img) = theme.default_font.render(
+                &self.text,
+                &self.layer.font_style,
+                &self.layer.frame,
+                false
+            ) {
+                let y = frame.y() + (frame.height() - img.area().height()) / 2.0;
+                let text_frame = Rectangle::new((frame.x() + 30.0, y), (frame.width() - 30.0, img.area().height()));
+                window.draw(&img.area().constrain(&text_frame), Img(&img));
+                self.image_text = Some(img);
+            }
 
-        Ok(())
+        }
     }
 }
 
@@ -132,9 +150,21 @@ impl Checkbox {
 // Checkbox :: Displayable
 // *****************************************************************************************************
 
-impl TKDisplayable for Checkbox {
+impl Displayable for Checkbox {
+
+    fn get_id(&self) -> u32 { self.layer.get_id() }
+
+    fn set_id(&mut self, id: u32) {
+        self.layer.set_id(id);
+        self.layer.type_id = self.get_type_id();
+    }
+
     fn get_type_id(&self) -> TypeId {
         TypeId::of::<Checkbox>()
+    }
+
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
     }
 
     fn get_frame(&self) -> Rectangle {
@@ -149,35 +179,46 @@ impl TKDisplayable for Checkbox {
         }
     }
 
+    fn move_to(&mut self, pos: (f32, f32)) {
+        self.layer.frame.pos.x = pos.0;
+        self.layer.frame.pos.y = pos.1;
+    }
+
     /// Change the font, color, and size
-    fn set_theme(&mut self, theme: &Theme) {
-        let style = FontStyle::new(theme.font_size, Color::BLACK);
-        let img = theme.font.render(&self.text, &style).unwrap();
-
+    fn set_theme(&mut self, theme: &mut Theme) {
+        if self.layer.lock_style { return }
+        self.layer.apply_theme(theme);
+        // let style = FontStyle::new(theme.font_size, Color::BLACK);
+        // let img = theme.font.render(&self.text, &style).unwrap();
         // let hit_area = UITools::combine_frames(&self.box_frame, &img.area());
-        // eprintln!(">>> hit_area={:?} y={:?}", hit_area, 0);
+        // log::debug!(">>> hit_area={:?} y={:?}", hit_area, 0);
         // self.hit_area = UITools::padded_rect(&hit_area, 4.0, 4.0);
-        self.image_text = Some(img);
+        self.image_text = None;
     }
 
-    fn update(&mut self, _window: &mut Window) -> TKResult {
-        if let Some(tween) = &mut self.layer.animation {
-            tween.tick();
-            if let Some(update) = tween.update() {
-                self.layer.apply_updates(&update.props);
+    fn notify(&mut self, event: &DisplayEvent) {
+        match event {
+            DisplayEvent::Ready => {
+                self.layer.on_ready();
             }
+            DisplayEvent::Moved => {
+                self.layer.on_move_complete();
+            }
+            _ => {}
         }
-        Ok(())
     }
 
-    fn render(&mut self, theme: &mut Theme, window: &mut Window) -> TKResult {
+    fn update(&mut self, _window: &mut Window, state: &mut AppState) {
+        self.layer.frame.pos = self.layer.initial.pos + Vector::new(state.offset.0, state.offset.1);
+        self.layer.tween_update();
+    }
+
+    fn render(&mut self, theme: &mut Theme, window: &mut Window) {
         self.render_at(&self.layer.frame.clone(), theme, window)
     }
 
-    fn set_hover_animation(&mut self, props: &[Prop], seconds: f64) {
-        self.layer.defaults = Tween::load_props(&self.layer);
-        let transition = UITransition::new(props.to_vec(), seconds);
-        self.layer.on_hover = Some(transition);
+    fn set_hover_animation(&mut self, props: PropSet) {
+        self.layer.hover_effect = Some(props);
     }
 
     fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
@@ -186,21 +227,18 @@ impl TKDisplayable for Checkbox {
 }
 
 // *****************************************************************************************************
-// Checkbox :: TKResponder
+// Checkbox :: Responder
 // *****************************************************************************************************
 
-impl TKResponder for Checkbox {
+impl Responder for Checkbox {
     fn get_field_value(&self) -> FieldValue {
         FieldValue::Checkbox(self.is_checked)
     }
 
-    fn handle_mouse_down(&mut self, pt: &Vector, state: &mut TKState) -> bool {
+    fn handle_mouse_down(&mut self, pt: &Vector, _state: &mut AppState) -> bool {
         if pt.overlaps_rectangle(&self.layer.frame) {
             // log::debug!("Click at: x={} y={}", pt.x, pt.y);
             self.is_checked = !self.is_checked;
-            if let Some(cb) = &mut self.onclick {
-                (&mut *cb)(TKAction::Click, state);
-            }
 
             return true;
         }

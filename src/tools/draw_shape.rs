@@ -13,6 +13,7 @@ use quicksilver::{
     },
 };
 
+/// A utility struct for creating Quicksilver Mesh objects for a variety of shapes using Lyon
 pub struct DrawShape {}
 
 impl DrawShape {

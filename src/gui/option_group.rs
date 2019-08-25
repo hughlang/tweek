@@ -1,10 +1,11 @@
 /// OptionGroup
 ///
 use crate::core::*;
+use crate::events::*;
 
 #[allow(unused_imports)]
 use quicksilver::{
-    geom::{Line, Rectangle, Shape, Vector},
+    geom::{Line, Rectangle, Shape, Transform, Vector},
     graphics::{Background::Col, Color, Image},
     lifecycle::Window,
 };
@@ -12,29 +13,40 @@ use std::any::TypeId;
 
 use super::*;
 
+/// Enum to define how the checkbox options are laid out within the group
 pub enum OptionGroupLayout {
-    Vertical(f32),            // Layout checkboxes with fixed vertical spacing between each
-    HorizontalGrid(f32, f32), // First f32 is the fixed interval for placement of checkboxes that wrap to next line
-    HorizontalWrap(f32, f32), // Layout checkboxes with fixed horizontal spacing between each and wrap to next line
+    /// Layout checkboxes with fixed vertical spacing between each
+    Vertical(f32),
+    /// First f32 is the fixed interval for placement of checkboxes that wrap to next line
+    /// Second f32 is the vertical space between rows
+    HorizontalGrid(f32, f32),
+    /// First f32 is the horizontal gap between checkbox items
+    /// Second f32 is the vertical space between rows
+    HorizontalWrap(f32, f32),
 }
 
 //-- OptionGroup -----------------------------------------------------------------------
 
-#[allow(dead_code)]
+
+/// An object containing a collection of Checkbox objects with different layout options
 pub struct OptionGroup {
-    pub layer: TweenLayer,
+    /// The base layer
+    pub layer: Layer,
+    /// Is it single or multi select?
     pub multi_select: bool,
+    /// The CheckStyle of all included checkboxes
     pub check_style: CheckStyle,
     checkboxes: Vec<Checkbox>,
     layout: OptionGroupLayout,
 }
 
 impl OptionGroup {
+    /// Constructor
     pub fn new(frame: Rectangle) -> Self {
-        let layer = TweenLayer::new(frame);
+        let layer = Layer::new(frame);
 
         OptionGroup {
-            layer: layer,
+            layer,
             multi_select: false,
             check_style: CheckStyle::X,
             checkboxes: Vec::new(),
@@ -42,26 +54,30 @@ impl OptionGroup {
         }
     }
 
+    /// Set the OptionGroupLayout
     pub fn set_layout(&mut self, layout: OptionGroupLayout) {
         self.layout = layout;
     }
 
+    /// Set the list of string options and whether any are initially selected
     pub fn set_options(&mut self, options: Vec<(&str, bool)>) {
         let line_height = 20.0;
-
+        let line_gap = 5.0;
         // Create checkboxes and set the default frames for vertical layout.
         // These will get updated in set_theme
         for (i, option) in options.iter().enumerate() {
             let xpos = self.layer.frame.x();
-            let ypos = self.layer.frame.y() + line_height * i as f32;
+            let ypos = self.layer.frame.y() + (line_gap * (i + 1) as f32) + (line_height * i as f32);
             let frame = Rectangle::new((xpos, ypos), (self.layer.frame.width(), line_height));
             let mut checkbox = Checkbox::new(frame).with_text(option.0, option.1);
+            checkbox.set_id(i as u32); // Assign the layer a unique id within the scope of this OptionGroup
             checkbox.check_style = self.check_style.clone();
             self.checkboxes.push(checkbox);
         }
     }
 
-    fn layout_subviews(&mut self, theme: &Theme) {
+    /// Internal method to layout the Checkbox components based on the OptionGroupLayout
+    fn layout_subviews(&mut self, theme: &mut Theme) {
         let line_height = 20.0;
         let mut row_size = Vector::new(0.0, 0.0);
         // The layout of checkboxes may depend on the content width, so update the theme which will re-render
@@ -93,7 +109,7 @@ impl OptionGroup {
                     }
                     let ypos = self.layer.frame.y() + row_size.y + 10.0;
                     let frame = Rectangle::new((xpos, ypos), (interval, line_height));
-                    // eprintln!("row_size={:?} add_size={:?} frame={:?}", row_size, add_size, frame);
+                    // log::debug!("row_size={:?} add_size={:?} frame={:?}", row_size, add_size, frame);
                     frame
                 }
                 OptionGroupLayout::HorizontalWrap(h_space, v_space) => {
@@ -114,7 +130,7 @@ impl OptionGroup {
                     }
                     let ypos = self.layer.frame.y() + row_size.y + 10.0;
                     let frame = Rectangle::new((xpos, ypos), (add_size.x, line_height));
-                    // eprintln!("row_size={:?} add_size={:?} frame={:?}", row_size, add_size, frame);
+                    // log::debug!("row_size={:?} add_size={:?} frame={:?}", row_size, add_size, frame);
                     frame
                 }
             };
@@ -127,64 +143,78 @@ impl OptionGroup {
 // OptionGroup :: Displayable
 // *****************************************************************************************************
 
-impl TKDisplayable for OptionGroup {
+impl Displayable for OptionGroup {
+
+    fn get_id(&self) -> u32 { self.layer.get_id() }
+
+    fn set_id(&mut self, id: u32) {
+        self.layer.set_id(id);
+        self.layer.type_id = self.get_type_id();
+    }
+
     fn get_type_id(&self) -> TypeId {
         TypeId::of::<OptionGroup>()
+    }
+
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
     }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
     }
 
+    fn move_to(&mut self, pos: (f32, f32)) {
+        self.layer.frame.pos.x = pos.0;
+        self.layer.frame.pos.y = pos.1;
+
+    }
+
     /// Change the font, color, and size
-    fn set_theme(&mut self, theme: &Theme) {
-        if theme.border_width > 0.0 {
-            self.layer.border_width = theme.border_width;
-            self.layer.border_color = Some(theme.border_color);
-        }
+    fn set_theme(&mut self, theme: &mut Theme) {
+        if self.layer.lock_style { return }
+        self.layer.apply_theme(theme);
         self.layout_subviews(theme);
     }
 
+
     fn notify(&mut self, event: &DisplayEvent) {
         match event {
-            DisplayEvent::Activate => {}
-            DisplayEvent::Deactivate => {}
-            DisplayEvent::Ready => {}
-            _ => (),
-        }
-    }
-
-    fn update(&mut self, _window: &mut Window) -> TKResult {
-        if let Some(tween) = &mut self.layer.animation {
-            tween.tick();
-            if let Some(update) = tween.update() {
-                self.layer.apply_updates(&update.props);
+            DisplayEvent::Ready => {
+                self.layer.on_ready();
             }
+            DisplayEvent::Moved => {
+                self.layer.on_move_complete();
+            }
+            _ => {}
         }
-        Ok(())
+        for checkbox in &mut self.checkboxes {
+            checkbox.notify(event);
+        }
     }
 
-    fn render(&mut self, theme: &mut Theme, window: &mut Window) -> TKResult {
-        window.draw(&self.layer.frame, Col(self.layer.color));
+    fn update(&mut self, window: &mut Window, state: &mut AppState) {
+        let offset = Vector::new(state.offset.0, state.offset.1);
+        self.layer.frame.pos = self.layer.initial.pos + offset;
+        self.layer.tween_update();
+        for checkbox in &mut self.checkboxes {
+            checkbox.update(window, state);
+        }
+    }
+
+    fn render(&mut self, theme: &mut Theme, window: &mut Window) {
+        // self.layer.draw_background(window);
 
         for checkbox in &mut self.checkboxes {
-            checkbox.render(theme, window)?;
+            checkbox.render(theme, window);
         }
 
         // Draw border
-        if let Some(color) = self.layer.border_color {
-            for line in self.layer.get_border_lines(self.layer.border_width) {
-                window.draw(&line.with_thickness(line.t), Col(color));
-            }
-        }
-
-        Ok(())
+        self.layer.draw_border(window);
     }
 
-    fn set_hover_animation(&mut self, props: &[Prop], seconds: f64) {
-        self.layer.defaults = Tween::load_props(&self.layer);
-        let transition = UITransition::new(props.to_vec(), seconds);
-        self.layer.on_hover = Some(transition);
+    fn set_hover_animation(&mut self, props: PropSet) {
+        self.layer.hover_effect = Some(props);
     }
 
     fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
@@ -198,13 +228,28 @@ impl TKDisplayable for OptionGroup {
         }
         false
     }
+
+    fn debug_out(&self) -> String {
+        let mut rows: Vec<String> = Vec::new();
+        let frame = self.get_frame();
+        let out = format!("{}<{}> [{}] Pos({:.1},{:.1}) Size({:.1},{:.1})", "", gui_print_type(&self.get_type_id()), self.get_id(), frame.pos.x, frame.pos.y, frame.size.x, frame.size.y);
+        rows.push(out);
+        for cb in &self.checkboxes {
+            let frame = cb.get_frame();
+            // For child objects, prepend the output with a linebreak and pipe+space to conform with scene hierarchy style
+            let out = format!("{}<{}> [{}] Pos({:.1},{:.1}) Size({:.1},{:.1})", "\n| ", gui_print_type(&cb.get_type_id()), cb.get_id(), frame.pos.x, frame.pos.y, frame.size.x, frame.size.y);
+            rows.push(out);
+        }
+        let result = rows.join(""); // Note, it doesn't work to try putting the linebreak in the join character.
+        result
+    }
 }
 
 // *****************************************************************************************************
-// OptionGroup :: TKResponder
+// OptionGroup :: Responder
 // *****************************************************************************************************
 
-impl TKResponder for OptionGroup {
+impl Responder for OptionGroup {
     fn get_field_value(&self) -> FieldValue {
         let results: Vec<usize> =
             self.checkboxes.iter().enumerate().filter(|(_, option)| option.is_checked).map(|(i, _)| i).collect();
@@ -212,7 +257,7 @@ impl TKResponder for OptionGroup {
         FieldValue::Selections(results)
     }
 
-    fn handle_mouse_down(&mut self, pt: &Vector, state: &mut TKState) -> bool {
+    fn handle_mouse_down(&mut self, pt: &Vector, state: &mut AppState) -> bool {
         if pt.overlaps_rectangle(&self.layer.frame) {
             let mut hit_index: Option<usize> = None;
             for (i, checkbox) in &mut self.checkboxes.iter_mut().enumerate() {

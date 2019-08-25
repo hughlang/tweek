@@ -34,7 +34,7 @@ This is a sample of a simple animation that increases the size of rectangle grap
     let rect = Rect::new(xpos, ypos, 0.0, 20.0);
 
     let mut item = Item::new(item_id, Shape::Rectangle(rect))?;
-    item.layer.graphics.color = Color::from_rgb_u32(HexColors::Orange);
+    item.layer.graphics.color = Color::from_hex(HexColors::Orange);
 
     let tween = Tween::with(item_id, &item.layer)
         .to(&[size(target_width as f64, 20.0)])
@@ -54,7 +54,7 @@ Tweek provides a trait called *Tweenable* that makes it simple to add support fo
 pub trait Tweenable {
     fn get_prop(&self, prop: &Prop) -> Prop;
     fn apply(&mut self, prop: &Prop);
-    fn apply_updates(&mut self, props: &[Prop]) {
+    fn apply_props(&mut self, props: &[Prop]) {
         for prop in props {
             self.apply(prop);
         }
@@ -62,7 +62,7 @@ pub trait Tweenable {
 }
 ```
 
-And this is the [TweenLayer wrapper for Quicksilver that implements Tweenable](https://github.com/wasm-network/tweek-rust/blob/master/src/ui/layer.rs). It reads and writes the values you specify.
+And this is the [Layer wrapper for Quicksilver that implements Tweenable](https://github.com/wasm-network/tweek-rust/blob/master/src/ui/layer.rs). It reads and writes the values you specify.
 
 
 ### UI Components
@@ -73,10 +73,10 @@ Naturally, these components also have Tweenable graphics, which provides "intern
 
 ```rust
         let mut button = Button::new(frame).with_title("Previous");
-        button.set_color(&Color::from_rgb_u32(HexColors::Tan));
+        button.set_color(&Color::from_hex(HexColors::Tan));
         button.set_hover_animation(&[color(HexColors::Chocolate)], 0.1);
-        button.set_onclick(move |_action, tk| {
-            tk.commands.push(PREV_COMMAND);
+        button.set_onclick(move |state| {
+            // FIXME: state.commands.push(PREV_COMMAND);
         });
 ```
 

@@ -1,40 +1,58 @@
-/// The Label view displays an image representation of text content.
+/// The Label view displays text content rendered as image text
 ///
+use super::*;
 use crate::core::*;
+use crate::events::*;
 
+// use glyph_brush::HorizontalAlign as HAlign;
 use quicksilver::{
     geom::{Rectangle, Shape, Vector},
-    graphics::{Background::Img, Color, FontStyle, Image},
+    graphics::{Background::Img, Image},
     lifecycle::Window,
 };
-
 use std::any::TypeId;
-
-use super::*;
 
 //-- Label -----------------------------------------------------------------------
 
+/// Tweenable text label
 pub struct Label {
-    pub layer: TweenLayer,
+    /// The base layer
+    pub layer: Layer,
+    /// The string value
     text: String,
+    /// The rendered image text
     content: Option<Image>,
 }
 
 impl Label {
-    pub fn new(frame: &Rectangle, text: &str) -> Self {
-        let layer = TweenLayer::new(frame.clone());
-
-        Label { layer: layer, text: text.to_owned(), content: None }
+    /// Constructor with the text string
+    pub fn new(frame: Rectangle, text: &str) -> Self {
+        let layer = Layer::new(frame);
+        Label { layer, text: text.to_owned(), content: None }
     }
 
-    pub fn set_color(&mut self, color: &Color) {
-        self.layer.color = color.clone();
+    /// Set the text string if changed from initial value
+    pub fn set_text(&mut self, text: &str) {
+        self.text = text.to_owned();
+        self.content = None;
     }
 }
 
-impl TKDisplayable for Label {
+impl Displayable for Label {
+
+    fn get_id(&self) -> u32 { self.layer.get_id() }
+
+    fn set_id(&mut self, id: u32) {
+        self.layer.set_id(id);
+        self.layer.type_id = self.get_type_id();
+    }
+
     fn get_type_id(&self) -> TypeId {
         TypeId::of::<Label>()
+    }
+
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
     }
 
     fn get_frame(&self) -> Rectangle {
@@ -48,33 +66,44 @@ impl TKDisplayable for Label {
         Vector::new(0.0, 0.0)
     }
 
-
-    fn set_theme(&mut self, theme: &Theme) {
-        self.layer.color = theme.fg_color;
-        // if let Some(label) = &mut self.label {
-        //     label.layer.graphics.color = theme.fg_color;
-        // }
+    fn move_to(&mut self, pos: (f32, f32)) {
+        self.layer.frame.pos.x = pos.0;
+        self.layer.frame.pos.y = pos.1;
     }
 
-    fn update(&mut self, _window: &mut Window) -> TKResult {
-        if let Some(tween) = &mut self.layer.animation {
-            tween.tick();
-            if let Some(update) = tween.update() {
-                self.layer.apply_updates(&update.props);
+    fn set_theme(&mut self, theme: &mut Theme) {
+        if self.layer.lock_style { return }
+        self.layer.apply_theme(theme);
+
+    }
+
+    fn notify(&mut self, event: &DisplayEvent) {
+        match event {
+            DisplayEvent::Ready => {
+                self.layer.on_ready();
             }
+            DisplayEvent::Moved => {
+                self.layer.on_move_complete();
+            }
+            _ => {}
         }
-        Ok(())
     }
 
-    fn render(&mut self, theme: &mut Theme, window: &mut Window) -> TKResult {
+    fn update(&mut self, _window: &mut Window, state: &mut AppState) {
+        self.layer.frame.pos = self.layer.initial.pos + Vector::new(state.offset.0, state.offset.1);
+        self.layer.tween_update();
+    }
+
+    fn render(&mut self, theme: &mut Theme, window: &mut Window) {
+        self.layer.draw_background(window);
         if let Some(image) = &self.content {
             window.draw(&image.area().with_center(self.layer.frame.center()), Img(&image));
         } else {
-            let style = FontStyle::new(theme.font_size, self.layer.color);
-            let image_text = theme.font.render(&self.text, &style).unwrap();
-            window.draw(&image_text.area().with_center(self.layer.frame.center()), Img(&image_text));
-            self.content = Some(image_text);
+            log::debug!("Render <{:?}> frame={:?}", self.text, self.layer.frame);
+            if let Some(image_text) = theme.default_font.render(&self.text, &self.layer.font_style, &self.layer.frame, false) {
+                window.draw(&image_text.area().with_center(self.layer.frame.center()), Img(&image_text));
+                self.content = Some(image_text);
+            }
         }
-        Ok(())
     }
 }

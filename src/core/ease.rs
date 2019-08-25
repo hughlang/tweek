@@ -6,7 +6,8 @@ const PERIOD: f32 = 0.3;
 const AMPLITUDE: f32 = 1.0;
 const PI_2: f32 = PI * 2.0;
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[allow(missing_docs)]
 pub enum Ease {
     Linear,
     SineIn,
@@ -47,29 +48,33 @@ pub enum Ease {
 /// animation based on the time elapsed divided by the duration to get a number between
 /// 0.0 and 1.0. The functions below provide an adjusted ratio based on the timing formula
 /// that applies to each.
+#[cfg_attr(feature = "cargo-clippy", allow(clippy::needless_return))]
 impl Ease {
+    /// Method for calculating the ratio to apply to the linear interpolation of an animation based on
+    /// the specified Ease type. For Linear, the parameter p returns exactly p. For other types, there
+    /// is a formula copied from other easing formulas.
     pub fn get_ratio(self, p: f32) -> f32 {
         match self {
             Ease::Linear => p,
             Ease::SineIn => {
                 // AS3: -Math.cos(p * _HALF_PI) + 1;
-                -1.0 * (p * PI / 2.0).cos() + 1.0
+                return -1.0 * (p * PI / 2.0).cos() + 1.0;
             }
             Ease::SineOut => {
                 // AS3: Math.sin(p * _HALF_PI);
-                (p * PI / 2.0).sin()
+                return (p * PI / 2.0).sin();
             }
             Ease::SineInOut => {
                 // AS3: -0.5 * (Math.cos(Math.PI * p) - 1);
-                -0.5 * ((PI * p).cos() - 1.0)
+                return -0.5 * ((PI * p).cos() - 1.0);
             }
             Ease::ExpoIn => {
                 // AS3: Math.pow(2, 10 * (p - 1)) - 0.001;
-                2.0_f32.powf(10.0 * (p - 1.0)) - 0.001
+                return 2.0_f32.powf(10.0 * (p - 1.0)) - 0.001;
             }
             Ease::ExpoOut => {
                 // AS3: 1 - Math.pow(2, -10 * p);
-                1.0 - 2.0_f32.powf(-10.0 * p)
+                return 1.0 - 2.0_f32.powf(-10.0 * p);
             }
             Ease::ExpoInOut => {
                 // AS3: ((p*=2) < 1) ? 0.5 * Math.pow(2, 10 * (p - 1)) : 0.5 * (2 - Math.pow(2, -10 * (p - 1)));
@@ -126,7 +131,7 @@ impl Ease {
                     return 1.0 - (7.5625 * p * p + 0.9375);
                 } else {
                     p -= 2.625 / 2.75;
-                    return 1.0 - (7.5625 * p * p + 0.984375);
+                    return 1.0 - (7.5625 * p * p + 0.984_375);
                 }
             }
             Ease::BounceOut => {
@@ -152,7 +157,7 @@ impl Ease {
                     return 7.5625 * p * p + 0.9375;
                 } else {
                     p -= 2.625 / 2.75;
-                    return 7.5625 * p * p + 0.984375;
+                    return 7.5625 * p * p + 0.984_375;
                 }
             }
             Ease::BounceInOut => {
@@ -194,7 +199,7 @@ impl Ease {
                     p = 7.5625 * p * p + 0.9375;
                 } else {
                     p -= 2.625 / 2.75;
-                    p = 7.5625 * p * p + 0.984375;
+                    p = 7.5625 * p * p + 0.984_375;
                 }
                 if invert {
                     return (1.0 - p) * 0.5;

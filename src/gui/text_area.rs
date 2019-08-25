@@ -2,34 +2,41 @@
 ///
 use super::*;
 use crate::core::*;
-use crate::shared::*;
+use crate::events::*;
+use crate::tools::*;
 
-#[allow(unused_imports)]
 use quicksilver::{
-    geom::{Rectangle, Shape, Transform, Vector},
+    geom::{Rectangle, Shape, Vector},
     graphics::{Background::Col, Background::Img, Color, FontStyle, Image, PixelFormat},
-    input::{Key, MouseCursor},
+    input::{Key},
     lifecycle::Window,
 };
 
-pub use glyph_brush::HorizontalAlign as HAlign;
+use glyph_brush::HorizontalAlign as HAlign;
 use std::any::TypeId;
 use std::ops::Range;
 
 //-- TextArea -----------------------------------------------------------------------
 
+/// UI component that resembles HTML textarea where word-wrapped content is displayed in a scrollable frame.
+/// It can either be as read-only or read/write editing. In read mode, the text is just a block of rendered
+/// image text. In edit mode, the text is displayed as live font glyphs rendered by the GPU
 #[allow(dead_code)]
-#[allow(unused_variables)]
-#[allow(unused_imports)]
-#[allow(unused_mut)]
 pub struct TextArea {
-    pub layer: TweenLayer,
+    /// The base layer
+    pub layer: Layer,
+    /// Currently unused.
+    /// TODO: Implement placeholder like TextField
     pub placeholder: Option<String>,
+    /// Optional cursor to display when in edit mode.
     pub cursor: Option<Cursor>,
+    /// The internal frame for text display (inset from the outer frame)
     input_frame: Rectangle,
+    /// Cached image text that is unchanged until the user scrolls or tries to start editing.
     image_text: Option<Image>,
-    text_size: (u32, u32),
+    /// The editor utility that manages all text state while user edits text.
     editor: TextAreaEditor,
+    // draw_font: DrawFont,
     is_editing: bool,
     is_hovering: bool,
     can_edit: bool,
@@ -38,57 +45,58 @@ pub struct TextArea {
 }
 
 impl TextArea {
-    pub fn new(frame: Rectangle, can_edit: bool) -> Self {
+    /// Constructor
+    pub fn new(frame: Rectangle, theme: &mut Theme, can_edit: bool) -> Self {
         // FIXME: The default() does not load a font and therefore requires a font to be set in set_theme()
-        let layer = TweenLayer::new(frame);
+        let layer = Layer::new(frame);
 
         let input_frame = layer.inset_by(10.0, 10.0, 10.0, 10.0);
         // log::debug!("outer frame={:?} input frame={:?}", frame, input_frame);
 
-        let mut editor = TextAreaEditor::default()
+        let mut editor = TextAreaEditor::create(theme)
             .with_frame((input_frame.x(), input_frame.y()), (input_frame.width(), input_frame.height()));
+
 
         // temporary hack to test scroll bar
         editor.ctx.frame.max.x = editor.ctx.frame.max.x - 10.0;
         editor.ctx.debug = true;
 
         TextArea {
-            layer: TweenLayer::new(frame),
+            layer: Layer::new(frame),
             placeholder: None,
             cursor: None,
-            input_frame: input_frame,
+            input_frame,
             image_text: None,
-            text_size: (0, 0),
-            editor: editor,
+            editor,
             is_editing: false,
             is_hovering: false,
-            can_edit: can_edit,
+            can_edit,
             can_scroll: true,
             scroll_offset: Vector::new(0.0, 0.0),
         }
     }
 
-    pub fn set_color(&mut self, color: &Color) {
-        self.layer.color = color.clone();
-    }
-
+    /// Set the text in the editor
     pub fn set_text(&mut self, text: &str) {
         self.editor.ctx.set_text(text);
     }
 
+    /// Get the text content of the editor
     pub fn get_text(&self) -> &str {
         return self.editor.ctx.get_text();
     }
 
-    pub fn get_visible_rows(&self) -> Range<usize> {
+    /// Calculate the range of lines that are visible in the editor
+    /// FIXME: Unused?
+    fn _get_visible_rows(&self) -> Range<usize> {
         let row_height = self.editor.ctx.font_size;
         let shift = self.scroll_offset.y / row_height;
         let start = shift.floor() as usize;
-
         let row_count = (self.layer.frame.height() / row_height + shift.fract()).ceil() as usize;
         return start..(start + row_count);
     }
 
+    /// Tells the editor to switch to the editing state.
     fn start_editing(&mut self) {
         log::debug!("TextArea start_editing");
 
@@ -103,6 +111,7 @@ impl TextArea {
         self.cursor = Some(cursor);
     }
 
+    /// Switches to read-only state
     fn stop_editing(&mut self) {
         self.is_editing = false;
         self.cursor = None;
@@ -111,28 +120,37 @@ impl TextArea {
     }
 }
 
-impl TKDisplayable for TextArea {
+impl Displayable for TextArea {
+
+    fn get_id(&self) -> u32 { self.layer.get_id() }
+
+    fn set_id(&mut self, id: u32) {
+        self.layer.set_id(id);
+        self.layer.type_id = self.get_type_id();
+    }
+
     fn get_type_id(&self) -> TypeId {
         TypeId::of::<TextArea>()
+    }
+
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
     }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
     }
 
-    fn set_theme(&mut self, theme: &Theme) {
-        self.layer.color = theme.bg_color;
+    fn move_to(&mut self, pos: (f32, f32)) {
+        self.layer.frame.pos.x = pos.0;
+        self.layer.frame.pos.y = pos.1;
+    }
+
+    fn set_theme(&mut self, theme: &mut Theme) {
+        if self.layer.lock_style { return }
+        self.layer.apply_theme(theme);
         self.editor.ctx.font_size = theme.font_size;
-        if theme.border_width > 0.0 {
-            self.layer.border_width = theme.border_width;
-            self.layer.border_color = Some(theme.border_color);
-        }
-        // self.layer.font = theme.font;
-        // self.layer.font_size = theme.font_size;
-        // self.editor.ctx.set_font_bytes(theme.font_bytes.into();
-        // if let Some(raw_font) = &theme.raw_font {
-        //     self.editor.ctx.set_font(raw_font.clone());
-        // }
+        self.layer.border_style = BorderStyle::SolidLine(theme.border_color, theme.border_width);
     }
 
     fn get_perimeter_frame(&self) -> Option<Rectangle> {
@@ -149,44 +167,58 @@ impl TKDisplayable for TextArea {
                 self.stop_editing();
             }
             DisplayEvent::Ready => {
-                self.editor.ctx.gpu_text.setup_gpu();
+                self.layer.on_ready();
                 if self.get_text().len() > 0 {
                     self.editor.update_rendered_text();
                 }
                 // self.start_editing();
             }
-            DisplayEvent::Resize(_screen_size) => {}
+            DisplayEvent::Moved => {
+                self.layer.on_move_complete();
+            }
+            _ => {}
         }
     }
 
-    fn update(&mut self, window: &mut Window) -> TKResult {
-        if let Some(tween) = &mut self.layer.animation {
-            tween.tick();
-            if let Some(update) = tween.update() {
-                self.layer.apply_updates(&update.props);
-            }
-        }
+    fn update(&mut self, window: &mut Window, state: &mut AppState) {
+        let offset = Vector::new(state.offset.0, state.offset.1);
+        self.layer.frame.pos = self.layer.initial.pos + offset;
+        // self.input_frame = self.layer.inset_by(10.0, 10.0, 10.0, 10.0);
+        self.layer.tween_update();
         if let Some(cursor) = &mut self.cursor {
-            cursor.update(window)?;
+            cursor.update(window, state);
         }
-        Ok(())
     }
 
     #[allow(unused_mut)]
-    fn render(&mut self, theme: &mut Theme, window: &mut Window) -> TKResult {
-        window.draw(&self.layer.frame, Col(self.layer.color));
+    fn render(&mut self, theme: &mut Theme, window: &mut Window) {
+        self.layer.draw_background(window);
 
         if self.get_text().len() == 0 {
-            return Ok(());
+            return;
         }
 
         if self.is_editing {
             self.editor.update_textarea();
             let cursor_space = 0.0;
             if self.get_text().len() > 0 {
-                if let Some(text) = self.editor.get_visible_text(self.scroll_offset.y) {
-                    let style = FontStyle::new(theme.font_size, Color::BLUE);
-                    let _ = self.editor.ctx.gpu_text.draw_text(&text, &style, &self.input_frame, window);
+                if let Some(mesh_task) = &self.editor.ctx.cached_mesh {
+                    window.add_task(mesh_task.clone());
+                } else {
+                    if let Some(text) = self.editor.get_visible_text(self.scroll_offset.y) {
+                        let style = FontStyle::new(theme.font_size, Color::BLUE);
+                        if let Some(task) = self.editor.ctx.draw_font.draw(
+                            &text,
+                            &style,
+                            HAlign::Left,
+                            &self.input_frame,
+                            window,
+                            true
+                        ) {
+                            self.editor.ctx.cached_mesh = Some(task.clone());
+                            window.add_task(task);
+                        }
+                    }
                 }
             }
             if let Some(cursor) = &mut self.cursor {
@@ -224,13 +256,7 @@ impl TKDisplayable for TextArea {
         }
 
         // Draw border
-        if let Some(color) = self.layer.border_color {
-            for line in self.layer.get_border_lines(self.layer.border_width) {
-                window.draw_ex(&line.with_thickness(line.t), Col(color), Transform::IDENTITY, 0);
-            }
-        }
-
-        Ok(())
+        self.layer.draw_border(window);
     }
 
     fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
@@ -239,14 +265,9 @@ impl TKDisplayable for TextArea {
     }
 }
 
-impl TKResponder for TextArea {
+impl Responder for TextArea {
     fn get_field_value(&self) -> FieldValue {
         FieldValue::Text(self.get_text().to_owned())
-    }
-
-    // TODO: How to change mouse_state to None after another Responder gets focus.
-    fn has_focus(&self) -> bool {
-        self.layer.mouse_state == MouseState::Focus
     }
 
     fn handle_key_press(&mut self, c: char, _window: &mut Window) {
@@ -288,7 +309,7 @@ impl TKResponder for TextArea {
         false
     }
 
-    fn handle_mouse_down(&mut self, pt: &Vector, _state: &mut TKState) -> bool {
+    fn handle_mouse_down(&mut self, pt: &Vector, _state: &mut AppState) -> bool {
         if pt.overlaps_rectangle(&self.layer.frame) {
             if self.is_editing {
                 return true;
@@ -299,7 +320,7 @@ impl TKResponder for TextArea {
         false
     }
 
-    fn handle_mouse_scroll(&mut self, pt: &Vector, _state: &mut TKState) {
+    fn handle_mouse_scroll(&mut self, pt: &Vector, _state: &mut AppState) {
         // Only scroll if hovering and not editing
         if self.is_hovering && !self.is_editing {
             let upper_limit = self.editor.ctx.text_size.1 as f32 - self.layer.frame.height();

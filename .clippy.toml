@@ -1,0 +1,9 @@
+# https://rust-lang.github.io/rust-clippy/master/index.html
+# redundant_field_names = false
+needless_return = true
+unreadable_literal = false
+let_and_return = true
+len_zero = false
+clone_double_ref = true
+clone_on_copy = true
+float_cmp = true

@@ -1,20 +1,25 @@
 /// Misc tools for common operations for Quicksilver UI
 ///
+use super::*;
 
 #[allow(unused_imports)]
 use quicksilver::{
     geom::{Line, Rectangle, Scalar, Shape, Transform, Vector},
-    graphics::{Background::Col, Color, DrawTask, Font, GpuTriangle, Mesh, Vertex},
+    graphics::{Background::Col, Color, MeshTask, Font, GpuTriangle, Mesh, Vertex},
     input::Key,
 };
 
 use std::any::TypeId;
 use std::f32;
 
+/// Simple utility for manipulated UI data
 pub struct UITools {}
 
 impl UITools {
+    /// Default width of scrollbar
+    /// TODO: Make this configurable
     pub const SCROLLBAR_WIDTH: f32 = 10.0;
+    /// Default scrollbar color
     pub const SCROLLBAR_COLOR: &'static str = "#BBBBBB";
 
     // pub const TEXT_KEY_COMMANDS: &[Key] = &[
@@ -26,6 +31,7 @@ impl UITools {
     //     Key::Escape,
     // ];
 
+    /// FIXME: Unused
     pub fn scrollable_types() -> Vec<TypeId> {
         vec![
             // TypeId::of::<ListBox>(),
@@ -34,10 +40,12 @@ impl UITools {
         ]
     }
 
+    /// FIXME: Unused
     pub fn is_scrollable(type_id: &TypeId) -> bool {
         UITools::scrollable_types().contains(type_id)
     }
 
+    /// Create a rectangle frame as the union of two Rectangles
     pub fn combine_frames(r1: &Rectangle, r2: &Rectangle) -> Rectangle {
         let x = f32::min(r1.x(), r2.x());
         let y = f32::min(r1.y(), r2.y());
@@ -51,20 +59,26 @@ impl UITools {
         UITools::inset_rect(rect, -x, -y, -x, -y)
     }
 
+    /// Create a Rectangle given the left, top, right, bottom inset values.
+    /// Notably, negative values will give you an outset frame.
     pub fn inset_rect(rect: &Rectangle, left: f32, top: f32, right: f32, bottom: f32) -> Rectangle {
         Rectangle::new((rect.x() + left, rect.y() + top), (rect.width() - left - right, rect.height() - top - bottom))
     }
 
+    /// Create an inset Rectangle given an outer Rectangle and an inner one
     pub fn inset_left_middle(rect: &Rectangle, object: &Rectangle, margin: f32) -> Rectangle {
         let y = rect.y() + (rect.height() - object.height()) / 2.0;
         Rectangle::new((rect.x() + margin, y), (rect.width() - margin * 2.0, object.height()))
     }
 
+    /// Create an inset Rectangle that is aligned left inside the outer rectangle.
+    /// A way of creating left-aligned content inside a rect with a specified margin
     pub fn position_left_middle(rect: &Rectangle, object: &Rectangle, margin: f32) -> Rectangle {
         let y = rect.y() + (rect.height() - object.height()) / 2.0;
         Rectangle::new((rect.x() + margin, y), (object.width(), object.height()))
     }
 
+    /// Calculate an area for a scrollbar inside another Rectangle
     pub fn get_scrollbar_frame(content_height: f32, rect: &Rectangle, offset: f32) -> Option<Rectangle> {
         if content_height > rect.height() {
             let bar_h = (rect.height() / content_height).min(0.2) * rect.height();
@@ -81,6 +95,7 @@ impl UITools {
         None
     }
 
+    /// Given a rectangle, generate an array of Lines for all 4 sides
     pub fn make_border_lines(rect: &Rectangle, width: f32) -> Vec<Line> {
         let mut lines: Vec<Line> = Vec::new();
         let line = Line::new((rect.x(), rect.y()), (rect.x() + rect.width(), rect.y())).with_thickness(width);
@@ -113,10 +128,10 @@ impl UITools {
        +--------------+
     */
     pub fn get_perimeter_blocks(frame: &Rectangle, outside: &Rectangle) -> Vec<Rectangle> {
-        if outside.pos.x == frame.pos.x
-            && outside.pos.y == frame.pos.y
-            && outside.size.x == frame.size.x
-            && outside.size.y == frame.size.y
+        if (outside.pos.x - frame.pos.x).abs() < FLOAT_TOLERANCE
+            && (outside.pos.y - frame.pos.y).abs() < FLOAT_TOLERANCE
+            && (outside.size.x - frame.size.x).abs() < FLOAT_TOLERANCE
+            && (outside.size.y - frame.size.y).abs() < FLOAT_TOLERANCE
         {
             return Vec::new();
         }
@@ -153,12 +168,12 @@ impl UITools {
         blocks
     }
 
-    /// Helper function for creating a DrawTask from a Rectangle primitive outside of the base
+    /// Helper function for creating a MeshTask from a Rectangle primitive outside of the base
     /// Drawable implementations done within Quicksilver. This is only necessary for painting over
     /// other objects on screen. This is not ideal, since it's just a hacky way of covering up UI problems.
     /// Later, we hope to have a way of cropping content in the GPU to prevent overflow.
-    pub fn draw_rectangles(rectangles: Vec<Rectangle>, color: Color) -> DrawTask {
-        let mut task = DrawTask::new(0);
+    pub fn draw_rectangles(rectangles: Vec<Rectangle>, color: Color) -> MeshTask {
+        let mut task = MeshTask::new(0);
         for rect in rectangles {
             let offset = task.vertices.len() as u32;
             // top left

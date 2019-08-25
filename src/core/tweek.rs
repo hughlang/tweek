@@ -1,213 +1,213 @@
 /// Tweek acts as the coordinator when there are multiple tweens being animated with one or more timelines.
 ///
-use std::cell::RefCell;
-use std::rc::Rc;
+use crate::events::*;
+use crate::gui::*;
 
-use super::property::*;
-use super::timeline::*;
-use super::tween::*;
+use std::{
+    any::TypeId
+};
+
+use quicksilver::{
+    geom::{Rectangle, Vector},
+    input::{Key},
+    lifecycle::{Window},
+};
 
 //-- Base -----------------------------------------------------------------------
 
-pub type TweenRef = Rc<RefCell<Tween>>;
-pub type UserCommand = u32;
-
 /// The Playable trait provides support for basic animation updating and control
 pub trait Playable {
+    /// Must implement play method to start the Playable
     fn play(&mut self);
-
-    // TODO: Return an Option<TKEvent> instead.
-    fn tick(&mut self) -> Vec<TKEvent>;
-    fn get_update(&mut self, id: &usize) -> Option<UIState>;
-    fn stop(&mut self);
-    fn pause(&mut self);
-    fn reset(&mut self);
-    // fn resume(&mut self);
-    // fn seek(&mut self, pos: f64);
+    /// Method called in the run loop to inform playables to check and update their internal state
+    fn tick(&mut self) {}
+    /// Handle request to stop the current play
+    fn stop(&mut self) {}
+    /// Pause the current playback
+    fn pause(&mut self) {}
+    /// Reset the playback to initial state
+    fn reset(&mut self) {}
 }
 
-/// This is an experimental trait with the intention of passing around a mutable TKState
-/// which other code can use.
-///
-pub trait TimelineAware {
-    // fn tk_play(&mut self, ctx: &mut TKState);
-    fn update(&mut self, ctx: &mut TKState);
-}
-
-#[derive(Copy, Clone, Debug)]
-pub enum TKEvent {
-    None,
-    Completed(usize),
-    Pause(usize),
-    Play(usize),
-    // case pending
-    // case running
-    // case idle
-    // case cancelled
-    // case completed
-}
-
-#[derive(Copy, Clone, Debug)]
-pub enum TKAction {
-    Click,
-    Hover,
-}
-
-pub enum TKRequest {
-    Play,
-    Replay,
-    Pause,
-    Reverse,
-    SkipForward,
-}
-
-pub struct TKState {
-    pub time_scale: f64,
+/// Mutable state object passed through Responder methods for capturing and handling
+/// user events from keyboard and mouse
+pub struct AppState {
+    /// Ratio value to alter speed of playback, where 1.0 is natural time
+    pub time_scale: f32,
+    /// Elapsed time
     pub elapsed_time: f64,
+    /// Total time
     pub total_time: f64,
-    pub events: Vec<TKEvent>,
-    pub requests: Vec<TKRequest>,
-    /// user defined u32 values that can be used for any purpose.
-    pub commands: Vec<UserCommand>,
-    pub click_target: Option<usize>,
+    /// Offset x-y when Scene is animating/moving
+    pub offset: (f32, f32),
+    /// The event queue
+    pub event_bus: EventBus,
+    /// Stores the index value of the row that was clicked on.
     pub row_target: Option<usize>,
 }
 
-impl TKState {
+impl AppState {
+    /// Constructor
     pub fn new() -> Self {
-        TKState {
+        AppState {
             time_scale: 1.0,
             elapsed_time: 0.0,
             total_time: 0.0,
-            events: Vec::new(),
-            requests: Vec::new(),
-            commands: Vec::new(),
-            click_target: None,
+            offset: (0.0, 0.0),
+            event_bus: EventBus::default(),
             row_target: None,
         }
     }
-}
 
-pub type TKResult<T = ()> = Result<T, &'static str>;
+    /// Hacky way of forcing top-level controller to zero
+    pub fn zero_offset(&mut self) {
+        self.offset = (0.0, 0.0);
+    }
+}
 
 //-- Main -----------------------------------------------------------------------
 
 /// Tweek acts as a coordinator when multiple tween animations are added to a Timeline
 /// for animation.
 pub struct Tweek {
-    subscribers: Vec<Rc<Fn(TKEvent, &mut TKState) + 'static>>,
-    timelines: Vec<Rc<RefCell<Timeline>>>,
+    layer: Layer,
+    pub scenes: Vec<Scene>,
 }
 
 impl Tweek {
-    pub fn new() -> Self {
-        Tweek { subscribers: Vec::new(), timelines: Vec::new() }
+    /// Constructor
+    ///
+    pub fn new(frame: Rectangle) -> Self {
+        let layer = Layer::new(frame);
+        Tweek { layer, scenes: Vec::new() }
     }
 
-    pub fn add_timeline(&mut self, timeline: Timeline) {
-        self.timelines.push(Rc::new(RefCell::new(timeline)));
+    pub fn add_scene(&mut self, scene: Scene) {
+        self.scenes.push(scene);
     }
 
-    /// See: https://www.ralfj.de/projects/rust-101/part12.html
-    /// This method should be called by a Timeline that wants to receive callbacks from
-    /// Tweek.
-    /// FIXME: UNUSED
-    pub fn add_subscriber<C>(&mut self, cb: C)
-    where
-        C: Fn(TKEvent, &mut TKState) + 'static,
-    {
-        log::debug!("Adding subscriber");
-        self.subscribers.push(Rc::new(cb));
-    }
-
-    /// This method should be called by a Timeline that wants a Tween to send events
-    /// to Tweek and then re-publish them back to the Timeline which has added itself as
-    /// the subscribers list.
-    /// Same as add_tween but without the lifetime marks
-    /// FIXME: UNUSED
-    pub fn register_tween(&mut self, tween: &mut Tween) {
-        let subscribers = self.subscribers.clone();
-        // let timelines = self.timelines.
-        tween.add_callback(move |e, g| {
-            log::debug!("Tween callback: event={:?}", e);
-            for cb in subscribers.iter() {
-                (&*cb)(e, g);
+    /// This function provides a passthrough for Quicksilver State lifecycle
+    pub fn handle_event(&mut self, event: &SceneEvent) -> bool {
+        for scene in &mut self.scenes {
+            let handled = scene.handle_event(event);
+            if handled {
+                return true;
             }
-        });
+        }
+        false
     }
 }
 
-impl Playable for Tweek {
-    fn play(&mut self) {
-        for tl in &self.timelines {
-            // TODO: Combine into one statement
-            let mut timeline = tl.borrow_mut();
-            (&mut *timeline).play();
+// ************************************************************************************
+// ************************************************************************************
+
+impl Displayable for Tweek {
+
+    fn get_id(&self) -> u32 { self.layer.get_id() }
+
+    fn set_id(&mut self, id: u32) {
+        self.layer.set_id(id);
+    }
+
+    fn get_type_id(&self) -> TypeId {
+        TypeId::of::<Tweek>()
+    }
+
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
+
+    fn get_frame(&self) -> Rectangle {
+        return self.layer.frame;
+    }
+
+    fn move_to(&mut self, pos: (f32, f32)) {
+        self.layer.frame.pos.x = pos.0;
+        self.layer.frame.pos.y = pos.1;
+    }
+
+    fn set_theme(&mut self, theme: &mut Theme) {
+        for scene in &mut self.scenes {
+            scene.set_theme(theme);
         }
     }
 
-    fn tick(&mut self) -> Vec<TKEvent> {
-        let mut events: Vec<TKEvent> = Vec::new();
-        for tl in &self.timelines {
-            let mut timeline = tl.borrow_mut();
-            let mut ticks = (&mut *timeline).tick();
-            events.append(&mut ticks);
-        }
-        events
-    }
-
-    fn stop(&mut self) {
-        for tl in &self.timelines {
-            let mut timeline = tl.borrow_mut();
-            (&mut *timeline).stop();
+    fn notify(&mut self, event: &DisplayEvent) {
+        for scene in &mut self.scenes {
+            scene.notify(event);
         }
     }
 
-    fn pause(&mut self) {
-        for tl in &self.timelines {
-            let mut timeline = tl.borrow_mut();
-            (&mut *timeline).pause();
+    fn update(&mut self, window: &mut Window, state: &mut AppState) {
+        self.layer.tween_update();
+        for scene in &mut self.scenes {
+            scene.update(window, state);
         }
     }
 
-    fn reset(&mut self) {
-        for tl in &self.timelines {
-            let mut timeline = tl.borrow_mut();
-            (&mut *timeline).reset();
+    /// The top-level objects in the scene should all use the scene's coordinate system and
+    /// therefore, this render() method should only call render() for all child Displayable objects.
+    /// That's the current plan. It may change.
+    fn render(&mut self, theme: &mut Theme, window: &mut Window) {
+        for scene in &mut self.scenes {
+            scene.render(theme, window);
         }
     }
 
-    fn get_update(&mut self, id: &usize) -> Option<UIState> {
-        for tl in &self.timelines {
-            let mut timeline = tl.borrow_mut();
-            if let Some(update) = (&mut *timeline).get_update(id) {
-                return Some(update);
+    fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
+        for scene in &mut self.scenes {
+            let hover = scene.handle_mouse_at(pt);
+            if hover {
+                return true;
             }
         }
-        None
+        false
     }
 }
-impl TimelineAware for Tweek {
-    fn update(&mut self, ctx: &mut TKState) {
-        if ctx.requests.is_empty() {
-            ctx.events.clear();
-            for tl in &self.timelines {
-                let mut timeline = tl.borrow_mut();
-                (&mut *timeline).update(ctx);
+// ************************************************************************************
+// ************************************************************************************
+
+impl Responder for Tweek {
+    fn set_field_value(&mut self, value: &FieldValue, type_id: TypeId, layer_id: u32) -> bool {
+        for scene in &mut self.scenes {
+            let success = scene.set_field_value(value, type_id, layer_id);
+            if success {
+                return true;
             }
-        } else {
-            for request in &ctx.requests {
-                match request {
-                    TKRequest::Play => {
-                        for tl in &self.timelines {
-                            let mut timeline = tl.borrow_mut();
-                            (&mut *timeline).reset();
-                        }
-                    }
-                    _ => (),
-                }
-            }
-            &ctx.requests.clear();
         }
+        false
+    }
+
+    fn handle_mouse_down(&mut self, pt: &Vector, state: &mut AppState) -> bool {
+        for scene in &mut self.scenes {
+            scene.handle_mouse_down(pt, state);
+        }
+        false
+    }
+
+    fn handle_mouse_up(&mut self, pt: &Vector, state: &mut AppState) -> bool {
+        for scene in &mut self.scenes {
+            scene.handle_mouse_up(pt, state);
+        }
+        false
+    }
+
+    fn handle_mouse_scroll(&mut self, pt: &Vector, state: &mut AppState) {
+        for scene in &mut self.scenes {
+            scene.handle_mouse_scroll(pt, state);
+        }
+    }
+
+    fn handle_key_press(&mut self, c: char, window: &mut Window) {
+        for scene in &mut self.scenes {
+            scene.handle_key_press(c, window);
+        }
+    }
+
+    fn handle_key_command(&mut self, key: &Key, window: &mut Window) -> bool {
+        for scene in &mut self.scenes {
+            scene.handle_key_command(key, window);
+        }
+        false
     }
 }
