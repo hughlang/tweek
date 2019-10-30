@@ -3,11 +3,12 @@
 use super::*;
 use crate::core::*;
 use crate::events::*;
+use crate::tools::DrawShape;
 
 #[allow(unused_imports)]
 use quicksilver::{
     geom::{Line, Rectangle, Shape, Transform, Vector},
-    graphics::{Background::Col, Color, Image},
+    graphics::{Background::Col, Color, Image, Mesh},
     lifecycle::{run, Settings, State, Window},
 };
 
@@ -23,9 +24,9 @@ pub struct Cursor {
 impl Cursor {
     /// Create a new cursor at the specified points and line_width. A Rect is created so that any motion tweening
     /// can be applied.
-    pub fn new(pt1: Vector, pt2: Vector, line_width: f32) -> Self {
+    pub fn new(pt1: Vector, pt2: Vector, _line_width: f32) -> Self {
         let rect = Rectangle::new((pt1.x, pt1.y), ((pt2.x - pt1.x).abs(), (pt2.y - pt1.y).abs()));
-        let mut layer = Layer::new(rect);
+        let layer = Layer::new(rect);
         Cursor { layer }
     }
 
@@ -33,7 +34,7 @@ impl Cursor {
     /// and call start_animation directly.
     /// TBD: Maybe move this into the Displayable trait.
     pub fn default_animation(mut self) -> Self {
-        self.start_animation(&[alpha(0.0)], 0.5);
+        self.start_animation(&[color("#000000EE")], 0.25);  // Hex color for black with very low alpha
         self
     }
 
@@ -43,41 +44,27 @@ impl Cursor {
         let mut tween = Tween::with(0, &self.layer)
             .to(&props.to_vec())
             .duration(seconds).repeat(-1, 0.1).yoyo()
-            // .debug()
             ;
         &tween.play();
         self.layer.animation = Some(tween);
-    }
-
-    /// Render the cursor given an origin point where y is the baseline for the current line.
-    /// The font_size is approximately the line height, but the actual characters are shorter
-    /// than that, so the height and position of the cursor should consider that.
-    /// The ideal cursor should have a top position near the top of the line extending above
-    /// the tallest character and extend below the baseline.
-    pub fn render_at_point(&self, pt: &Vector, theme: &Theme, window: &mut Window) {
-        let cursor_height = theme.font_size;
-        let y2 = pt.y + cursor_height * 0.2;
-        let y1 = y2 - cursor_height;
-        let line = Line::new((pt.x, y1), (pt.x, y2)).with_thickness(2.0);
-        window.draw_ex(&line.with_thickness(line.t), Col(Color::BLACK), Transform::IDENTITY, 9);
+        self.layer.tween_type = TweenType::Animation;
     }
 
     /// Method used by TextField to render the cursor
     /// TODO: Evaluate different from render_at_point
-    pub fn render_line(&self, pt1: &Vector, pt2: &Vector, _theme: &Theme, window: &mut Window) {
-        let line = Line::new(*pt1, *pt2).with_thickness(2.0);
-        match self.layer.border_style {
-            BorderStyle::SolidLine(color, width) => {
-                window.draw_ex(&line.with_thickness(width), Col(color), Transform::IDENTITY, 9);
-            }
-            _ => ()
-        };
+    pub fn render_line(&self, pt1: &Vector, pt2: &Vector, _theme: &Theme) -> Mesh {
+        let color = self.layer.transition.color;
+        let pts: [&Vector; 2] = [ pt1, pt2 ];
+        let line = DrawShape::line(&pts, color, 2.0);
+        line
     }
+
 }
 
 impl Displayable for Cursor {
-
-    fn get_id(&self) -> u32 { self.layer.get_id() }
+    fn get_id(&self) -> u32 {
+        self.layer.get_id()
+    }
 
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
@@ -88,9 +75,9 @@ impl Displayable for Cursor {
         TypeId::of::<Cursor>()
     }
 
-    fn get_layer_mut(&mut self) -> &mut Layer {
-        &mut self.layer
-    }
+    fn get_layer(&self) -> &Layer { &self.layer }
+
+    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -102,7 +89,10 @@ impl Displayable for Cursor {
     }
 
     fn set_theme(&mut self, theme: &mut Theme) {
-        if self.layer.lock_style { return }
+        let ok = self.layer.apply_theme(theme);
+        if !ok {
+            return;
+        }
         self.layer.border_style = BorderStyle::SolidLine(theme.cursor_color, 2.0);
     }
 
@@ -122,6 +112,18 @@ impl Displayable for Cursor {
         self.layer.frame.pos = self.layer.initial.pos + Vector::new(state.offset.0, state.offset.1);
         self.layer.tween_update();
     }
-
-
 }
+
+// impl fmt::Debug for Cursor {
+//     /// Special debug output that trims the extra Vector wrappers.
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(
+//             f,
+//             "LAYER: <{}>-[{}]-Pos({:.2})-Size({:.2}) Color",
+//             gui_print_type(&self.type_id),
+//             self.id,
+//             self.frame.pos,
+//             self.frame.size
+//         )
+//     }
+// }

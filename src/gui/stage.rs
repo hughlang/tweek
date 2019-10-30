@@ -4,32 +4,13 @@ use super::*;
 use crate::core::*;
 use crate::events::*;
 
-use std::{
-    any::TypeId,
-    collections::BTreeMap,
-};
+use std::{any::TypeId, collections::HashMap};
 
 use quicksilver::{
     geom::{Rectangle, Vector},
-    input::{Key},
-    lifecycle::{Window},
+    input::Key,
+    lifecycle::Window,
 };
-
-//-- Support -----------------------------------------------------------------------
-
-pub struct Route {
-    pub id: u32,
-    pub type_id: TypeId,
-    pub route_map: BTreeMap<u32, Route>
-}
-
-impl Route {
-    pub fn new(id: u32, type_id: TypeId) -> Self {
-        Route {
-            id, type_id, route_map: BTreeMap::new(),
-        }
-    }
-}
 
 //-- Main -----------------------------------------------------------------------
 
@@ -37,10 +18,14 @@ impl Route {
 /// for animation.
 pub struct Stage {
     layer: Layer,
-    // routes:
+    /// Title for display
     pub title: String,
+    /// All of the Scenes
     pub scenes: Vec<Scene>,
-
+    /// Storage of added Commands as a mapping of the source to target
+    event_actions: HashMap<(SceneEvent, Option<String>), SceneAction>,
+    /// Rudimentary storage of an node_id and the Route it probably matches. FIXME later
+    route_map: HashMap<String, String>,
 }
 
 impl Stage {
@@ -48,7 +33,13 @@ impl Stage {
     ///
     pub fn new(frame: Rectangle) -> Self {
         let layer = Layer::new(frame);
-        Stage { layer, title: String::default(), scenes: Vec::new() }
+        Stage {
+            layer,
+            title: String::default(),
+            scenes: Vec::new(),
+            event_actions: HashMap::new(),
+            route_map: HashMap::new(),
+        }
     }
 
     pub fn add_scene(&mut self, scene: Scene) {
@@ -56,44 +47,36 @@ impl Stage {
     }
 
     /// This function provides a passthrough for Quicksilver State lifecycle
-    pub fn handle_event(&mut self, event: &SceneEvent) -> bool {
-        let action: SceneAction = {
-            let mut action = SceneAction::None;
-            for scene in &mut self.scenes {
-                if let Some(result) = scene.find_action(event.clone()) {
-                    action = result;
+    pub fn handle_event(&mut self, event: &SceneEvent, source: &Option<String>) {
+        if let Some(action) = self.event_actions.get(&(event.clone(), source.clone())) {
+            // log::debug!("Found action={:?}", action);
+            match action {
+                SceneAction::Animate(propset, node) => {
+                    if let Some(route) = self.route_map.get(&node.id_string()) {
+                        for scene in &mut self.scenes {
+                            if let Some(layer) = scene.get_layer_for_route(&route) {
+                                log::debug!("Found layer for route={:?}", route);
+                                layer.animate_with_props(propset.clone());
+                                scene.handle_event(event, source);
+                            }
+                        }
+                    }
                 }
+                _ => (),
             }
-            action
-        };
-
-        match action {
-            SceneAction::Animate(_, _, id) => {
-                if let Some(scene) = self.scenes.iter_mut().find(|s| s.get_id() == id) {
-                    let handled = scene.handle_action(&action.clone());
-                }
-            }
-            _ => ()
         }
-        // if let Some(action) = action {
-        //
-        // }
-        false
     }
 
-    pub fn print_routes(&mut self) {
+    pub fn load_routes(&mut self) {
         for scene in &mut self.scenes {
             log::debug!("=== Routes in Scene: {} =====================", scene.name);
             for route in scene.get_routes() {
-                log::debug!("{}", route);
-            }
-        }
-    }
-
-    fn load_routes(&mut self) {
-        for scene in &mut self.scenes {
-            for routes in scene.get_routes() {
-
+                log::debug!("Route: {}", route);
+                let parts = route.split("/");
+                if let Some(part) = parts.last() {
+                    // TODO: Warn if key already exists
+                    self.route_map.insert(part.to_string(), route.to_string());
+                }
             }
         }
     }
@@ -103,8 +86,9 @@ impl Stage {
 // ************************************************************************************
 
 impl Displayable for Stage {
-
-    fn get_id(&self) -> u32 { self.layer.get_id() }
+    fn get_id(&self) -> u32 {
+        self.layer.get_id()
+    }
 
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
@@ -114,9 +98,9 @@ impl Displayable for Stage {
         TypeId::of::<Stage>()
     }
 
-    fn get_layer_mut(&mut self) -> &mut Layer {
-        &mut self.layer
-    }
+    fn get_layer(&self) -> &Layer { &self.layer }
+
+    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -134,17 +118,23 @@ impl Displayable for Stage {
     }
 
     fn notify(&mut self, event: &DisplayEvent) {
-        for scene in &mut self.scenes {
-            scene.notify(event);
-        }
-
         match event {
             DisplayEvent::Ready => {
-                self.print_routes();
+                self.load_routes();
+                for scene in &mut self.scenes {
+                    scene.notify(event);
+                    // For Ready event, capture all commands from scenes
+                    for (k, v) in scene.event_actions.drain() {
+                        self.event_actions.insert(k, v);
+                    }
+                }
             }
-            _ => {}
+            _ => {
+                for scene in &mut self.scenes {
+                    scene.notify(event);
+                }
+            }
         }
-
     }
 
     fn update(&mut self, window: &mut Window, state: &mut AppState) {
@@ -163,9 +153,9 @@ impl Displayable for Stage {
         }
     }
 
-    fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
+    fn handle_mouse_at(&mut self, pt: &Vector, window: &mut Window) -> bool {
         for scene in &mut self.scenes {
-            let hover = scene.handle_mouse_at(pt);
+            let hover = scene.handle_mouse_at(pt, window);
             if hover {
                 return true;
             }

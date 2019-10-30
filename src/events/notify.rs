@@ -4,7 +4,6 @@
 /// This event system follows the Observer design pattern described here:
 /// https://blog.rom1v.com/2017/09/gnirehtet-rewritten-in-rust/#observer
 /// In this code, the Storage struct is called Notifications
-
 use crate::events::*;
 
 use std::cell::RefCell;
@@ -51,16 +50,16 @@ impl Notifier {
 // *****************************************************************************************************
 
 /**
- * A struct that can receive an AnyEvent enum and store it.
- * 1/ Add Notifications field to your struct and initialise it.
-    notifications: Rc<RefCell<Notifications>>,
-    notifications: Notifications::new(),
+* A struct that can receive an AnyEvent enum and store it.
+* 1/ Add Notifications field to your struct and initialise it.
+   notifications: Rc<RefCell<Notifications>>,
+   notifications: Notifications::new(),
 
- * 2/ Sending a notification:
-    let mut notifier = Notifier::new();
-    self.notifications.borrow_mut().attach(&mut notifier);
-    notifier.notify(<AnyEvent>);  // example
- */
+* 2/ Sending a notification:
+   let mut notifier = Notifier::new();
+   self.notifications.borrow_mut().attach(&mut notifier);
+   notifier.notify(<AnyEvent>);  // example
+*/
 pub struct Notifications {
     weak_self: Weak<RefCell<Notifications>>,
     pub events: EventBus,
@@ -107,12 +106,14 @@ impl Notifications {
 ///
 /// A future use case will be to capture GPU Texture state events and metadata to better manage GPU actions.
 pub trait NotifyDispatcher {
-    /// The associated type. Example: type Update = PropSet;
+    /// Associated type for the Result. Example: type Update = PropSet;
     type Update;
+    /// Associated type for Params
+    type Params;
     /// In the runloop update() call, the status method tells the object to evaluate its internal state before
     /// calling the request_update method. Both methods can emit useful notifications that can be evaluated at runtime.
-    fn status(&mut self, notifier: &mut Notifier) {}
+    fn status(&mut self, _notifier: &mut Notifier) {}
     /// This is a generic method to get an expected Update object, along with notifications dispatched during the
     /// request_update() call.
-    fn request_update(&mut self, notifier: &mut Notifier) -> Option<Box<Self::Update>>;
+    fn request_update(&mut self, notifier: &mut Notifier, params: Option<Box<Self::Params>>) -> Option<Box<Self::Update>>;
 }

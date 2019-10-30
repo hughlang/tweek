@@ -1,15 +1,13 @@
 /// Checkbox
 ///
 use crate::core::*;
-use crate::tools::*;
 use crate::events::*;
+use crate::tools::*;
 
 use quicksilver::{
-    geom::{Line, Rectangle, Shape, Vector},
-    graphics::{
-        Background::{Col, Img},
-        Color, MeshTask, Image,
-    },
+    geom::{Rectangle, Shape, Vector},
+    graphics::{Color, MeshTask},
+    input::MouseCursor,
     lifecycle::Window,
 };
 use std::any::TypeId;
@@ -43,8 +41,8 @@ pub struct Checkbox {
     pub is_checked: bool,
     /// The style of the checkbox: X, radio, check mark, filled
     pub check_style: CheckStyle,
-    /// Previously rendered text
-    image_text: Option<Image>,
+    /// The calculated minimum size of the checkbox based on size of the text
+    pub content_size: Vector,
 }
 
 impl Checkbox {
@@ -52,13 +50,7 @@ impl Checkbox {
     pub fn new(frame: Rectangle) -> Self {
         let layer = Layer::new(frame);
 
-        Checkbox {
-            layer,
-            text: String::default(),
-            is_checked: false,
-            check_style: CheckStyle::X,
-            image_text: None,
-        }
+        Checkbox { layer, text: String::default(), is_checked: false, check_style: CheckStyle::X, content_size: Vector::ZERO }
     }
 
     /// Builder method to set the text
@@ -73,76 +65,9 @@ impl Checkbox {
         self.layer.frame = frame;
     }
 
-    /// Public render method that can be called by OptionGroup. Currently the default method for the Displayable render() method
-    fn render_at(&mut self, frame: &Rectangle, theme: &mut Theme, window: &mut Window) {
-        self.layer.draw_background(window);
-
-        let stroke = 1.0;
-        let stroke_color = Color::BLACK;
-
-        let box_frame = Rectangle::new((0.0, 0.0), (20.0, 20.0));
-        let box_frame = UITools::position_left_middle(&frame, &box_frame, 5.0);
-        match self.check_style {
-            CheckStyle::X => {
-                let mut lines = UITools::make_border_lines(&box_frame, stroke);
-                if self.is_checked {
-                    let rect = &box_frame;
-                    let line = Line::new((rect.x(), rect.y()), (rect.x() + rect.width(), rect.y() + rect.height()))
-                        .with_thickness(stroke);
-                    lines.push(line);
-                    let line = Line::new((rect.x() + rect.width(), rect.y()), (rect.x(), rect.y() + rect.height()))
-                        .with_thickness(stroke);
-                    lines.push(line);
-                }
-
-                for line in lines {
-                    window.draw(&line.with_thickness(line.t), Col(stroke_color));
-                }
-            }
-            CheckStyle::Radio => {
-                let mut mesh =
-                    DrawShape::circle(&box_frame.center(), &box_frame.width() / 2.0, None, Some(Color::BLACK), 1.0);
-                let mut task = MeshTask::new(0);
-                task.vertices.append(&mut mesh.vertices);
-                task.triangles.append(&mut mesh.triangles);
-                window.add_task(task);
-
-                if self.is_checked {
-                    let mut mesh = DrawShape::circle(
-                        &box_frame.center(),
-                        &box_frame.width() / 2.0 - 4.0,
-                        Some(Color::BLACK),
-                        None,
-                        0.0,
-                    );
-                    let mut task = MeshTask::new(0);
-                    task.vertices.append(&mut mesh.vertices);
-                    task.triangles.append(&mut mesh.triangles);
-                    window.add_task(task);
-                }
-            }
-            _ => {}
-        }
-
-
-        if let Some(img) = &self.image_text {
-            let y = frame.y() + (frame.height() - img.area().height()) / 2.0;
-            let text_frame = Rectangle::new((frame.x() + 30.0, y), (frame.width() - 30.0, img.area().height()));
-            window.draw(&img.area().constrain(&text_frame), Img(&img));
-        } else {
-            if let Some(img) = theme.default_font.render(
-                &self.text,
-                &self.layer.font_style,
-                &self.layer.frame,
-                false
-            ) {
-                let y = frame.y() + (frame.height() - img.area().height()) / 2.0;
-                let text_frame = Rectangle::new((frame.x() + 30.0, y), (frame.width() - 30.0, img.area().height()));
-                window.draw(&img.area().constrain(&text_frame), Img(&img));
-                self.image_text = Some(img);
-            }
-
-        }
+    /// Method to clear previous MeshTasks. This is also called by OptionGroup which sometimes needs to invalidate Checkboxes
+    pub fn clear_draw_cache(&mut self) {
+        self.layer.meshes.clear();
     }
 }
 
@@ -151,8 +76,9 @@ impl Checkbox {
 // *****************************************************************************************************
 
 impl Displayable for Checkbox {
-
-    fn get_id(&self) -> u32 { self.layer.get_id() }
+    fn get_id(&self) -> u32 {
+        self.layer.get_id()
+    }
 
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
@@ -163,17 +89,17 @@ impl Displayable for Checkbox {
         TypeId::of::<Checkbox>()
     }
 
-    fn get_layer_mut(&mut self) -> &mut Layer {
-        &mut self.layer
-    }
+    fn get_layer(&self) -> &Layer { &self.layer }
+
+    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
     }
 
     fn get_content_size(&self) -> Vector {
-        if let Some(img) = &self.image_text {
-            Vector::new(40.0 + img.area().width(), self.layer.frame.height())
+        if self.content_size != Vector::ZERO {
+            self.content_size
         } else {
             self.layer.frame.size
         }
@@ -186,14 +112,11 @@ impl Displayable for Checkbox {
 
     /// Change the font, color, and size
     fn set_theme(&mut self, theme: &mut Theme) {
-        if self.layer.lock_style { return }
-        self.layer.apply_theme(theme);
-        // let style = FontStyle::new(theme.font_size, Color::BLACK);
-        // let img = theme.font.render(&self.text, &style).unwrap();
-        // let hit_area = UITools::combine_frames(&self.box_frame, &img.area());
-        // log::debug!(">>> hit_area={:?} y={:?}", hit_area, 0);
-        // self.hit_area = UITools::padded_rect(&hit_area, 4.0, 4.0);
-        self.image_text = None;
+        let ok = self.layer.apply_theme(theme);
+        if !ok {
+            return;
+        }
+        self.clear_draw_cache();
     }
 
     fn notify(&mut self, event: &DisplayEvent) {
@@ -214,15 +137,102 @@ impl Displayable for Checkbox {
     }
 
     fn render(&mut self, theme: &mut Theme, window: &mut Window) {
-        self.render_at(&self.layer.frame.clone(), theme, window)
+        // self.layer.draw_background(window);
+
+        // Use previous mesh if exists
+        if self.layer.meshes.len() > 0 {
+            for task in &self.layer.meshes {
+                window.add_task(task.clone());
+            }
+            return;
+        }
+        let border = self.layer.border_style.get_border();
+
+        // TODO: make these themeable
+        let stroke = border.1;
+        let stroke_color = border.0;
+        let frame = self.layer.frame;
+        let box_frame = Rectangle::new((0.0, 0.0), (20.0, 20.0));
+        let box_frame = UITools::position_left_middle(&frame, &box_frame, 5.0);
+        match self.check_style {
+            CheckStyle::X => {
+                let mut task = MeshTask::new(0);
+                let mut mesh = DrawShape::rectangle(&box_frame, None, Some(stroke_color), stroke, 0.0);
+                task.append(&mut mesh);
+
+                if self.is_checked {
+                    let rect = &box_frame;
+                    let pts: [&Vector; 2] = [
+                        &Vector::new(rect.x(), rect.y()),
+                        &Vector::new(rect.x() + rect.width(), rect.y() + rect.height()),
+                    ];
+                    let mut line = DrawShape::line(&pts, stroke_color, stroke);
+                    task.append(&mut line);
+
+                    task.vertices.append(&mut line.vertices);
+                    task.triangles.append(&mut line.triangles);
+
+                    let pts: [&Vector; 2] = [
+                        &Vector::new(rect.x() + rect.width(), rect.y()),
+                        &Vector::new(rect.x(), rect.y() + rect.height()),
+                    ];
+                    let mut line = DrawShape::line(&pts, stroke_color, stroke);
+                    task.append(&mut line);
+                }
+                self.layer.meshes.push(task.clone());
+                window.add_task(task);
+            }
+
+            CheckStyle::Radio => {
+                let mut mesh =
+                    DrawShape::circle(&box_frame.center(), &box_frame.width() / 2.0, None, Some(Color::BLACK), 1.0);
+                let mut task = MeshTask::new(0);
+                task.append(&mut mesh);
+
+                if self.is_checked {
+                    let mut mesh = DrawShape::circle(
+                        &box_frame.center(),
+                        &box_frame.width() / 2.0 - 4.0,
+                        Some(Color::BLACK),
+                        None,
+                        0.0,
+                    );
+                    task.append(&mut mesh);
+                }
+                self.layer.meshes.push(task.clone());
+                window.add_task(task);
+            }
+            _ => {}
+        }
+
+        let text_frame = Rectangle::new((frame.x() + 30.0, frame.y()), (frame.width() - 30.0, frame.height()));
+        let params = TextParams::new(self.layer.font_style)
+            .frame(text_frame.clone())
+            .text(&self.text)
+            .multiline(false);
+
+        if let Some(task) = theme.default_font.draw(params) {
+            self.content_size = Vector::new(task.content_size.0 + 30.0, task.content_size.1);
+            // log::error!("Checkbox frame size={:?}", self.content_size);
+            self.layer.meshes.push(task.clone());
+            window.add_task(task);
+        } else {
+            log::debug!(">>> mesh_task is None!");
+        }
     }
 
     fn set_hover_animation(&mut self, props: PropSet) {
         self.layer.hover_effect = Some(props);
     }
 
-    fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
-        return self.layer.handle_mouse_over(pt);
+    fn handle_mouse_at(&mut self, pt: &Vector, window: &mut Window) -> bool {
+        let hover = self.layer.handle_mouse_over(pt);
+        if hover {
+            window.set_cursor(MouseCursor::Hand);
+        } else {
+            window.set_cursor(MouseCursor::Default);
+        }
+        hover
     }
 }
 
@@ -237,9 +247,8 @@ impl Responder for Checkbox {
 
     fn handle_mouse_down(&mut self, pt: &Vector, _state: &mut AppState) -> bool {
         if pt.overlaps_rectangle(&self.layer.frame) {
-            // log::debug!("Click at: x={} y={}", pt.x, pt.y);
             self.is_checked = !self.is_checked;
-
+            self.clear_draw_cache();
             return true;
         }
         false

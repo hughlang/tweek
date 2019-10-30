@@ -1,24 +1,24 @@
+use super::*;
 /// The ShapeView is simple shape holder with some Tweenable support
 /// Warning: A ShapeView object will render above objects in Quicksilver's window.mesh because of the
 /// ordering of MeshTasks.
 use crate::core::*;
 use crate::events::*;
 use crate::tools::DrawShape;
-use super::*;
 
 use quicksilver::{
     geom::{Rectangle, Shape, Transform, Vector},
-    graphics::{Color, MeshTask, Mesh},
+    graphics::{Color, Mesh, MeshTask},
     lifecycle::Window,
 };
 
-use std::{
-    any::{TypeId},
-};
+use std::any::TypeId;
 
 /// Enum type to define how a shape is drawn.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ShapeDef {
+    /// Line connecting two points
+    Line,
     /// Circle
     Circle,
     /// Ellipse
@@ -73,21 +73,18 @@ impl ShapeView {
     /// Builder method to set the BackgroundStyle
     pub fn with_background(mut self, bg_style: BackgroundStyle) -> Self {
         self.layer.bg_style = bg_style;
-        // self.layer.init_props();
         self
     }
 
     /// Builder method to set the BorderStyle
     pub fn with_border(mut self, style: BorderStyle) -> Self {
         self.layer.border_style = style;
-        // self.layer.init_props();
         self
     }
 
     /// Method to update the MeshTask
     /// FIXME: This is a dumb idea
     pub fn build(&mut self) {
-        log::debug!(">>> build");
         let mut mesh = self.build_mesh();
         let mut task = MeshTask::new(0);
         task.vertices.append(&mut mesh.vertices);
@@ -109,23 +106,21 @@ impl ShapeView {
         let mesh = {
             let border: (Option<Color>, f32) = {
                 match self.layer.border_style {
-                    BorderStyle::None => {
-                        (None, 0.0)
-                    }
-                    BorderStyle::SolidLine(color, width) => {
-                        (Some(color), width)
-                    }
+                    BorderStyle::None => (None, 0.0),
+                    BorderStyle::SolidLine(color, width) => (Some(color), width),
                 }
             };
             let color = Some(self.layer.bg_style.get_color());
             match self.shape_def {
-                ShapeDef::Rectangle => {
-                    DrawShape::rectangle(&self.layer.frame, color, border.0, border.1, 0.0)
-                }
-                ShapeDef::Circle => {
-                    DrawShape::circle(&self.layer.frame.center(), &self.layer.frame.width() / 2.0, color, border.0, border.1)
-                }
-                _ => Mesh::new()
+                ShapeDef::Rectangle => DrawShape::rectangle(&self.layer.frame, color, border.0, border.1, 0.0),
+                ShapeDef::Circle => DrawShape::circle(
+                    &self.layer.frame.center(),
+                    &self.layer.frame.width() / 2.0,
+                    color,
+                    border.0,
+                    border.1,
+                ),
+                _ => Mesh::new(),
             }
         };
         mesh
@@ -136,12 +131,8 @@ impl ShapeView {
         let mesh = {
             let border: (Option<Color>, f32) = {
                 match self.layer.border_style {
-                    BorderStyle::None => {
-                        (None, 0.0)
-                    }
-                    BorderStyle::SolidLine(color, width) => {
-                        (Some(color), width)
-                    }
+                    BorderStyle::None => (None, 0.0),
+                    BorderStyle::SolidLine(color, width) => (Some(color), width),
                 }
             };
             let color = Some(self.layer.transition.color);
@@ -149,20 +140,24 @@ impl ShapeView {
                 ShapeDef::Rectangle => {
                     DrawShape::rectangle(&self.layer.frame, color, border.0, border.1, self.layer.corner_radius)
                 }
-                ShapeDef::Circle => {
-                    DrawShape::circle(&self.layer.frame.center(), &self.layer.frame.width() / 2.0, color, border.0, border.1)
-                }
-                _ => Mesh::new()
+                ShapeDef::Circle => DrawShape::circle(
+                    &self.layer.frame.center(),
+                    &self.layer.frame.width() / 2.0,
+                    color,
+                    border.0,
+                    border.1,
+                ),
+                _ => Mesh::new(),
             }
         };
         mesh
     }
-
 }
 
 impl Displayable for ShapeView {
-
-    fn get_id(&self) -> u32 { self.layer.get_id() }
+    fn get_id(&self) -> u32 {
+        self.layer.get_id()
+    }
 
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
@@ -173,9 +168,9 @@ impl Displayable for ShapeView {
         TypeId::of::<ShapeView>()
     }
 
-    fn get_layer_mut(&mut self) -> &mut Layer {
-        &mut self.layer
-    }
+    fn get_layer(&self) -> &Layer { &self.layer }
+
+    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -187,8 +182,10 @@ impl Displayable for ShapeView {
     }
 
     fn set_theme(&mut self, theme: &mut Theme) {
-        if self.layer.lock_style { return }
-        self.layer.apply_theme(theme);
+        let ok = self.layer.apply_theme(theme);
+        if !ok {
+            return;
+        }
         // TODO: decide if shapes should get themed
     }
 
@@ -210,6 +207,7 @@ impl Displayable for ShapeView {
     fn update(&mut self, _window: &mut Window, state: &mut AppState) {
         let offset = Vector::new(state.offset.0, state.offset.1);
         self.layer.frame.pos = self.layer.initial.pos + offset;
+
 
         let mut notifier = Notifier::new();
         self.layer.notifications.borrow_mut().attach(&mut notifier);
@@ -233,9 +231,11 @@ impl Displayable for ShapeView {
             let mut task = MeshTask::new(0);
             task.vertices.append(&mut mesh.vertices);
             task.triangles.append(&mut mesh.triangles);
-            for (_, vertex) in task.vertices.iter_mut().enumerate() {
-                vertex.pos = Transform::rotate(self.layer.transition.rotation) * Transform::translate(self.layer.anchor_pt) * vertex.pos;
-            }
+            // for (_, vertex) in task.vertices.iter_mut().enumerate() {
+            //     vertex.pos = Transform::rotate(self.layer.transition.rotation)
+            //         * Transform::translate(self.layer.anchor_pt)
+            //         * vertex.pos;
+            // }
             window.add_task(task);
         } else {
             let mut task = self.mesh_task.clone();
@@ -252,9 +252,12 @@ impl Displayable for ShapeView {
         self.layer.hover_effect = Some(props);
     }
 
-    fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
+    fn handle_mouse_at(&mut self, pt: &Vector, _window: &mut Window) -> bool {
         // TODO: Use better hit-testing for non-rectangular items. See quicksilver Drawable
         // TODO: Override mouse cursor behavior for non-interactive shapes
-        return self.layer.handle_mouse_over(pt);
+        if self.layer.hover_effect.is_some() {
+            return self.layer.handle_mouse_over(pt);
+        }
+        false
     }
 }

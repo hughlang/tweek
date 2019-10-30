@@ -13,7 +13,6 @@ use std::hash::{Hash, Hasher};
 extern crate uuid;
 use uuid::Uuid;
 
-
 //-- Prop functions -----------------------------------------------------------------------
 /*
 The following Prop functions are used as function parameters for the Tween::to method which
@@ -62,13 +61,13 @@ pub fn alpha(v: f32) -> Prop {
 /// Change the color to the specifed hex color (e.g 0xFFFFFF)
 pub fn color(hex: &str) -> Prop {
     let rgb = rgb_from_hex(hex);
-    Prop::Color(ColorRGBA::new(rgb.0, rgb.1, rgb.2, 255.0))
+    Prop::Color(ColorRGBA::new(rgb.0, rgb.1, rgb.2, rgb.3))
 }
 
 /// Change the tint to the specifed hex color (e.g 0xFFFFFF)
 pub fn tint(hex: &str) -> Prop {
     let rgb = rgb_from_hex(hex);
-    Prop::Tint(ColorRGBA::new(rgb.0, rgb.1, rgb.2, 255.0))
+    Prop::Tint(ColorRGBA::new(rgb.0, rgb.1, rgb.2, rgb.3))
 }
 
 /// Rotate the object to the specified degrees (range 0.0..360.0)
@@ -86,7 +85,6 @@ pub fn border(hex: &str, width: f32, alpha: f32) -> Prop {
     let rgb = rgb_from_hex(hex);
     Prop::Border(Some(ColorRGBA::new(rgb.0, rgb.1, rgb.2, alpha)), FloatProp::new(width))
 }
-
 
 //-- Base -----------------------------------------------------------------------
 
@@ -213,10 +211,7 @@ impl Tween {
 
     /// Builder method to apply a PropSet to this Tween
     pub fn using_props(self, propset: PropSet) -> Self {
-        self.to(&propset.props)
-            .duration(propset.duration)
-            .delay(propset.delay)
-            .ease(propset.ease)
+        self.to(&propset.props).duration(propset.duration).delay(propset.delay).ease(propset.ease)
     }
 
     /// Static helper method to get the initial props for any Tweenable object
@@ -365,7 +360,8 @@ impl Tween {
             cleaned_props.push(Prop::Shift(sum_shift));
         }
 
-        let animator = Animator::create(&(self.tween_id as usize, self.animators.len()), &self.start_props, &cleaned_props);
+        let animator =
+            Animator::create(&(self.tween_id as usize, self.animators.len()), &self.start_props, &cleaned_props);
         self.animators.push(animator);
         self
     }
@@ -415,7 +411,7 @@ impl Tween {
                                     Prop::Position(pos) => {
                                         let sum_vec = pos.clone() + offset.clone();
                                         let sum_prop = Prop::Position(sum_vec);
-                                        log::trace!(">>>> Inserting sum_prop={:?}", sum_prop);
+                                        // log::trace!(">>>> Inserting sum_prop={:?}", sum_prop);
                                         end_props.push(sum_prop);
                                         keep_prop_ids.insert(begin_prop.prop_id());
                                     }
@@ -428,7 +424,7 @@ impl Tween {
                                     Prop::Size(size) => {
                                         let sum_vec = size.clone() + offset.clone();
                                         let sum_prop = Prop::Size(sum_vec);
-                                        log::trace!(">>>> Inserting sum_prop={:?}", sum_prop);
+                                        // log::trace!(">>>> Inserting sum_prop={:?}", sum_prop);
                                         end_props.push(sum_prop);
                                         keep_prop_ids.insert(begin_prop.prop_id());
                                     }
@@ -447,9 +443,6 @@ impl Tween {
             // And then overwrite begin_props with end_props for the next loop.
             animator.end_state.props = end_props.clone();
             begin_props = end_props.clone();
-
-            // log::debug!("Initial: [{}] start = {:?}", self.tween_id, &animator.start_state.props);
-            // log::debug!("Initial: [{}] end   = {:?}", self.tween_id, &animator.end_state.props);
         }
 
         // Step 2:
@@ -471,20 +464,21 @@ impl Tween {
                 end_props.push(prop.clone());
             }
             animator.end_state.props = end_props;
-
-            log::debug!("Final props: [{}] start = {:?}", self.tween_id, &animator.start_state.props);
-            log::debug!("Final props: [{}] end   = {:?}", self.tween_id, &animator.end_state.props);
+            log::debug!("Tween: [{}] start = {:?}", self.tween_id, &animator.start_state.props);
+            log::debug!("Tween: [{}] end   = {:?}", self.tween_id, &animator.end_state.props);
         }
     }
 
-    pub fn get_start_props(&mut self) -> Vec<Prop> {
+    /// Helper for debug output of Tween start props
+    pub fn get_start_props(&self) -> Vec<Prop> {
         if let Some(animator) = self.animators.first() {
             return animator.start_state.props.clone();
         }
         Vec::new()
     }
 
-    pub fn get_end_props(&mut self) -> Vec<Prop> {
+    /// Helper for debug output of Tween end props
+    pub fn get_end_props(&self) -> Vec<Prop> {
         if let Some(animator) = self.animators.last() {
             return animator.end_state.props.clone();
         }
@@ -499,7 +493,7 @@ impl Playable for Tween {
             PlayState::Pending => {
                 self.state = PlayState::Starting;
             }
-            _ => ()
+            _ => (),
         }
     }
 
@@ -525,11 +519,15 @@ impl Playable for Tween {
 
 impl NotifyDispatcher for Tween {
     type Update = PropSet;
-    /// Unused. Plan to use notifications to notify state change
+    type Params = f64;      // Not in use yet, but possibly use this to request PropSet for specific time in seconds
+
+    /// This replaces the tick() method which was used to tell Tween to check if it's state is changing based on the
+    /// time elapsed. The Layer expects to receive notifications when state changes to PlayState::Starting
     fn status(&mut self, notifier: &mut Notifier) {
         match self.state {
             PlayState::Starting => {
                 self.sync_animators();
+
                 notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Starting));
                 self.started_at = current_time();
                 self.state = PlayState::Running;
@@ -549,10 +547,12 @@ impl NotifyDispatcher for Tween {
             PlayState::Idle => {
                 // If repeat_delay > 0, tween should wait until time elapsed passes it
                 if elapsed_time(self.started_at) > (self.duration + self.repeat_delay) as f64 {
-                    log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
+                    // log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
                     if self.repeat_count < 0 {
+                        notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Restarting));
                         self.reset();
                     } else if self.play_count <= self.repeat_count as u32 {
+                        notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Restarting));
                         self.reset();
                     } else {
                         self.state = PlayState::Completed;
@@ -563,7 +563,9 @@ impl NotifyDispatcher for Tween {
         }
     }
 
-    fn request_update(&mut self, notifier: &mut Notifier) -> Option<Box<Self::Update>> {
+    /// This call requests a PropSet response about the current Props that are animating so that the parent Layer can
+    /// update the display. The Layer expects to receive notifications when state changes to PlayState::Completed
+    fn request_update(&mut self, notifier: &mut Notifier, _params: Option<Box<Self::Params>>) -> Option<Box<Self::Update>> {
         match self.state {
             PlayState::Running => {
                 let elapsed = elapsed_time(self.started_at);

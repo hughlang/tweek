@@ -1,28 +1,22 @@
 /// A helper for drawing glyph text using the GPU via glyph_brush
 /// – Currently an experiment
 ///
-
+use super::*;
+use glyph_brush::rusttype::{point, Font as RTFont, GlyphId, PositionedGlyph, Scale};
 use glyph_brush::{
-    self, BrushAction, BrushError, GlyphBrush, GlyphBrushBuilder, GlyphCalculator,
-    GlyphCalculatorBuilder, GlyphCruncher, HorizontalAlign as HAlign, Layout, Section,
-    SectionText, VariedSection, VerticalAlign as VAlign,
+    self, BrushAction, BrushError, GlyphBrush, GlyphBrushBuilder, GlyphCalculator, GlyphCalculatorBuilder,
+    GlyphCruncher, HorizontalAlign as HAlign, Layout, Section, SectionText, VariedSection, VerticalAlign as VAlign,
 };
-use glyph_brush::rusttype::{Rect, Font as RTFont, PositionedGlyph, Scale, point};
-use image::{imageops, DynamicImage, ImageBuffer, Rgba};
+use image_rs::{imageops, DynamicImage, Rgba, RgbaImage};
 
-// #[allow(unused_imports)]
 use quicksilver::{
     geom::{Rectangle, Vector},
-    graphics::{
-        Background::Col, Color, MeshTask, FontStyle, GpuTriangle, Image, PixelFormat, Texture,
-        Vertex,
-    },
-    lifecycle::{Window},
+    graphics::{Background::Col, Color, FontStyle, GpuTriangle, Image, MeshTask, PixelFormat, Texture, Vertex},
 };
 use std::f32;
+use std::collections::HashMap;
 
 /// Utility for Theme struct for drawing live text using glyph_brush crate
-// #[derive(Clone, Debug)]
 pub struct DrawFont {
     /// Instance of GlyphBrush using the GLVertex struct as the wrapper for glyph vertices
     glyph_brush: GlyphBrush<'static, GLVertex>,
@@ -33,11 +27,14 @@ pub struct DrawFont {
     /// The texture index in Quicksilver GL3 and WebGL backends
     index: usize,
     /// The cached MeshTask
-    cached_mesh: Option<MeshTask>,
+    pub cached_mesh: Option<MeshTask>,
+    /// A Hashmap storing the mapping of GlyphId to char. Used mainly for debugging?
+    pub glyph_db: HashMap<GlyphId, char>,
+    /// A Hashmap storing the mapping of a char to its width
+    pub char_db: HashMap<char, f32>,
 }
 
 impl DrawFont {
-
     /// Constructor using bytes from Truetype font
     pub fn from_bytes(data: Vec<u8>, tex_id: Option<&usize>) -> Self {
         let raw_font = RTFont::from_bytes(data).unwrap();
@@ -45,7 +42,15 @@ impl DrawFont {
         let glyph_brush = GlyphBrushBuilder::using_font(raw_font.clone()).build();
 
         let (width, height) = glyph_brush.texture_dimensions();
-        let mut draw = DrawFont { glyph_brush, glyph_calc, raw_font, index: 0, cached_mesh: None };
+        let mut draw = DrawFont {
+            glyph_brush,
+            glyph_calc,
+            raw_font,
+            index: 0,
+            cached_mesh: None,
+            glyph_db: HashMap::new(),
+            char_db: HashMap::new()
+        };
         if let Some(index) = tex_id {
             log::error!("Re-using tex: {:?}", index);
             draw.index = index.clone();
@@ -62,7 +67,6 @@ impl DrawFont {
 
     /// Initialize GPU
     pub fn setup_gpu(&mut self, width: u32, height: u32) {
-        log::debug!(">>> setup_gpu =================================");
 
         let mut texture = Texture::new("DrawFont").with_shaders(VERTEX_SHADER, FRAGMENT_SHADER).with_fields(
             TEX_FIELDS,
@@ -87,57 +91,53 @@ impl DrawFont {
     /// Draw word-wrapped text in the given rect using glyph_brush
     pub fn draw(
         &mut self,
-        text: &str,
-        style: &FontStyle,
-        h_align: HAlign,
-        rect: &Rectangle,
-        window: &mut Window,
-        multiline: bool
+        params: TextParams,
     ) -> Option<MeshTask> {
-        // let screen = window.screen_size();
-        let origin: (f32, f32);
+        let mut origin: (f32, f32) = (params.frame.x(), params.frame.y());
+        let rect = params.frame;
+        let h_align = params.text_align.to_glyph_align();
+        let v_align = params.vert_align.to_glyph_align();
         let layout = {
-            if multiline {
-                origin = (rect.x(), rect.y());
+            if params.multiline {
                 Layout::default_wrap().h_align(h_align)
             } else {
-                origin = match h_align {
-                    HAlign::Left => (rect.x(), rect.y() + rect.height() / 2.0),
-                    HAlign::Center => (rect.x() + rect.width() / 2.0, rect.y() + rect.height() / 2.0),
-                    HAlign::Right => (rect.x() + rect.width(), rect.y() + rect.height() / 2.0),
+                origin.0 = match h_align {
+                    HAlign::Left => rect.x(),
+                    HAlign::Center => rect.x() + rect.width() / 2.0,
+                    HAlign::Right => rect.x() + rect.width(),
                 };
-                Layout::default_single_line().v_align(VAlign::Center).h_align(h_align)
+                origin.1 = match v_align {
+                    VAlign::Top => rect.y(),
+                    VAlign::Center => rect.y() + rect.height() / 2.0,
+                    VAlign::Bottom => rect.y() + rect.height(),
+                };
+                Layout::default_single_line().v_align(v_align).h_align(h_align)
             }
         };
-        let color = style.get_color();
+        let color = params.style.get_color();
         let section = Section {
             layout,
-            bounds: (rect.width(), rect.height()),
+            bounds: (params.frame.width(), params.frame.height()),
             screen_position: origin,
-            scale: Scale::uniform(style.get_size()),
-            text: &text,
+            scale: Scale::uniform(params.style.get_size()),
+            text: &params.text,
             color: [color.r, color.g, color.b, color.a],
             ..Section::default()
         };
         let index = self.index;
-        let mut task = MeshTask::new(index);
 
         self.glyph_brush.queue(&section);
-        // let tex_index = self.index;
-        let text_size = self.glyph_brush.texture_dimensions();
-        task.content_size = (text_size.0 as f32, text_size.1 as f32);
 
         let mut brush_action;
         loop {
             brush_action = self.glyph_brush.process_queued(
                 |rect, data| {
-                    // log::debug!("{}/ Update texture={:?}", tex_index, rect);
                     // Update part of gpu texture with new glyph alpha values.
                     let sub_rect = Rectangle::new((rect.min.x, rect.min.y), (rect.width(), rect.height()));
                     let rgba_data: Vec<[u8; 4]> = data.iter().map(|c| [255, 255, 255, *c]).collect();
                     let flattened: Vec<u8> = rgba_data.iter().flat_map(|s| s.to_vec()).collect();
-                    // let _ = Texture::update(index, &flattened.as_slice(), &sub_rect, PixelFormat::RGBA);
-                    window.update_texture(index, &flattened.as_slice(), &sub_rect, PixelFormat::RGBA);
+                    let _ = Texture::update(index, &flattened.as_slice(), &sub_rect, PixelFormat::RGBA);
+                    // window.update_texture(index, &flattened.as_slice(), &sub_rect, PixelFormat::RGBA);
                 },
                 to_vertex, // See function defined below
             );
@@ -145,7 +145,7 @@ impl DrawFont {
             match brush_action {
                 Ok(_) => {
                     break;
-                },
+                }
                 Err(BrushError::TextureTooSmall { suggested, .. }) => {
                     let (new_width, new_height) = suggested;
                     log::debug!("Resizing glyph texture -> {}x{}", new_width, new_height);
@@ -159,56 +159,124 @@ impl DrawFont {
         match brush_action.unwrap() {
             // The Draw(vertices) enum contains the aggregate output of the to_vertex function.
             BrushAction::Draw(vertices) => {
-                // log::debug!("vertices count={:?} y={:?}", vertices.len(), 0);
+                // if params.debug {
+                //     log::debug!("vertices count={:?} y={:?}", vertices.len(), 0);
+                // }
+                let mut task = MeshTask::new(index);
 
-                for (i, glv) in vertices.iter().enumerate() {
-                    // log::debug!("pix={:?} tex={:?}", glv.frame, glv.tex_frame);
+                for (i, ref mut glv) in vertices.into_iter().enumerate() {
+                    if params.debug == true {
+                        log::trace!("{} frame={:?} tex_frame={:?}", params.text, glv.frame, glv.tex_frame);
+                    }
 
                     let color = Color { r: glv.color[0], g: glv.color[1], b: glv.color[2], a: glv.color[3] };
-
                     let offset = i as u32 * 4;
-                    // log::debug!("color={:?} offset={:?}", color, offset);
-                    // top left
-                    let v = Vertex::new(
-                        Vector::new(glv.frame.min.x as f32, glv.frame.max.y as f32),
-                        Some(Vector::new(glv.tex_frame.min.x, glv.tex_frame.max.y)),
-                        Col(color),
-                    );
+
+                    if let Some(subframe) = params.subframe {
+                        self.clip_vertex(glv, &subframe, GlyphSide::Left);
+                        self.clip_vertex(glv, &subframe, GlyphSide::Top);
+                        self.clip_vertex(glv, &subframe, GlyphSide::Right);
+                        self.clip_vertex(glv, &subframe, GlyphSide::Bottom);
+                    }
+
+                    let v = self.make_vertex(VertexPoint::TopLeft, &glv, color);
+                    if params.subframe.is_some() {
+                        log::trace!("**TopLeft={:?}", v);
+                    }
                     task.vertices.push(v);
 
                     // top right
-                    let v = Vertex::new(
-                        Vector::new(glv.frame.max.x as f32, glv.frame.max.y as f32),
-                        Some(Vector::new(glv.tex_frame.max.x, glv.tex_frame.max.y)),
-                        Col(color),
-                    );
+                    let v = self.make_vertex(VertexPoint::TopRight, &glv, color);
+                    if params.subframe.is_some() {
+                        log::trace!("**TopRight={:?}", v);
+                    }
                     task.vertices.push(v);
 
                     // bottom right
-                    let v = Vertex::new(
-                        Vector::new(glv.frame.max.x as f32, glv.frame.min.y as f32),
-                        Some(Vector::new(glv.tex_frame.max.x, glv.tex_frame.min.y)),
-                        Col(color),
-                    );
+                    let v = self.make_vertex(VertexPoint::BottomRight, &glv, color);
+                    if params.subframe.is_some() {
+                        log::trace!("**BottomRight={:?}", v);
+                    }
                     task.vertices.push(v);
 
                     // bottom left
-                    let v = Vertex::new(
-                        Vector::new(glv.frame.min.x as f32, glv.frame.min.y as f32),
-                        Some(Vector::new(glv.tex_frame.min.x, glv.tex_frame.min.y)),
-                        Col(color),
-                    );
+                    let v = self.make_vertex(VertexPoint::BottomLeft, &glv, color);
+                    if params.subframe.is_some() {
+                        log::trace!("**BottomLeft={:?}", v);
+                    }
                     task.vertices.push(v);
 
                     // Add triangles based on clockwise insertion of vertices from top-left
-                    task.triangles.push(GpuTriangle::new(offset, [0, 1, 2], 9, Col(Color::YELLOW)));
-                    task.triangles.push(GpuTriangle::new(offset, [2, 3, 0], 9, Col(Color::YELLOW)));
-                    self.cached_mesh = Some(task.clone());
+                    task.triangles.push(GpuTriangle::new(offset, [0, 1, 2], 9, Col(Color::WHITE)));
+                    task.triangles.push(GpuTriangle::new(offset, [2, 3, 0], 9, Col(Color::WHITE)));
                 }
+                self.cached_mesh = Some(task.clone());
                 Some(task)
             }
             BrushAction::ReDraw => {
-                None
+                self.cached_mesh.clone()
+            },
+        }
+    }
+
+    fn make_vertex(&self, position: VertexPoint, glvertex: &GLVertex, color: Color) -> Vertex {
+        let vector = match position {
+            VertexPoint::TopLeft => Vector::new(glvertex.frame.min.x as f32, glvertex.frame.max.y as f32),
+            VertexPoint::TopRight => Vector::new(glvertex.frame.max.x as f32, glvertex.frame.max.y as f32),
+            VertexPoint::BottomRight => Vector::new(glvertex.frame.max.x as f32, glvertex.frame.min.y as f32),
+            VertexPoint::BottomLeft => Vector::new(glvertex.frame.min.x as f32, glvertex.frame.min.y as f32),
+        };
+        let tex_vector = match position {
+            VertexPoint::TopLeft => Vector::new(glvertex.tex_frame.min.x, glvertex.tex_frame.max.y),
+            VertexPoint::TopRight => Vector::new(glvertex.tex_frame.max.x, glvertex.tex_frame.max.y),
+            VertexPoint::BottomRight => Vector::new(glvertex.tex_frame.max.x, glvertex.tex_frame.min.y),
+            VertexPoint::BottomLeft => Vector::new(glvertex.tex_frame.min.x, glvertex.tex_frame.min.y),
+        };
+        Vertex::new(
+            vector,
+            Some(tex_vector),
+            Col(color),
+        )
+    }
+
+    fn clip_vertex(&self, glv: &mut GLVertex, subframe: &Rectangle, side: GlyphSide) {
+        match side {
+            GlyphSide::Left => {
+                let delta = subframe.pos.x - glv.frame.min.x as f32;
+                if delta > 0.0 {
+                    let ratio = delta / (glv.frame.max.x as f32 - glv.frame.min.x as f32);
+                    log::trace!("{:?} delta={:?} ratio={:?}", side, delta, ratio);
+                    glv.frame.min.x = subframe.pos.x as i32;
+                    glv.tex_frame.min.x = glv.tex_frame.min.x + glv.tex_frame.width() * ratio;
+                }
+            }
+            GlyphSide::Top => {
+                let delta = subframe.pos.y - glv.frame.min.y as f32;
+                if delta > 0.0 {
+                    let ratio = delta / (glv.frame.max.y as f32 - glv.frame.min.y as f32);
+                    log::trace!("{:?} delta={:?} ratio={:?}", side, delta, ratio);
+                    glv.frame.min.y = subframe.pos.y as i32;
+                    glv.tex_frame.min.y = glv.tex_frame.min.y + glv.tex_frame.height() * ratio;
+                }
+            }
+            GlyphSide::Right => {
+                let delta = glv.frame.max.x as f32 - (subframe.pos.x + subframe.width());
+                if delta > 0.0 {
+                    let ratio = delta / (glv.frame.max.x as f32 - glv.frame.min.x as f32);
+                    log::trace!("{:?} delta={:?} ratio={:?}", side, delta, ratio);
+                    glv.frame.max.x = subframe.pos.x as i32 + subframe.width() as i32;
+                    glv.tex_frame.max.x = glv.tex_frame.max.x - glv.tex_frame.width() * ratio;
+                }
+            }
+            GlyphSide::Bottom => {
+                let delta = glv.frame.max.y as f32 - (subframe.pos.y + subframe.height());
+
+                if delta > 0.0 {
+                    let ratio = delta / (glv.frame.max.y as f32 - glv.frame.min.y as f32);
+                    log::trace!("{:?} delta={:?} ratio={:?}", side, delta, ratio);
+                    glv.frame.max.y = subframe.pos.y as i32 + subframe.height() as i32;
+                    glv.tex_frame.max.y = glv.tex_frame.max.y - glv.tex_frame.height() * ratio;
+                }
             }
         }
     }
@@ -216,53 +284,43 @@ impl DrawFont {
     /// Render text to image buffer
     pub fn render_pixels(
         &mut self,
-        text: &str,
-        style: &FontStyle,
-        rect: &Rectangle,
-        multiline: bool
-    ) -> (ImageBuffer<Rgba<u8>, Vec<u8>>, u32, u32) {
-
+        params: TextParams,
+    ) -> (RgbaImage, u32, u32) {
         let layout = {
-            if multiline {
+            if params.multiline {
                 Layout::default_wrap()
             } else {
                 Layout::default_single_line()
             }
         };
-        let varied = VariedSection {
+        let section = VariedSection {
             layout,
-            bounds: (rect.width(), f32::INFINITY),
-            text: vec![SectionText {
-                text: &text,
-                scale: Scale::uniform(style.get_size()),
-                ..SectionText::default()
-            }],
+            bounds: (params.frame.width(), f32::INFINITY),
+            text: vec![SectionText { text: &params.text, scale: Scale::uniform(params.style.get_size()), ..SectionText::default() }],
             ..VariedSection::default()
         };
 
         let mut glyph_calc = self.glyph_calc.cache_scope();
         let text_size: (u32, u32) = {
-            if let Some(rect) = glyph_calc.glyph_bounds_custom_layout(&varied, &layout) {
-                log::debug!(">>> New glyph_bounds_custom: {:?}", rect);
-                let buffer = style.get_size() as u32;
-                (rect.width().round() as u32 + buffer, rect.height().round() as u32 + buffer)
+            if let Some(rect) = glyph_calc.glyph_bounds_custom_layout(&section, &layout) {
+                // log::debug!(">>> New glyph_bounds_custom: {:?}", rect);
+                (rect.width().round() as u32, rect.height().round() as u32)
             } else {
                 // This is the old calculation method that was too small and had to be buffered
-                let pixel_bounds = glyph_calc.pixel_bounds(&varied).expect("None bounds");
-                let buffer = style.get_size() as u32;
-                (pixel_bounds.width() as u32 + buffer, pixel_bounds.height() as u32 + buffer)
+                let pixel_bounds = glyph_calc.pixel_bounds(&section).expect("None bounds");
+                (pixel_bounds.width() as u32, pixel_bounds.height() as u32)
             }
         };
-
-        let glyphs = glyph_calc.glyphs(&varied);
-        let mut imgbuf = DynamicImage::new_rgba8( text_size.0, text_size.1 ).to_rgba();
-        let color = style.get_color();
+        let glyphs = glyph_calc.glyphs(&section);
+        let mut imgbuf = DynamicImage::new_rgba8(text_size.0, text_size.1).to_rgba();
+        let color = params.style.get_color();
         let red = (255.0 * color.r) as u8;
         let green = (255.0 * color.g) as u8;
         let blue = (255.0 * color.b) as u8;
 
-        // Loop through the glyphs in the text, positing each one on a line
+        // Loop through the glyphs in the text, positioning each one on a line
         for glyph in glyphs {
+            // TODO: try exact_bounding_box
             if let Some(bounds) = glyph.pixel_bounding_box() {
                 log::trace!("id={:?} bounds={:?}", glyph.id(), bounds);
                 // Draw the glyph into the image per-pixel by using the draw closure
@@ -271,7 +329,7 @@ impl DrawFont {
                     // Offset the position by the glyph bounding box
                     let x = x + bounds.min.x as u32;
                     let y = y + bounds.min.y as u32;
-                    imgbuf.put_pixel(x, y, Rgba { data: [red, green, blue, alpha] })
+                    imgbuf.put_pixel(x, y, Rgba { 0: [red, green, blue, alpha] })
                 });
             }
         }
@@ -280,73 +338,212 @@ impl DrawFont {
     }
 
     /// Render the text as an image with no cropping
-    pub fn render(&mut self,
-        text: &str,
-        style: &FontStyle,
-        rect: &Rectangle,
-        multiline: bool
-   ) -> Option<Image> {
+    pub fn render(&mut self, text: &str, style: &FontStyle, rect: &Rectangle, multiline: bool) -> Option<Image> {
 
-        let (mut imgbuf, width, height) = self.render_pixels(text, style, rect, multiline);
+        let params = TextParams::new(style.clone())
+            .frame(rect.clone())
+            .text(text)
+            .multiline(multiline);
+
+        let (mut imgbuf, width, height) = self.render_pixels(params);
         log::debug!(">>> render_pixels size w={:?} h={:?}", width, height);
         let height = style.get_size() as u32;
         let subimg = imageops::crop(&mut imgbuf, 0, 0, width, height);
-        let img: Image = Image::from_raw(subimg.to_image().into_raw().as_slice(), width, height, PixelFormat::RGBA).unwrap();
+        let img: Image =
+            Image::from_raw(subimg.to_image().into_raw().as_slice(), width, height, PixelFormat::RGBA).unwrap();
 
         return Some(img);
-   }
+    }
+
+    // ************************************************************************************
+    // Helper methods used by EditorContext and various others
+    // ************************************************************************************
+
+    pub fn get_raw_font(&self) -> &RTFont<'static> {
+        &self.raw_font
+    }
+
+    pub fn glyph_calc(&self) -> &GlyphCalculator<'static> {
+        &self.glyph_calc
+    }
+
+    pub fn char_size(&self, c: char, font_size: f32) -> (f32, f32) {
+        let scale = Scale::uniform(font_size);
+        let w = self.raw_font.glyph(c).scaled(scale).h_metrics().advance_width;
+        let v_metrics = self.raw_font.v_metrics(scale);
+        let h = (v_metrics.ascent - v_metrics.descent).ceil();
+        (w, h)
+    }
 
     /// A utility function for getting the size of specified text and calculate the cursor position.
     /// This is only useful for single-line text. Since glyph_brush does not count trailing spaces in
     /// pixel_bounds, we have to inspect the number of trailing spaces and pad the result.
     /// Another use case is calculating the width of a password mask in TextField. In this case, trailing
     /// spaces will not exist.
-    pub fn measure_text(&self, text: &str, font_size: f32) -> (f32, f32) {
+    pub fn estimate_text(&self, text: &str, font_size: f32) -> (f32, f32) {
         let scale = Scale::uniform(font_size);
         let v_metrics = self.raw_font.v_metrics(scale);
 
         let height = (v_metrics.ascent - v_metrics.descent).ceil();
         let glyphs: Vec<PositionedGlyph<'_>> = self.raw_font.layout(text, scale, point(0.0, 0.0)).collect();
-        let width = glyphs
+        let mut width = glyphs
             .iter()
             .rev()
             .map(|g| g.position().x as f32 + g.unpositioned().h_metrics().advance_width)
             .next()
             .unwrap_or(0.0);
 
+        // Shitty hack. This thing is not measuring properly
+        width += 30.0;
         (width, height)
+    }
+
+    pub fn measure_text(&self, text: &str, font_size: f32) -> (f32, f32) {
+        let mut glyph_calc = self.glyph_calc.cache_scope();
+        let layout = Layout::default();
+        let scale = Scale::uniform(font_size);
+        let section = Section { layout, scale, text, ..Section::default() };
+
+        let text_size: (f32, f32) = {
+            if let Some(size) = glyph_calc.pixel_bounds(&section) {
+                (size.width() as f32, size.height() as f32)
+            } else {
+                (0.0, 0.0)
+            }
+        };
+        text_size
     }
 }
 
-/// Wrapper struct to hold the output of to_vertex for every GlyphVertex input.
-/// GLVertex also is used as the generic when creating a GlyphBrush instance.
+// impl NotifyDispatcher for DrawFont {
+//     type Update = MeshTask;
+//     type Params = TextParams;      // Not in use yet, but possibly use this to request PropSet for specific time in seconds
+
+
+// }
+
+
+// ************************************************************************************
+// Support
+// ************************************************************************************
+
+/// Use this as a parameter for draw method
 #[derive(Clone, Debug)]
-pub struct GLVertex {
-    frame: Rect<i32>,
-    tex_frame: Rect<f32>,
-    color: [f32; 4],
+pub struct TextParams {
+    /// The font style to use
+    pub style: FontStyle,
+    /// The absolute-positioned Rectangle where text is drawn
+    pub frame: Rectangle,
+    /// An optional Rectangle that is used for clipping text
+    pub subframe: Option<Rectangle>,
+    /// The text to draw
+    pub text: String,
+    /// The horizontal alignment
+    pub text_align: TextAlign,
+    /// The vertical alignment
+    pub vert_align: VertAlign,
+    /// Whether the text should wrap
+    pub multiline: bool,
+    /// Debug flag which can be used for debugging a specific text object
+    pub debug: bool,
 }
 
-/// This is the function that converts the GlyphVertex output from glyph_brush
-/// and transforms it to a struct that is processed in
-fn to_vertex(v: glyph_brush::GlyphVertex) -> GLVertex {
-    GLVertex { frame: v.pixel_coords, tex_frame: v.tex_coords, color: v.color }
+impl TextParams {
+    pub fn new(style: FontStyle) -> Self {
+        TextParams {
+            style,
+            frame: Rectangle::new_sized(Vector::ONE),
+            subframe: None,
+            text: String::default(),
+            text_align: TextAlign::Left,
+            vert_align: VertAlign::Middle,
+            multiline: false,
+            debug: false,
+        }
+    }
+
+    pub fn text(mut self, text: &str) -> Self {
+        self.text = text.to_string();
+        self
+    }
+
+    pub fn frame(mut self, frame: Rectangle) -> Self {
+        self.frame = frame;
+        self
+    }
+
+    pub fn align(mut self, horizontal: TextAlign, vertical: VertAlign) -> Self {
+        self.text_align = horizontal;
+        self.vert_align = vertical;
+        self
+    }
+
+    pub fn multiline(mut self, multiline: bool) -> Self {
+        self.multiline = multiline;
+        self
+    }
+
+    pub fn debug(mut self) -> Self {
+        self.debug = true;
+        self
+    }
+
 }
 
-fn serialize_vertex(vertex: Vertex) -> Vec<f32> {
-    let mut result: Vec<f32> = Vec::new();
-    result.push(vertex.pos.x);
-    result.push(vertex.pos.y);
-    let tex_pos = vertex.tex_pos.unwrap_or(Vector::ZERO);
-    result.push(tex_pos.x);
-    result.push(tex_pos.y);
-    result.push(vertex.col.r);
-    result.push(vertex.col.g);
-    result.push(vertex.col.b);
-    result.push(vertex.col.a);
-    result.push(if vertex.tex_pos.is_some() { 1f32 } else { 0f32 });
-    result
+/// Enum for Horizontal Alignment
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum TextAlign {
+    Left,
+    Center,
+    Right,
 }
+
+impl TextAlign {
+    pub fn to_glyph_align(&self) -> HAlign {
+        match self {
+            TextAlign::Left => HAlign::Left,
+            TextAlign::Center => HAlign::Center,
+            TextAlign::Right => HAlign::Right,
+        }
+    }
+}
+
+/// Enum for Vertical Alignment
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum VertAlign {
+    Top,
+    Middle,
+    Bottom,
+}
+
+impl VertAlign {
+    pub fn to_glyph_align(&self) -> VAlign {
+        match self {
+            VertAlign::Top => VAlign::Top,
+            VertAlign::Middle => VAlign::Center,
+            VertAlign::Bottom => VAlign::Bottom,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum VertexPoint {
+    TopLeft,
+    TopRight,
+    BottomRight,
+    BottomLeft,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum GlyphSide {
+    Left,
+    Top,
+    Right,
+    Bottom,
+}
+
+// ************************************************************************************
+// ************************************************************************************
 
 #[cfg(not(target_arch = "wasm32"))]
 const VERTEX_SHADER: &str = r#"#version 150

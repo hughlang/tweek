@@ -33,14 +33,12 @@ use crate::core::*;
 use crate::events::*;
 use crate::tools::*;
 
-#[allow(unused_imports)]
 use quicksilver::{
-    geom::{Rectangle, Shape, Transform, Vector},
-    graphics::{Background::Col, Background::Img, Color, FontStyle, Image},
+    geom::{Rectangle, Shape, Vector},
+    graphics::{Background::Img, Color, FontStyle, Image, MeshTask},
     input::{Key, MouseCursor},
     lifecycle::Window,
 };
-use glyph_brush::HorizontalAlign as HAlign;
 
 use std::any::TypeId;
 
@@ -89,14 +87,14 @@ pub struct TextField {
 
 impl TextField {
     /// Constructor
-    pub fn new(frame: Rectangle, theme: &mut Theme, can_edit: bool) -> Self {
+    pub fn new(frame: Rectangle, can_edit: bool) -> Self {
         // FIXME: The default() does not load a font and therefore requires a font to be set in set_theme()
         let layer = Layer::new(frame);
 
         let input_frame = layer.inset_by(10.0, 10.0, 10.0, 10.0);
         // log::debug!("outer frame={:?} input frame={:?}", frame, input_frame);
 
-        let mut editor = TextFieldEditor::create(theme)
+        let mut editor = TextFieldEditor::default()
             .with_frame((input_frame.x(), input_frame.y()), (input_frame.width(), input_frame.height()));
         editor.ctx.debug = true;
 
@@ -137,15 +135,16 @@ impl TextField {
     }
 
     /// Switch to editing mode
-    fn start_editing(&mut self) {
+    fn start_editing(&mut self, position: Option<usize>) {
         self.layer.mouse_state = MouseState::Focus;
         self.is_editing = true;
-        self.editor.ctx.start_editing();
+        self.editor.ctx.start_editing(position);
 
         let rect = self.input_frame;
         let pt1 = Vector::new(rect.x(), rect.y());
         let pt2 = Vector::new(rect.x(), rect.y() + rect.height());
-        let cursor = Cursor::new(pt1, pt2, 2.0).default_animation();
+        let mut cursor = Cursor::new(pt1, pt2, 2.0).default_animation();
+        cursor.set_id(self.get_id());
         self.cursor = Some(cursor);
     }
 
@@ -158,8 +157,9 @@ impl TextField {
 }
 
 impl Displayable for TextField {
-
-    fn get_id(&self) -> u32 { self.layer.get_id() }
+    fn get_id(&self) -> u32 {
+        self.layer.get_id()
+    }
 
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
@@ -170,9 +170,9 @@ impl Displayable for TextField {
         TypeId::of::<TextField>()
     }
 
-    fn get_layer_mut(&mut self) -> &mut Layer {
-        &mut self.layer
-    }
+    fn get_layer(&self) -> &Layer { &self.layer }
+
+    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -184,10 +184,18 @@ impl Displayable for TextField {
     }
 
     fn set_theme(&mut self, theme: &mut Theme) {
-        if self.layer.lock_style { return }
-        self.layer.apply_theme(theme);
-        self.editor.ctx.font_size = theme.font_size;
+        let ok = self.layer.apply_theme(theme);
+        if !ok {
+            return;
+        }
+        let data = theme.data_for_font(Theme::DEFAULT_FONT).clone();
+        self.editor.ctx.set_font_data(data, theme.font_size);
         self.layer.border_style = BorderStyle::SolidLine(theme.border_color, theme.border_width);
+        self.layer.bg_style = BackgroundStyle::None;
+
+        if let Some(cursor) = &mut self.cursor {
+            cursor.set_theme(theme);
+        }
     }
 
     // fn get_perimeter_frame(&self) -> Option<Rectangle> {
@@ -196,18 +204,19 @@ impl Displayable for TextField {
     // }
 
     fn notify(&mut self, event: &DisplayEvent) {
+        log::debug!("notify event={:?}", event);
         match event {
             DisplayEvent::Activate => {
-                self.start_editing();
+                // self.start_editing(None);
             }
             DisplayEvent::Deactivate => {
                 self.stop_editing();
             }
             DisplayEvent::Ready => {
                 self.layer.on_ready();
-                // self.editor.ctx.gpu_text.setup_gpu();
                 if self.get_text().len() > 0 {
                     self.editor.ctx.update_metrics();
+                    self.editor.update_textfield();
                 }
             }
             DisplayEvent::Moved => {
@@ -235,7 +244,7 @@ impl Displayable for TextField {
             let mut cursor_x = self.editor.ctx.cursor_origin.0;
 
             if self.get_text().len() > 0 {
-                if let Some(mesh_task) = &self.editor.ctx.cached_mesh {
+                if let Some(mesh_task) = &self.editor.ctx.draw_font.cached_mesh {
                     window.add_task(mesh_task.clone());
                 } else {
                     if let Some(text) = self.editor.get_visible_text(0.0) {
@@ -250,16 +259,35 @@ impl Displayable for TextField {
                                 _ => text,
                             }
                         };
-                        let style = FontStyle::new(theme.font_size, Color::BLUE);
-                        if let Some(task) = self.editor.ctx.draw_font.draw(
-                            &text,
-                            &style,
-                            HAlign::Left,
-                            &self.input_frame,
-                            window,
-                            false
-                        ) {
-                            self.editor.ctx.cached_mesh = Some(task.clone());
+
+                        let input_rect = self.input_frame.clone();
+                        let mut params = TextParams::new(self.layer.font_style)
+                            .text(&text)
+                            .frame(input_rect.clone())
+                            .multiline(false);
+
+                        match self.editor.ctx.insert_mode {
+                            InsertMode::Start(overflows) => {
+                                if overflows {
+                                    params.subframe = Some(input_rect.clone());
+                                }
+                            }
+                            InsertMode::End(overflows) => {
+                                if overflows {
+                                    params.text_align = TextAlign::Right;
+                                    params.subframe = Some(input_rect.clone());
+                                }
+                            }
+                            InsertMode::Intra(overflows) => {
+                                // TODO: Intra-text editing should show text to the right of the cursor.
+                                if overflows {
+                                    params.text_align = TextAlign::Right;
+                                    params.subframe = Some(input_rect.clone());
+                                }
+                            }
+                            _ => ()
+                        }
+                        if let Some(task) = self.editor.ctx.draw_font.draw(params) {
                             window.add_task(task);
                         }
                     }
@@ -268,10 +296,17 @@ impl Displayable for TextField {
             if let Some(cursor) = &mut self.cursor {
                 let y1 = self.input_frame.y() + (self.input_frame.height() - self.editor.ctx.font_size) / 2.0;
                 let y2 = self.input_frame.y() + (self.input_frame.height() + self.editor.ctx.font_size) / 2.0;
-                cursor.render_line(&Vector::new(cursor_x, y1), &Vector::new(cursor_x, y2), &theme, window);
-                // log::debug!("frame={:?} cursor={:?}", self.input_frame, cursor_pt);
+                let pt1 = Vector::new(cursor_x, y1);
+                let pt2 = Vector::new(cursor_x, y2);
+                let mut line = cursor.render_line(&pt1, &pt2, &theme);
+
+                let mut mesh = MeshTask::new(0);
+                mesh.append(&mut line);
+                window.add_task(mesh.clone());
             }
+
         } else {
+
             if self.get_text().len() > 0 {
                 if let Some(img) = &self.image_text {
                     window.draw(&img.area().constrain(&self.input_frame), Img(&img));
@@ -285,39 +320,27 @@ impl Displayable for TextField {
                         };
                         let style = FontStyle::new(theme.font_size, Color::BLACK);
 
-                        if let Some(img) = self.editor.ctx.draw_font.render(
-                            &text,
-                            &style,
-                            &self.input_frame,
-                            false
-                        ) {
+                        if let Some(img) = self.editor.ctx.draw_font.render(&text, &style, &self.input_frame, false) {
+                            // TODO: clip overflow
                             window.draw(&img.area().constrain(&self.input_frame), Img(&img));
                             self.image_text = Some(img);
                         }
-
-                        // let img = theme.font.render(&text, &style).unwrap();
-                        // window.draw(&img.area().constrain(&self.input_frame), Img(&img));
-                        // self.image_text = Some(img);
                     }
                 }
             } else {
                 if let Some(img) = &self.image_text {
                     window.draw(&img.area().constrain(&self.input_frame), Img(&img));
                 } else if let Some(text) = &self.placeholder {
+                    // TODO: use theme
                     let style = FontStyle::new(theme.font_size, Color::from_hex("#AAAAAA"));
-                    if let Some(img) = self.editor.ctx.draw_font.render(
-                        &text,
-                        &style,
-                        &self.input_frame,
-                        false
-                    ) {
+                    if let Some(img) = self.editor.ctx.draw_font.render(&text, &style, &self.input_frame, false) {
                         window.draw(&img.area().constrain(&self.input_frame), Img(&img));
                         self.image_text = Some(img);
                     }
 
-                    // let img = theme.font.render(&text, &style).unwrap();
-                    // window.draw(&img.area().constrain(&self.input_frame), Img(&img));
-                    // self.image_text = Some(img);
+                // let img = theme.font.render(&text, &style).unwrap();
+                // window.draw(&img.area().constrain(&self.input_frame), Img(&img));
+                // self.image_text = Some(img);
                 } else {
                     log::debug!("No cached image and no placeholder text");
                 }
@@ -328,8 +351,17 @@ impl Displayable for TextField {
         self.layer.draw_border(window);
     }
 
-    fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
+    fn handle_mouse_at(&mut self, pt: &Vector, window: &mut Window) -> bool {
         self.is_hovering = self.layer.handle_mouse_over(pt);
+        if self.is_hovering {
+            if pt.overlaps_rectangle(&self.input_frame) {
+                window.set_cursor(MouseCursor::Text);
+            } else {
+                window.set_cursor(MouseCursor::Hand);
+            }
+        } else {
+            window.set_cursor(MouseCursor::Default);
+        }
         return self.is_hovering;
     }
 }
@@ -377,12 +409,20 @@ impl Responder for TextField {
     }
 
     fn handle_mouse_down(&mut self, pt: &Vector, _state: &mut AppState) -> bool {
-        if pt.overlaps_rectangle(&self.layer.frame) {
-            if self.is_editing {
-                return true;
+        if pt.overlaps_rectangle(&self.input_frame) {
+            match self.field_type {
+                TextFieldType::Normal => {
+                    let local_pt = *pt - self.input_frame.pos;
+                    let pos = self.editor.find_cursor_position(local_pt.x);
+                    self.start_editing(pos);
+                    return true;
+                }
+                _ => {
+                    let pos = Some(self.get_text().len());
+                    self.start_editing(pos);
+                    return true;
+                }
             }
-            self.start_editing();
-            return true;
         }
         false
     }

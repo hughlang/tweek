@@ -12,7 +12,6 @@
 //!
 //! See the documentation in /docs/events-arch.md
 
-
 // pub use self::app::*;
 pub use self::app::*;
 pub use self::display::*;
@@ -29,9 +28,7 @@ mod player;
 // mod system;
 mod types;
 
-use std::{
-    any::{Any, TypeId},
-};
+use std::any::{Any, TypeId};
 
 // *****************************************************************************************************
 // This module file contains the core code for Events
@@ -54,12 +51,13 @@ pub enum EventError {
 pub struct EventBox {
     event: Box<dyn Any>,
     event_type: TypeId,
+    info: Option<String>,
 }
 
 impl EventBox {
     /// Constructor
     pub fn new<E: AnyEvent>(event: E) -> Self {
-        EventBox { event: Box::new(event), event_type: TypeId::of::<E>() }
+        EventBox { event: Box::new(event), event_type: TypeId::of::<E>(), info: None }
     }
 
     /// Determine if the event type matches
@@ -70,6 +68,11 @@ impl EventBox {
     /// Getter for event_type
     pub fn event_type(&self) -> TypeId {
         self.event_type
+    }
+
+    /// Get the event info
+    pub fn event_info(&self) -> Option<String> {
+        self.info.clone()
     }
 
     /// Attempt to convert the type into the specified type and use it
@@ -109,6 +112,12 @@ impl EventBus {
     /// Register an event?
     pub fn register_event<E: AnyEvent>(&mut self, event: E) {
         self.event_queue.push(EventBox::new::<E>(event));
+    }
+
+    pub fn dispatch_event<E: AnyEvent>(&mut self, event: E, info: String) {
+        let mut event = EventBox::new::<E>(event);
+        event.info = Some(info);
+        self.event_queue.push(event);
     }
 
     /// Pop an event from the queue
@@ -168,5 +177,3 @@ impl<'a> Iterator for EventBusIterator<'a> {
         self.event_queue.dequeue()
     }
 }
-
-

@@ -1,15 +1,19 @@
 /// ListBox
 ///
 use crate::core::*;
-use crate::tools::*;
 use crate::events::*;
+use crate::tools::*;
 
 #[allow(unused_imports)]
 use quicksilver::{
     geom::{Rectangle, Shape, Transform, Vector},
-    graphics::{Background::Col, Background::Img, Color, FontStyle, Image},
+    graphics::{Background::Col, Background::Img, Color, FontStyle, Image, MeshTask},
+    input::{MouseCursor},
     lifecycle::Window,
 };
+
+#[allow(unused_imports)]
+use image_rs::{imageops, DynamicImage, Pixel, RgbaImage};
 
 use std::any::TypeId;
 use std::f32;
@@ -18,7 +22,53 @@ use std::ops::Range;
 use super::*;
 
 /// This is the multiplier that affects how quickly scrolling occurs.
+/// Not needed if 1.0 is the norm
 const SCROLL_FACTOR: f32 = 1.0;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ListBoxState {
+    /// User is idle
+    Idle,
+    /// Scrolling underway and selecting not allowed.
+    Scrolling,
+    /// At least one row has been selected
+    Selected,
+    /// The listbox is not the currently focused control
+    Unfocused,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum RowState {
+    /// Default state
+    Normal,
+    /// Row shows hover state
+    Hover,
+    /// Row is selected/highlighted
+    Selected,
+}
+
+/// A wrapper for holding data and rendering information for each row
+pub struct RowData {
+    /// The string value
+    pub text: String,
+    /// Current mouse state
+    pub row_state: MouseState,
+    /// Rendered font text
+    pub render: Option<MeshTask>,
+    /// If present, the RowData needs a Layer for managing animation
+    pub layer: Option<Layer>,
+}
+
+impl RowData {
+    pub fn new(text: String) -> Self {
+        RowData {
+            text,
+            row_state: MouseState::None,
+            render: None,
+            layer: None,
+        }
+    }
+}
 
 // *****************************************************************************************************
 // ListBox
@@ -41,14 +91,15 @@ pub struct ListBox {
     pub select_row: Option<usize>,
     /// The row height
     pub row_height: f32,
+    /// The line separator between each row, including first and last
+    pub row_border_style: BorderStyle,
+    /// Is it single select or multiple?
+    pub multiselect: bool,
     /// The datasource as an array of strings
-    pub datasource: Vec<String>,
+    datasource: Vec<RowData>,
     /// The array of visible ListBoxRow objects
     rows: Vec<ListBoxRow>,
-    /// Hover animation for the ListBox
-    on_hover: Option<PropSet>,
-    /// Hover animation for the ListBoxRow.
-    /// FIXME: Unused?
+    /// Hover animation for the ListBoxRow. Unused
     on_row_hover: Option<PropSet>,
     /// Animation for row select
     on_row_select: Option<PropSet>,
@@ -59,44 +110,32 @@ pub struct ListBox {
 impl ListBox {
     /// Constructor
     pub fn new(frame: Rectangle) -> Self {
-        let mut layer = Layer::new(frame);
-        layer.border_style = BorderStyle::SolidLine(Color::from_hex("#333333"), 1.0);
+        let layer = Layer::new(frame);
 
-        let row_hover = PropSet::new(vec![color("#EEEEEE")], 0.0)
-            .for_type(TweenType::Hover);
-        let row_select = PropSet::new(vec![color("#CCCCCC")], 0.1)
-            .for_type(TweenType::Click);
+        let row_hover = PropSet::new(vec![color("#EEEEEE")], 0.0).for_type(TweenType::Hover);
+        let row_select = PropSet::new(vec![color("#0096FF"), tint("#FFFFFF")], 0.2).for_type(TweenType::Click);
 
         ListBox {
             layer,
             hover_row: None,
             select_row: None,
             row_height: 20.0,
+            row_border_style: BorderStyle::None,
+            multiselect: false,
             datasource: Vec::new(),
             rows: Vec::new(),
-            on_hover: None,
             on_row_hover: Some(row_hover),
             on_row_select: Some(row_select),
             scroll_offset: 0.0,
         }
     }
 
-    /// Builder method to set the datasource
-    pub fn datasource(mut self, ds: Vec<String>) -> Self {
-        // Create only the rows needed to fill the visible range. Each row is a template
-        // that is populated during the render phase
-        let row_count = (self.layer.frame.size.y / self.row_height) as usize + 1;
-
-        for i in 0..row_count {
-            let rect = Rectangle::new(
-                (self.layer.frame.pos.x, self.layer.frame.pos.y + self.row_height * i as f32),
-                (self.layer.frame.size.x, self.row_height),
-            );
-            let row = ListBoxRow::new(rect);
-            self.rows.push(row);
+    /// Load datasource with RowData objects
+    pub fn set_datasource(&mut self, values: Vec<String>) {
+        for string in values {
+            let row_data = RowData::new(string);
+            self.datasource.push(row_data);
         }
-        self.datasource = ds;
-        self
     }
 
     /// Based on the scroll_offset, determine what rows are visible in the scrollable frame
@@ -115,8 +154,9 @@ impl ListBox {
 // *****************************************************************************************************
 
 impl Displayable for ListBox {
-
-    fn get_id(&self) -> u32 { self.layer.get_id() }
+    fn get_id(&self) -> u32 {
+        self.layer.get_id()
+    }
 
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
@@ -127,9 +167,9 @@ impl Displayable for ListBox {
         TypeId::of::<ListBox>()
     }
 
-    fn get_layer_mut(&mut self) -> &mut Layer {
-        &mut self.layer
-    }
+    fn get_layer(&self) -> &Layer { &self.layer }
+
+    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -140,27 +180,45 @@ impl Displayable for ListBox {
         self.layer.frame.pos.y = pos.1;
     }
 
+    /// This function is responsible for building all of the ListBoxRows and pre-rendering text as
+    /// meshes. This is necessary to support theme changes that can affect the row height and font color.
     fn set_theme(&mut self, theme: &mut Theme) {
-        if self.layer.lock_style { return }
-        self.layer.apply_theme(theme);
-        for (_, row) in &mut self.rows.iter_mut().enumerate() {
+        // Don't allow style to be locked
+        let _ = self.layer.apply_theme(theme);
+
+        // Create only the rows needed to fill the visible range. Each row is a template
+        // that is populated during the render phase
+
+        self.rows.clear();
+        // FIXME: row height should be themed.
+        let row_count = (self.layer.frame.size.y / self.row_height) as usize + 1;
+        for i in 0..row_count {
+            let rect = Rectangle::new(
+                (self.layer.frame.pos.x, self.layer.frame.pos.y + self.row_height * i as f32),
+                (self.layer.frame.size.x, self.row_height),
+            );
+            let mut row = ListBoxRow::new(rect);
+            row.set_id(i as u32);
             row.set_theme(theme);
-            // FIXME: This is the only usage
-            // row.load_defaults();
+            self.rows.push(row);
+        }
+
+        // Render all string values in datasource as meshes to make performance better
+        let frame = Rectangle::new_sized((self.layer.frame.size.x, self.row_height));
+
+        for data in &mut self.datasource {
+            let mut params = TextParams::new(self.layer.font_style)
+                .frame(frame)
+                .align(TextAlign::Left, VertAlign::Middle)
+                .multiline(false);
+            params.text = data.text.clone();
+            if let Some(render) = theme.default_font.draw(params) {
+                data.render = Some(render);
+            } else {
+                log::debug!(">>> mesh_task is None!");
+            }
         }
     }
-
-    fn get_perimeter_frame(&self) -> Option<Rectangle> {
-        let perimeter = self.layer.offset_by(0.0, -self.row_height, 0.0, -self.row_height);
-        Some(perimeter)
-    }
-
-    // fn load_defaults(&mut self) {
-    //     let transition = PropSet::new(vec![color("#DDDDDD")], 0.1);
-    //     self.on_hover = Some(transition);
-    //     // TODO: Move this to another method to seamlessly load props and save them.
-    //     self.layer.defaults = Tween::load_props(&self.layer);
-    // }
 
     fn notify(&mut self, event: &DisplayEvent) {
         match event {
@@ -177,101 +235,98 @@ impl Displayable for ListBox {
     /// The ListBox should manage the UI state of its rows.
     /// The mouse state of a row should determine whether to reset or not.
     /// Otherwise, leave it alone?
-    fn update(&mut self, window: &mut Window, state: &mut AppState) {
+    fn update(&mut self, _window: &mut Window, state: &mut AppState) {
         let offset = Vector::new(state.offset.0, state.offset.1);
         self.layer.frame.pos = self.layer.initial.pos + offset;
         self.layer.tween_update();
 
-        // Provide usize index values that are outside the range of the array
-        // Q: If there's a better way of unwrapping these, please suggest.
-        let hover_index = self.hover_row.unwrap_or(self.datasource.len() + 1);
-        let select_index = self.select_row.unwrap_or(self.datasource.len() + 1);
+        self.datasource.iter_mut().for_each(|x| if let Some(ref mut layer) = x.layer {
+            layer.tween_update();
+        });
 
-        let range = self.get_visible_range();
-
-        for (i, row) in &mut self.rows.iter_mut().enumerate() {
-            row.update(window, state);
-            if i + range.start == select_index {
-                match row.layer.mouse_state {
-                    MouseState::Select => {
-                        if let Some(animation) = &row.layer.animation {
-                            if animation.state == PlayState::Completed {
-                                row.layer.mouse_state = MouseState::None;
-                                row.layer.animation = None;
-                                self.select_row = None;
-                            }
-                        } else {
-                            row.layer.mouse_state = MouseState::None;
-                            row.layer.animation = None;
-                        }
-                    }
-                    MouseState::Hover => {
-                        row.layer.mouse_state = MouseState::Select;
-                        if let Some(transition) = &self.on_row_select {
-                            if transition.duration > 0.0 {
-                                row.layer.animate_with_props(transition.clone());
-                            } else {
-                                row.layer.apply_props(&transition.props.clone());
-                            }
-                        }
-                    }
-                    _ => (),
-                }
-            } else if i + range.start == hover_index {
-                match row.layer.mouse_state {
-                    MouseState::None => {
-                        row.layer.mouse_state = MouseState::Hover;
-                        // show hover animation
-                        if let Some(transition) = &self.on_row_hover {
-                            if transition.duration > 0.0 {
-                                row.layer.animate_with_props(transition.clone());
-                            } else {
-                                row.layer.apply_props(&transition.props.clone());
-                            }
-                        }
-                    }
-                    _ => (),
-                }
-            } else {
-                match row.layer.mouse_state {
-                    MouseState::None => {}
-                    MouseState::Hover => {
-                        if i != hover_index {
-                            row.layer.mouse_state = MouseState::None;
-                            row.layer.animation = None;
-                        }
-                    }
-                    _ => (),
-                }
-            }
-        }
     }
 
-    fn render(&mut self, theme: &mut Theme, window: &mut Window) {
+    fn render(&mut self, _theme: &mut Theme, window: &mut Window) {
+        self.layer.draw_background(window);
         let frame = self.layer.frame;
 
-        // TODO: Render background?
+        // Create a mesh to hold row borders
+        let mut graphics = MeshTask::new(0);
+        let border: (Color, f32) = {
+            match self.row_border_style {
+                BorderStyle::None => (Color::WHITE, 0.0),
+                BorderStyle::SolidLine(color, width) => (color, width),
+            }
+        };
 
         // Iterate through the rows that are in the visible range
         let range = self.get_visible_range();
         let shift_y = self.scroll_offset % self.row_height;
-        let offset = range.start;
+
+        let range_start = range.start;
+        let last = self.rows.len() - 1;
         for (i, row) in &mut self.rows.iter_mut().enumerate() {
+            // Calculate where row should render, using shift_y as the scroll offset
             let ypos = frame.pos.y - shift_y + self.row_height * i as f32;
             let rect = Rectangle::new((frame.pos.x, ypos), (frame.size.x, self.row_height));
-            window.draw(&rect, Col(row.layer.transition.color));
+            // Draw borders as row separators. Future: cache these lines
+            if ypos > frame.y() {
+                if border.1 > 0.0 {
+                    let pts: [&Vector; 2] = [
+                        &Vector::new(rect.x(), ypos),
+                        &Vector::new(rect.x() + rect.width(), ypos),
+                    ];
+                    let mut line = DrawShape::line(&pts, border.0, border.1);
+                    graphics.append(&mut line);
+                }
+            }
 
-            if offset + i < self.datasource.len() {
-                let data = &self.datasource[offset + i];
-                row.render_with_text(rect, &data, theme, window);
+            let row_index = range_start + i;
+            let mut bounds = rect.clone();
+            if row_index < self.datasource.len() {
+                let row_data = &self.datasource[row_index];
+                if let Some(render) = &row_data.render {
+                    let mut mesh = render.clone();
+                    // All text meshes were created at origin 0, 0 and thus need to be translated to the actual
+                    // row position.
+                    for vertex in &mut mesh.vertices.iter_mut() {
+                        vertex.pos = Transform::translate(rect.pos) * vertex.pos;
+                    }
+                    // If first visible row, check if the row rect overflows the top of the listbox.
+                    // If last visible row, check if the row rect overflows the bottom of the listbox.
+                    // Clip the mesh top or bottom as needed.
+                    if i == 0 {
+                        let y_overflow = frame.y() - rect.y();
+                        if y_overflow > 0.0 {
+                            bounds = Rectangle::new(frame.pos, (frame.width(), rect.height() - y_overflow));
+                            UITools::clip_mesh(&mut mesh, &bounds, RectSide::Top);
+                        }
+                    } else if i == last {
+                        let y_overflow = (rect.y() + rect.height()) - (frame.y() + frame.height());
+                        if y_overflow > 0.0 {
+                            bounds = Rectangle::new((frame.x(), rect.y()), (frame.width(), rect.height() - y_overflow));
+                            UITools::clip_mesh(&mut mesh, &bounds, RectSide::Bottom);
+                        }
+                    }
+                    let transition = {
+                        if let Some(layer) = &row_data.layer {
+                            Some(layer.transition.clone())
+                        } else {
+                            None
+                        }
+                    };
+                    row.render_row(mesh, bounds, transition, window);
+                }
             }
         }
 
         let content_height = self.datasource.len() as f32 * self.row_height;
-        if let Some(rect) = UITools::get_scrollbar_frame(content_height, &self.layer.frame, self.scroll_offset) {
+        if let Some(rect) = UITools::get_scrollbar_frame(content_height, &frame, self.scroll_offset) {
+            // FIXME: use mesh
             window.draw(&rect, Col(Color::from_hex(UITools::SCROLLBAR_COLOR)));
         }
 
+        window.add_task(graphics);
         self.layer.draw_border(window);
     }
 
@@ -279,21 +334,40 @@ impl Displayable for ListBox {
         self.layer.hover_effect = Some(props);
     }
 
-    fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
+    fn handle_mouse_at(&mut self, pt: &Vector, window: &mut Window) -> bool {
         let range = self.get_visible_range();
         if pt.overlaps_rectangle(&self.layer.frame) {
             self.layer.mouse_state = MouseState::Hover;
+            window.set_cursor(MouseCursor::Hand);
             let local_y = pt.y - self.layer.frame.pos.y;
             let mut index = (local_y / self.row_height).floor() as usize;
             index += range.start;
             if index < self.datasource.len() {
-                // log::debug!("hover index={:?} y={:?}", index, 0);
                 self.hover_row = Some(index);
+                // TODO: Finish implementing hover effect
+                // log::debug!("hover index={:?} y={:?}", index, 0);
+                // let data = &mut self.datasource[index];
+                // data.row_state = MouseState::Hover;
+
+                // // show hover animation
+                // if let Some(transition) = &self.on_row_hover {
+                //     let layer = self.rows[0].get_layer().clone();
+                //     if let Some(layer) = &mut data.layer {
+                //         if transition.duration > 0.0 {
+                //             layer.animate_with_props(transition.clone());
+                //         } else {
+                //             layer.apply_props(&transition.props.clone());
+                //         }
+                //     }
+                // }
+
                 return true;
             }
+        } else {
+            window.set_cursor(MouseCursor::Default);
+            self.layer.mouse_state = MouseState::None;
+            self.hover_row = None;
         }
-        self.layer.mouse_state = MouseState::None;
-        self.hover_row = None;
         false
     }
 }
@@ -303,7 +377,6 @@ impl Displayable for ListBox {
 // *****************************************************************************************************
 
 impl Responder for ListBox {
-
     /// Calculate whether x, y are in the rect bounds of any child row with maths.
     /// Identify the row by getting x, y offset from listbox origin.
     fn handle_mouse_down(&mut self, pt: &Vector, state: &mut AppState) -> bool {
@@ -311,13 +384,35 @@ impl Responder for ListBox {
 
         if pt.overlaps_rectangle(&self.layer.frame) {
             let local_y = pt.y - self.layer.frame.pos.y;
-            // example: row_height=20. If local_y=50, then it is row_index=2
             let mut index = (local_y / self.row_height).floor() as usize;
             index += range.start;
             log::debug!("local_y={:?} clicked row={:?}", local_y, index);
             if index < self.datasource.len() {
                 state.row_target = Some(index);
                 self.select_row = Some(index);
+                for (i, data) in &mut self.datasource.iter_mut().enumerate() {
+                    if !self.multiselect && data.layer.is_some() {
+                        data.layer = None;
+                        data.row_state = MouseState::None;
+                    }
+                }
+
+                if self.rows.len() > 0 {
+                    let mut layer = self.rows[0].layer.clone();
+                    let data = &mut self.datasource[index];
+                    if data.row_state != MouseState::Select {
+                        data.row_state = MouseState::Select;
+                        if let Some(transition) = &self.on_row_select {
+                            if transition.duration > 0.0 {
+                                layer.animate_with_props(transition.clone());
+                            } else {
+                                layer.apply_props(&transition.props.clone());
+                            }
+                        }
+                        data.layer = Some(layer);
+                    }
+                }
+
                 return true;
             }
         }
@@ -345,12 +440,8 @@ impl Responder for ListBox {
 
 /// Defines a row within a ListBox. In general, most interaction is handled by the ListBox parent
 pub struct ListBoxRow {
-    /// Optional id value
-    // pub row_id: usize, // this is optional
     /// The base layer
     pub layer: Layer,
-    /// The string value for the row
-    pub string: String,
 }
 
 impl ListBoxRow {
@@ -359,19 +450,22 @@ impl ListBoxRow {
         let layer = Layer::new(frame);
 
         ListBoxRow {
-            // row_id: 0,
             layer,
-            string: String::default(),
         }
     }
 
-    /// Render live text
-    pub fn render_with_text(&mut self, rect: Rectangle, string: &str, theme: &mut Theme, window: &mut Window) {
-        let style = FontStyle::new(theme.font_size, Color::BLACK);
-        let mut text = Text::new(rect, string).margin(8.0, 5.0);
-
-        text.layer.font_style = style;
-        let _ = text.render(theme, window);
+    /// Method to render a row
+    pub fn render_row(&mut self, mut mesh: MeshTask, bounds: Rectangle, transition: Option<Transition>, window: &mut Window) {
+        if let Some(transition) = transition {
+            // Draw a background rectangle with the transition.color
+            let mut bg_mesh = DrawShape::rectangle(&bounds, Some(transition.color), None, 0.0, 0.0);
+            let mut mesh_task = MeshTask::new(0);
+            mesh_task.append(&mut bg_mesh);
+            window.add_task(mesh_task);
+            // Change the font color
+            mesh.vertices.iter_mut().for_each(|x| x.col = transition.tint);
+        }
+        window.add_task(mesh);
     }
 }
 
@@ -380,8 +474,9 @@ impl ListBoxRow {
 // *****************************************************************************************************
 
 impl Displayable for ListBoxRow {
-
-    fn get_id(&self) -> u32 { self.layer.get_id() }
+    fn get_id(&self) -> u32 {
+        self.layer.get_id()
+    }
 
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
@@ -392,9 +487,9 @@ impl Displayable for ListBoxRow {
         TypeId::of::<ListBoxRow>()
     }
 
-    fn get_layer_mut(&mut self) -> &mut Layer {
-        &mut self.layer
-    }
+    fn get_layer(&self) -> &Layer { &self.layer }
+
+    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -406,13 +501,11 @@ impl Displayable for ListBoxRow {
     }
 
     fn set_theme(&mut self, theme: &mut Theme) {
-        if self.layer.lock_style { return }
-        self.layer.apply_theme(theme);
+        let ok = self.layer.apply_theme(theme);
+        if !ok {
+            return;
+        }
     }
-
-    // fn load_defaults(&mut self) {
-    //     self.layer.defaults = Tween::load_props(&self.layer);
-    // }
 
     fn notify(&mut self, event: &DisplayEvent) {
         match event {

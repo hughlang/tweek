@@ -5,7 +5,7 @@ use super::*;
 #[allow(unused_imports)]
 use quicksilver::{
     geom::{Line, Rectangle, Scalar, Shape, Transform, Vector},
-    graphics::{Background::Col, Color, MeshTask, Font, GpuTriangle, Mesh, Vertex},
+    graphics::{Background::Col, Color, Font, GpuTriangle, Mesh, MeshTask, Vertex},
     input::Key,
 };
 
@@ -194,5 +194,93 @@ impl UITools {
         }
         task
     }
+
+    /// A function that modifies the vertices in a MeshTask that exceed the defined bounds.
+    /// Based on the RectSide param, the specific quad corners are changed to fit within the bounds and the
+    /// interpolated changes are made to the tex coordinates.
+    /// Important: Mesh vertices have flipped y coordinates. This is the ordering of each quad:
+    /// 0 = Bottom Left
+    /// 1 = Bottom Right
+    /// 2 = Top Right
+    /// 3 = Top Left
+    pub fn clip_mesh(mesh: &mut MeshTask, bounds: &Rectangle, side: RectSide) {
+        let mut quads = mesh.vertices.chunks_mut(4);
+        while let Some(quad) = &mut quads.next() {
+            match side {
+                RectSide::Left => {
+                    // Check and modify quad[0] and quad[3]
+                    // FIXME: Not done
+                    log::warn!("Not implemented RectSide::{:?}", side);
+                }
+                RectSide::Top => {
+                    // Check and modify quad[2] and quad[3]
+                    let mut vert = quad[2];
+                    let y_overflow = bounds.y() - vert.pos.y;
+                    if y_overflow > 0.0 {
+                        let overage = y_overflow / (vert.pos.y - quad[0].pos.y).abs();
+                        vert.pos.y = bounds.y();
+                        if let Some(tex_pos) = &mut vert.tex_pos {
+                            let tex_height = (tex_pos.y - quad[0].tex_pos.unwrap().y).abs();
+                            tex_pos.y += tex_height * overage;
+                        }
+                        quad[2] = vert;
+                    }
+                    let mut vert = quad[3];
+                    let y_overflow = bounds.y() - vert.pos.y;
+                    if y_overflow > 0.0 {
+                        let overage = y_overflow / (vert.pos.y - quad[0].pos.y).abs();
+                        vert.pos.y = bounds.y();
+                        if let Some(tex_pos) = &mut vert.tex_pos {
+                            let tex_height = (tex_pos.y - quad[0].tex_pos.unwrap().y).abs();
+                            tex_pos.y += tex_height * overage;
+                        }
+                        quad[3] = vert;
+                    }
+                }
+                RectSide::Right => {
+                    // Check and modify quad[1] and quad[2]
+                    // FIXME: Not done
+                    log::warn!("Not implemented RectSide::{:?}", side);
+                }
+                RectSide::Bottom => {
+                    // Check and modify quad[0] and quad[1]
+                    let mut vert = quad[0];
+                    let y_overflow = vert.pos.y - (bounds.y() + bounds.height());
+                    if y_overflow > 0.0 {
+                        let overage = y_overflow / (vert.pos.y - quad[2].pos.y).abs();
+                        vert.pos.y = bounds.y() + bounds.height();
+                        if let Some(tex_pos) = &mut vert.tex_pos {
+                            let tex_height = (tex_pos.y - quad[2].tex_pos.unwrap().y).abs();
+                            tex_pos.y -= tex_height * overage;
+                        }
+                        quad[0] = vert;
+                    }
+                    let mut vert = quad[1];
+                    let y_overflow = vert.pos.y - (bounds.y() + bounds.height());
+                    if y_overflow > 0.0 {
+                        let overage = y_overflow / (vert.pos.y - quad[2].pos.y).abs();
+                        vert.pos.y = bounds.y() + bounds.height();
+                        if let Some(tex_pos) = &mut vert.tex_pos {
+                            let tex_height = (tex_pos.y - quad[2].tex_pos.unwrap().y).abs();
+                            tex_pos.y -= tex_height * overage;
+                        }
+                        quad[1] = vert;
+                    }
+                }
+                _ => ()
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum RectSide {
+    Left,
+    Top,
+    Right,
+    Bottom,
+    All,
+    LeftRight,
+    TopBottom,
 }
 

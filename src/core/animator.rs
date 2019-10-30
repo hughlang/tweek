@@ -52,7 +52,6 @@ impl Animator {
         }
     }
 
-
     // /// Unused
     // pub fn schedule(mut self, start: f64, end: f64) -> Self {
     //     self.start_time = start;

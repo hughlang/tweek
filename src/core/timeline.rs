@@ -1,18 +1,16 @@
-/// A Timeline represents a group of Tween animations that each have a start and stop time in seconds
-/// in the overall timeline.
-use crate::gui::{Displayable, Theme, Layer, gui_print_type};
-use crate::events::*;
 use super::tweek::*;
 use super::{current_time, elapsed_time};
+use crate::events::*;
+/// A Timeline represents a group of Tween animations that each have a start and stop time in seconds
+/// in the overall timeline.
+use crate::gui::{Displayable, Layer, Theme};
 
 use quicksilver::{
     geom::{Rectangle, Vector},
-    lifecycle::{Window},
+    lifecycle::Window,
 };
 
-use std::{
-    any::TypeId,
-};
+use std::any::TypeId;
 
 //-- Base -----------------------------------------------------------------------
 
@@ -59,14 +57,7 @@ impl Timeline {
     /// Constructor
     pub fn new(frame: Rectangle) -> Self {
         let layer = Layer::new(frame);
-        Timeline {
-            layer,
-            sprites: Vec::new(),
-            tl_start: 0.0,
-            repeat_count: 0,
-            repeat_delay: 0.0,
-            loop_forever: false,
-        }
+        Timeline { layer, sprites: Vec::new(), tl_start: 0.0, repeat_count: 0, repeat_delay: 0.0, loop_forever: false }
     }
 
     pub fn add_sprite(&mut self, mut view: Box<dyn Displayable>, start: f64) {
@@ -89,7 +80,7 @@ impl Timeline {
     /// Builder method to set the start time of the Tweens as either:
     /// Normal: All start at the same time
     /// Sequence: Tweens play sequentially
-    pub fn align(&mut self, alignment: SpriteAlign) {
+    pub fn align(&mut self, _alignment: SpriteAlign) {
 
         // let mut start = 0.0 as f64;
         // for id in &self.tween_ids {
@@ -144,8 +135,9 @@ impl Timeline {
 // ************************************************************************************
 
 impl Displayable for Timeline {
-
-    fn get_id(&self) -> u32 { self.layer.get_id() }
+    fn get_id(&self) -> u32 {
+        self.layer.get_id()
+    }
 
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
@@ -155,9 +147,9 @@ impl Displayable for Timeline {
         TypeId::of::<Timeline>()
     }
 
-    fn get_layer_mut(&mut self) -> &mut Layer {
-        &mut self.layer
-    }
+    fn get_layer(&self) -> &Layer { &self.layer }
+
+    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -199,10 +191,10 @@ impl Displayable for Timeline {
         }
     }
 
-    fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
+    fn handle_mouse_at(&mut self, pt: &Vector, window: &mut Window) -> bool {
         // TODO: Don't handle mouse movement if Timeline is currently playing
         for sprite in &mut self.sprites {
-            let hover = sprite.view.handle_mouse_at(pt);
+            let hover = sprite.view.handle_mouse_at(pt, window);
             if hover {
                 return true;
             }
@@ -212,12 +204,12 @@ impl Displayable for Timeline {
 
     fn get_routes(&mut self) -> Vec<String> {
         let mut routes: Vec<String> = Vec::new();
-        let base = format!("/{}-{}", gui_print_type(&self.get_type_id()), self.get_id());
+        let base = self.node_key();
         routes.push(base.clone());
 
         for sprite in &mut self.sprites {
             for path in sprite.view.get_routes() {
-                let route = format!("{}{}", &base, path);
+                let route = format!("/{}/{}", &base, path);
                 routes.push(route);
             }
         }
@@ -259,5 +251,4 @@ pub enum SpriteAlign {
     Sequence,
     /// Stagger start time by specified seconds
     Stagger(f32),
-
 }

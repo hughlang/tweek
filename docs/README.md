@@ -3,6 +3,7 @@
 ## Pages
 
 * [Instrumentation](instrumentation.md)
+* [GUI Controls](gui-controls.md)
 * [GUI Lifecycle](gui-lifecycle.md)
 
 ## TODO

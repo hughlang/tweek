@@ -1,7 +1,7 @@
 [package]
 name = "tweek"
 description = "GUI library with tween animation"
-version = "0.2.0"
+version = "0.2.0-rc3"
 authors = ["Hugh Lang <hughlang@gmail.com>"]
 keywords = ["animation", "graphics", "gui"]
 license = "LGPL"
@@ -19,35 +19,33 @@ crate-type = ["lib"]
 name = "animate"
 path = "examples/quicksilver/animate.rs"
 
-# [[example]]
-# name = "timelines"
-# path = "examples/quicksilver/timelines.rs"
-
 [[example]]
 name = "gui"
 path = "examples/quicksilver/gui.rs"
 
 [[example]]
-name = "controller"
-path = "examples/quicksilver/controller.rs"
+name = "screens"
+path = "examples/quicksilver/screens.rs"
 
 [dependencies]
 cgmath = "0.17.0"
 log = "0.4"
-rand = "0.7"
 lazy_static = "1.3.0"
 unwrap_to = "0.1.0"
-image = { version = "0.21", default-features = false, features = ["png_codec"] }
+image = { version = "0.22", default-features = false, features = ["png_codec"] }
 glyph_brush = "0.5"
-# cascade = "0.1"
-# float-cmp = "0.5"
+float-cmp = "0.5"
+unicode-normalization = "0.1.8"
+# approx = "0.3"
+# euclid = "0.20"
+# fnv = "1.0"
 
 [dependencies.quicksilver]
 default-features = false
 features = ["fonts", "complex_shapes"]
-# path = "../quicksilver"
-git = "https://github.com/hughlang/quicksilver"
-branch = "modular_gl"
+path = "../quicksilver"
+# git = "https://github.com/hughlang/quicksilver"
+# branch = "modular_gl"
 
 [dependencies.uuid]
 version = "0.7"

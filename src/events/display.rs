@@ -20,7 +20,8 @@ pub enum DisplayEvent {
 }
 impl AnyEvent for DisplayEvent {}
 
-/// An enum for Theme-related events
+/// An enum for Theme-related events.
+/// FIXME: Move to SceneEvent
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ThemeEvent {
     /// Theme changed to the number that identifies it
@@ -49,5 +50,3 @@ pub enum LayerEvent {
     Move(u32, TypeId, PlayState),
 }
 impl AnyEvent for LayerEvent {}
-
-

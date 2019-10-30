@@ -1,5 +1,7 @@
 # GUI Controls
 
+> This document is not finished. Please ignore for now.
+
 * How buttons execute actions
 * How text editor works
 * How listbox works
@@ -25,3 +27,58 @@ To close the divide between the ambiguous button action and the desired result, 
 1. Send this event enum and maybe some numeric parameters...
 2. Which means to execute a designated PropSet (which is an animation directive)...
 3. And this is what it means within the Scene scope, so make it so.
+
+## ListBox
+
+A ListBox (aka "listbox"), displays a collection of rows that each contain simple text. It is designed to provide a UI
+for selecting rows, similar to an HTML select element.
+
+* Scrolling
+* Highlighting with animation
+* Unselect row as a public function
+* Multi select
+* Themeable
+
+
+### Scrolling
+
+A listbox supports vertical scrolling of content if the vertical size of the rows exceeds the size of the listbox. This
+presents many challenges because rows can be partially visible at the top and bottom of the listbox. More specifically,
+these rows need to be clipped to prevent rendering of content outside of the listbox.
+
+Each row is represented by a ListBoxRow component.
+
+### Rendering Layers
+
+The following components need to be drawn in order, from back to front.
+
+* Background: the background is just a rectangle with a default color.
+* Row borders: These can be drawn as meshes at runtime and cached. However, constant transforms could be annoying. These
+  can also be uploaded to the GPU as a texture.
+* Highlighting: A highlighted row has a different background color and the color change should support basic color
+  animation with Tween. The highlight rectangle is drawn above the background layer as Shape
+* Text: The text layer is the hardest because text needs to clipped if it is overflowing the listbox frame. The easiest
+  way to solve this is to render all text as images and upload as a texture into the GPU. However, if the dataset is
+  huge, it will cause performance issues. In addition, textures may not support color changes without serious GL
+  scripting.
+
+* Live text:
+  * Might be used for selected rows but clipping doesn't work.
+
+### State Model
+
+The state model helps define what actions are allowed.
+
+* Idle: You can select a row
+* Scrolling
+* Selected active/inactive
+
+### Events
+
+* Row selected
+* Row deselected
+
+
+### Caching
+
+Text objects and the creation of meshes

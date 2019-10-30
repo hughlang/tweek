@@ -1,109 +1,61 @@
-> Notice: The Tweek library is currently undergoing major changes. We have removed support for GGEZ, as they have decided to drop support for MacOS. In the current version 0.2.0, we have successfully migrated to Quicksilver. However, some of the examples have not been migrated yet. Specifically, the timelines
+# Tweek UI: A GUI framework for Rust with Animation
 
-# Tweek: A Tween Animation Kit for Rust
+Tweek is a Rust framework for building cross-platform GUI applications in Rust, with an ongoing goal of building for WebAssembly and WebGL. The goal is to deliver the "write once, run anywhere" vision using a modern and safe toolchain.  Tweek was initially created as an animation framework for Rust, using the principles of Tween animation that were well-known in the early days of web animation, primarily in Flash development. More specifically, it was popularized by the [Tween and Timeline animation tools from Greensock](https://greensock.com/docs).
 
-"Tween" is a term that was well-known in the early days of web animation, primarily in Flash development. More specifically, it was popularized by the [Tween and Timeline animation tools from Greensock](https://greensock.com/docs). Originally created for Flash and ActionScript, the Tween tools made it easy for any developer to build rich animations with minimal effort. Later, as Flash usage declined, the Greensock team ported the entire codebase to Javascript and HTML.
+In this release (version 0.2.0), Tweek takes on the bigger challenge of becoming a complete UI framework. That includes
+a suite of GUI components that actually work and can be used for building applications. Hence, that becomes a challenge
+of creating an application framework where GUI controls can communicate with the overall application and participate in
+a lifecycle where user actions are captured and translated into results.
 
+## Status
+
+Tweek is still under development and has not been released as a crate yet. In the initial 0.1.0 release, we
+experimented with a number of backend graphics engines (SDL2, OrbTk, GGEZ) in order to prototype the animation and
+display of shapes, images, and text. In the current 0.2.0 release, we migrated to Quicksilver for the backend, because
+of its support of Wasm and WebGL. Even so, major changes to Quicksilver were required to support variable GPU
+rendering pipelines and this release depends on a personal fork of Quicksilver.
+
+In the next major release, we will migrate to yet another backend. Probably something based on the gfx -> rendy -> wgpu
+chain of libraries. In the short time since early 2019 and now, the realm of graphics libraries on Rust has evolved
+quickly and we should finally have the desired tech stack. The concrete goal with version 0.3.0 is to publish a
+crate that will be stable and usable by anyone.
+
+In other words, version 0.2.0 is an interim release that is meant to be feature complete. And yet, much of it will be
+replaced in the next release. Hence, the code and documentation are not perfect, and many bugs still exist. However, the
+hard part of making the GUI components work in a reliable way is mostly there. Since the graphics backend will get
+replaced, it doesn't make sense to over-develop the current version.
 
 ## Goals
 
-Hence, this project aspires to deliver the same level of power and simplicity to the Rust community. That's a very ambitious goal, given that Rust has a steep learning curve and can be very intimidating because of its ultra-strict rules and syntax. Moreover, graphical user interfaces in Rust are still being developed and many GUI frameworks are not ready to build on top of.
+This architecure leans towards an [immediate mode GUI](https://en.wikipedia.org/wiki/Immediate_Mode_GUI) over retained
+mode with an [Entity Component System (ECS)](https://en.wikipedia.org/wiki/Entity_component_system). The ECS frameworks
+available today in Rust seem to demand full adoption of a particular architecture and are geared towards game
+development. The goal of Tweek is to build a GUI framework for applications and game dev architectures have other interests in mind.
 
-However, the endgame is quite clear to me. Rust is currently the language of choice when targeting WebAssembly (aka, Wasm) and Wasm-enabled browsers. Specifically, I'm talking about pure WebGL graphics and not a hybrid solution that requires HTML. When this is achieved, it will be possible to deliver the rich animations that work in nearly all browsers and bring back the "write once, run anywhere" vision.
+And yet, immediate mode GUI frameworks are often so barebones that you might question if they are usable in a real application.  Hence, the Tweek UI framework includes features that will hopefully be usable right away. For instance, the current codebase includes features that support the full application lifecycle including event notifications, UI transitions, and stateful data display and capture. It is also extensible, so that you can write your own components that conform to the required traits.
+
+However, the endgame is quite clear. Rust is currently the language of choice when targeting WebAssembly (aka, Wasm) and Wasm-enabled browsers. Specifically, I'm talking about pure WebGL graphics and not a hybrid solution that requires HTML. When this is achieved, it will be possible to deliver the rich animations that work in nearly all browsers and bring back the "write once, run anywhere" vision.
 
 ## Examples
-There are several demos you can try out in the examples directory that showcase various animation scenarios. Conveniently, most of them are bundled into a small set of files where you can browse demos with the Next and Previous buttons.
+There are several demos you can try out in the examples directory that showcase various GUI and animation scenarios. Conveniently, most of them are bundled into a small set of files where you can browse demos with the Next and Previous buttons.
 
-* Basic Tween animations
-    * cargo run --example basics
-* Work-in-progress GUI library
+* GUI components
     * cargo run --example gui
-
-To learn more about these examples, please also read the following pages:
-
-* [Basics](docs/1-basics.md)
-
-
-## Basic Usage
-
-* To start, make sure you are using the latest stable Rust version. Currently 1.34.0
-
-This is a sample of a simple animation that increases the size of rectangle graphic over time with a SineOut easing speed. It also repeats and has a yoyo effect.
-
-```rust
-    let rect = Rect::new(xpos, ypos, 0.0, 20.0);
-
-    let mut item = Item::new(item_id, Shape::Rectangle(rect))?;
-    item.layer.graphics.color = Color::from_hex(HexColors::Orange);
-
-    let tween = Tween::with(item_id, &item.layer)
-        .to(&[size(target_width as f64, 20.0)])
-        .duration(1.0)
-        .ease(Ease::SineOut)
-        .repeat(8, 0.2).yoyo()
-        ;
-```
-
-The best place to experiment with animations is in the gg_demos.rs example file, which showcases several animation scenarios.
-
-
-### Tweenable wrapper
-Tweek provides a trait called *Tweenable* that makes it simple to add support for other graphics frameworks. Implementing it is pretty minimal. Here is a copy of the trait code itself. Essentially, it requires that you implement a wrapper around your basic graphics object(s) so that the system can read or write a specified "Prop" value.
-
-```rust
-pub trait Tweenable {
-    fn get_prop(&self, prop: &Prop) -> Prop;
-    fn apply(&mut self, prop: &Prop);
-    fn apply_props(&mut self, props: &[Prop]) {
-        for prop in props {
-            self.apply(prop);
-        }
-    }
-}
-```
-
-And this is the [Layer wrapper for Quicksilver that implements Tweenable](https://github.com/wasm-network/tweek-rust/blob/master/src/ui/layer.rs). It reads and writes the values you specify.
-
-
-### UI Components
-
-By itself, the Tweenable trait provides the basic support needed for Tweek integration. However, it's hard to resist going further and adding as many helpers and utilities to make UI building easier. And so, Tweek provides a number of experimental View components in the ui folder. Things like buttons, labels, images, and a progress bar. These are almost done, but not very pretty yet.
-
-Naturally, these components also have Tweenable graphics, which provides "internal tweening" capabilities for different behaviors. For example, the Button struct can animate a color change for the *on hover* event, like this:
-
-```rust
-        let mut button = Button::new(frame).with_title("Previous");
-        button.set_color(&Color::from_hex(HexColors::Tan));
-        button.set_hover_animation(&[color(HexColors::Chocolate)], 0.1);
-        button.set_onclick(move |state| {
-            // FIXME: state.commands.push(PREV_COMMAND);
-        });
-```
-
-
-
-### Performance
-
-* In release mode, frame rate is well over 120 fps. In debug mode, it is close to 60 fps.
-
+    * cargo run --example animate
 
 
 ## Developer Notes
 
+* To start, make sure you are using the latest stable Rust version. Currently 1.38.0
+* [Docs](docs/README.md)
 
 ### Known Issues
 
 * GPU rendering of text is working, but may still be buggy.
 
+### Performance
 
-### Unit Tests (TODO)
-
-[ ] Test that end state props are expected based on forward or reverse time_scale
-
-### Contributing
-
-More details to come.
-
+* In release mode, frame rate is well over 120 fps. In debug mode, it is close to 60 fps.
 
 ## License
 
@@ -111,4 +63,4 @@ More details to come.
 
 ## Author
 
-Hugh Lang
+* [Hugh Lang](@hughlang)

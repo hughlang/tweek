@@ -7,61 +7,61 @@ use crate::core::*;
 use crate::events::*;
 use crate::gui::*;
 
-use std::{
-    any::{Any, TypeId},
-};
+use std::any::{Any, TypeId};
 
-/// A struct for building an action object to associate with a Button or other control
+/// A struct for building an action object to associate with a Button or other source
 pub struct Command {
     /// The Button or other Responder
-    pub control: Box<dyn Any>,
+    pub source: Box<dyn Any>,
     /// Callback method for handling click action
     pub action: Option<Box<dyn FnMut(&mut AppState) + 'static>>,
     /// Animation directives
     pub transition: PropSet,
-    // /// The layer_id of the source object
-    // pub source_id: u32,
-    // /// type_id of the source object
-    // pub source_type: TypeId,
-    /// The layer_id of the target object
+    /// The layer_id of the source object
     pub target_id: u32,
     /// The type_id of the target object
     pub target_type: TypeId,
     /// Holder of the event
-    pub result: EventBox,
+    pub event: EventBox,
 }
 
 impl Command {
 
-    pub fn new(control: Box<dyn Any>) -> Self {
-        // let source_id = control.get_id();
-        // let source_type = control.get_type_id();
+    /// Constructor that takes a Button or Responder object as the "source" of the command
+    pub fn new(source: Box<dyn Any>) -> Self {
         Command {
-            control: control,
+            source,
             action: None,
             transition: PropSet::default(),
-            // source_id,
-            // source_type,
             target_id: 0,
             target_type: TypeId::of::<Scene>(),
-            result: EventBox::new(NavEvent::Home),
+            event: EventBox::new(NavEvent::Home),
         }
     }
 
+    /// Define the target object given its layer.id and TypeId
     pub fn target(mut self, id: u32, type_id: TypeId) -> Self {
         self.target_id = id;
         self.target_type = type_id;
         self
     }
 
-    pub fn result<E: AnyEvent>(mut self, event: E) -> Self {
+    /// Define the event that will be dispatched when triggered
+    pub fn event<E: AnyEvent>(mut self, event: E) -> Self {
         self.action = Some(Box::new(move |state: &mut AppState| {
             state.event_bus.register_event(event);
         }));
-        self.result = EventBox::new(event);
+        self.event = EventBox::new(event);
         self
     }
 
+    /// Provide the display Props to manipulate or animate as a result of this command.
+    pub fn animate(mut self, props: PropSet) -> Self {
+        self.transition = props;
+        self
+    }
+
+    /// This allows you to define the callback more explicitly
     pub fn callback<C>(mut self, cb: C) -> Self
     where
         C: FnMut(&mut AppState) + 'static,
@@ -69,12 +69,8 @@ impl Command {
         self.action = Some(Box::new(cb));
         self
     }
-
-    pub fn transition(mut self, props: PropSet) -> Self {
-        self.transition = props;
-        self
-    }
 }
+
 
 // ************************************************************************************
 // Support

@@ -4,11 +4,9 @@ use crate::core::*;
 use crate::events::*;
 use crate::tools::*;
 
-use glyph_brush::HorizontalAlign as HAlign;
-
 use quicksilver::{
     geom::{Rectangle, Transform, Vector},
-    graphics::{MeshTask, FontStyle},
+    graphics::{MeshTask},
     lifecycle::Window,
 };
 
@@ -27,23 +25,30 @@ pub struct Text {
     /// The text string
     text: String,
     /// The horizontal alignment
-    h_align: HAlign,
+    pub text_align: TextAlign,
+    /// The vertical alignment
+    pub vert_align: VertAlign,
     /// Cached mesh data
     mesh_task: Option<MeshTask>,
     /// The offset is used when the parent Scene is moved and thus needs to inform child objects where to render
     offset: Vector,
+    /// A subframe for clipping text
+    pub subframe: Option<Rectangle>,
 }
 
 impl Text {
     /// Constructor
     pub fn new(frame: Rectangle, text: &str) -> Self {
         let layer = Layer::new(frame);
-        Text { layer,
+        Text {
+            layer,
             multiline: false,
             text: text.to_string(),
-            h_align: HAlign::Left,
+            text_align: TextAlign::Left,
+            vert_align: VertAlign::Middle,
             mesh_task: None,
-            offset: Vector::ZERO
+            offset: Vector::ZERO,
+            subframe: None,
         }
     }
 
@@ -67,14 +72,15 @@ impl Text {
     }
 
     /// Set the horizontal alignment
-    pub fn align_h(&mut self, align: HAlign) {
-        self.h_align = align;
+    pub fn text_align(&mut self, align: TextAlign) {
+        self.text_align = align;
     }
 }
 
 impl Displayable for Text {
-
-    fn get_id(&self) -> u32 { self.layer.get_id() }
+    fn get_id(&self) -> u32 {
+        self.layer.get_id()
+    }
 
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
@@ -85,9 +91,9 @@ impl Displayable for Text {
         TypeId::of::<Text>()
     }
 
-    fn get_layer_mut(&mut self) -> &mut Layer {
-        &mut self.layer
-    }
+    fn get_layer(&self) -> &Layer { &self.layer }
+
+    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -106,10 +112,10 @@ impl Displayable for Text {
     }
 
     fn set_theme(&mut self, theme: &mut Theme) {
-        if self.layer.lock_style { return }
-        self.layer.apply_theme(theme);
-        // TODO: Need to define context of this Text. Is it body text or button text?
-        self.layer.font_style = FontStyle::new(18.0, theme.fg_color)
+        let ok = self.layer.apply_theme(theme);
+        if !ok {
+            return;
+        }
     }
 
     fn notify(&mut self, event: &DisplayEvent) {
@@ -119,11 +125,12 @@ impl Displayable for Text {
             }
             DisplayEvent::Moved => {
                 self.layer.on_move_complete();
-                if let Some(task) = &mut self.mesh_task {
-                    for (_, vertex) in task.vertices.iter_mut().enumerate() {
-                        vertex.pos = Transform::translate(self.offset) * vertex.pos;
-                    }
-                }
+                self.mesh_task = None;
+                // if let Some(task) = &mut self.mesh_task {
+                //     for (_, vertex) in task.vertices.iter_mut().enumerate() {
+                //         vertex.pos = Transform::translate(self.offset) * vertex.pos;
+                //     }
+                // }
             }
             _ => {}
         }
@@ -138,7 +145,7 @@ impl Displayable for Text {
 
     fn render(&mut self, theme: &mut Theme, window: &mut Window) {
         self.layer.draw_background(window);
-
+        self.layer.draw_border(window);
         if let Some(task) = &self.mesh_task {
             if self.layer.is_animating() {
                 // If tint animation, change the text color
@@ -157,14 +164,16 @@ impl Displayable for Text {
                 window.add_task(task);
             }
         } else {
-            if let Some(task) = theme.default_font.draw(
-                &self.text,
-                &self.layer.font_style,
-                self.h_align,
-                &self.layer.frame,
-                window,
-                self.multiline
-            ) {
+            let mut params = TextParams::new(self.layer.font_style.clone())
+                .frame(self.layer.frame.clone())
+                .text(&self.text)
+                .align(self.text_align, self.vert_align)
+                .multiline(self.multiline);
+
+            params.subframe = self.subframe;
+            params.debug = self.layer.debug;
+
+            if let Some(task) = theme.default_font.draw(params) {
                 self.mesh_task = Some(task.clone());
                 window.add_task(task);
             } else {
@@ -182,7 +191,7 @@ impl Responder for Text {
                     self.set_text(text.to_owned());
                     return true;
                 }
-                _ => ()
+                _ => (),
             }
         }
         false

@@ -36,8 +36,9 @@ impl ImageView {
 }
 
 impl Displayable for ImageView {
-
-    fn get_id(&self) -> u32 { self.layer.get_id() }
+    fn get_id(&self) -> u32 {
+        self.layer.get_id()
+    }
 
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
@@ -48,9 +49,9 @@ impl Displayable for ImageView {
         TypeId::of::<ImageView>()
     }
 
-    fn get_layer_mut(&mut self) -> &mut Layer {
-        &mut self.layer
-    }
+    fn get_layer(&self) -> &Layer { &self.layer }
+
+    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -62,9 +63,10 @@ impl Displayable for ImageView {
     }
 
     fn set_theme(&mut self, theme: &mut Theme) {
-        if self.layer.lock_style { return }
-        self.layer.apply_theme(theme);
-
+        let ok = self.layer.apply_theme(theme);
+        if !ok {
+            return;
+        }
     }
 
     fn notify(&mut self, event: &DisplayEvent) {
@@ -88,6 +90,10 @@ impl Displayable for ImageView {
         let scale_w = self.layer.frame.size.x / self.image.area().width();
         let scale_h = self.layer.frame.size.y / self.image.area().height();
         let scale = Vector { x: scale_w, y: scale_h };
+        // window.draw(
+        //     &self.image.area().constrain(&self.layer.frame),
+        //     Img(&self.image)
+        // );
         window.draw_ex(
             &self.image.area().constrain(&self.layer.frame),
             Img(&self.image),

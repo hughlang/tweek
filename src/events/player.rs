@@ -1,6 +1,6 @@
 /// Events related to media players
 ///
-use super::{AnyEvent};
+use super::AnyEvent;
 
 /// An enum for specifying the common player events
 /// Unused

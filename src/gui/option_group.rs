@@ -27,7 +27,6 @@ pub enum OptionGroupLayout {
 
 //-- OptionGroup -----------------------------------------------------------------------
 
-
 /// An object containing a collection of Checkbox objects with different layout options
 pub struct OptionGroup {
     /// The base layer
@@ -97,7 +96,7 @@ impl OptionGroup {
                     let mut xpos = self.layer.frame.x();
 
                     if row_size.x + interval <= self.layer.frame.width() {
-                        // If the next element fits on the current line, calculate the xpos
+                        // If the next node fits on the current line, calculate the xpos
                         // and increase the width of the current row size.
                         xpos += row_size.x;
                         // Set the row_size width including the h_space
@@ -114,23 +113,24 @@ impl OptionGroup {
                 }
                 OptionGroupLayout::HorizontalWrap(h_space, v_space) => {
                     let row_height = line_height + v_space;
-                    let add_size = checkbox.get_content_size();
+                    let add_size = theme.default_font.estimate_text(&checkbox.text, theme.font_size);
+                    // eprintln!("row_size={:?} // add_size={:?}", row_size, add_size);
                     let mut xpos = self.layer.frame.x();
 
-                    if row_size.x + add_size.x <= self.layer.frame.width() {
-                        // If the next element fits on the current line, calculate the xpos
+                    if row_size.x + add_size.0 <= self.layer.frame.width() {
+                        // If the next node fits on the current line, calculate the xpos
                         // and increase the width of the current row size.
                         xpos += row_size.x;
                         // Set the row_size width including the h_space
-                        row_size.x += add_size.x + h_space;
+                        row_size.x += add_size.0 + h_space;
                     } else {
                         // Otherwise, push it to the next line.
-                        row_size.x = add_size.x + h_space;
+                        row_size.x = add_size.0 + h_space;
                         row_size.y += row_height;
                     }
                     let ypos = self.layer.frame.y() + row_size.y + 10.0;
-                    let frame = Rectangle::new((xpos, ypos), (add_size.x, line_height));
-                    // log::debug!("row_size={:?} add_size={:?} frame={:?}", row_size, add_size, frame);
+                    let frame = Rectangle::new((xpos, ypos), (add_size.0, line_height));
+                    log::debug!("row_size={:?} add_size={:?} frame={:?}", row_size, add_size, frame);
                     frame
                 }
             };
@@ -144,8 +144,9 @@ impl OptionGroup {
 // *****************************************************************************************************
 
 impl Displayable for OptionGroup {
-
-    fn get_id(&self) -> u32 { self.layer.get_id() }
+    fn get_id(&self) -> u32 {
+        self.layer.get_id()
+    }
 
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
@@ -156,9 +157,9 @@ impl Displayable for OptionGroup {
         TypeId::of::<OptionGroup>()
     }
 
-    fn get_layer_mut(&mut self) -> &mut Layer {
-        &mut self.layer
-    }
+    fn get_layer(&self) -> &Layer { &self.layer }
+
+    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -167,16 +168,16 @@ impl Displayable for OptionGroup {
     fn move_to(&mut self, pos: (f32, f32)) {
         self.layer.frame.pos.x = pos.0;
         self.layer.frame.pos.y = pos.1;
-
     }
 
     /// Change the font, color, and size
     fn set_theme(&mut self, theme: &mut Theme) {
-        if self.layer.lock_style { return }
-        self.layer.apply_theme(theme);
+        let ok = self.layer.apply_theme(theme);
+        if !ok {
+            return;
+        }
         self.layout_subviews(theme);
     }
-
 
     fn notify(&mut self, event: &DisplayEvent) {
         match event {
@@ -217,10 +218,10 @@ impl Displayable for OptionGroup {
         self.layer.hover_effect = Some(props);
     }
 
-    fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
+    fn handle_mouse_at(&mut self, pt: &Vector, window: &mut Window) -> bool {
         if pt.overlaps_rectangle(&self.layer.frame) {
             for checkbox in &mut self.checkboxes {
-                let hit = checkbox.handle_mouse_at(pt);
+                let hit = checkbox.handle_mouse_at(pt, window);
                 if hit {
                     return true;
                 }
@@ -231,13 +232,11 @@ impl Displayable for OptionGroup {
 
     fn debug_out(&self) -> String {
         let mut rows: Vec<String> = Vec::new();
-        let frame = self.get_frame();
-        let out = format!("{}<{}> [{}] Pos({:.1},{:.1}) Size({:.1},{:.1})", "", gui_print_type(&self.get_type_id()), self.get_id(), frame.pos.x, frame.pos.y, frame.size.x, frame.size.y);
+        let out = format!("{}{} {}", "", self.debug_id(), self.debug_frame());
         rows.push(out);
         for cb in &self.checkboxes {
-            let frame = cb.get_frame();
             // For child objects, prepend the output with a linebreak and pipe+space to conform with scene hierarchy style
-            let out = format!("{}<{}> [{}] Pos({:.1},{:.1}) Size({:.1},{:.1})", "\n| ", gui_print_type(&cb.get_type_id()), cb.get_id(), frame.pos.x, frame.pos.y, frame.size.x, frame.size.y);
+            let out = format!("{}{} {}", "\n| ", cb.debug_id(), cb.debug_frame());
             rows.push(out);
         }
         let result = rows.join(""); // Note, it doesn't work to try putting the linebreak in the join character.
@@ -272,6 +271,7 @@ impl Responder for OptionGroup {
                     for (i, checkbox) in &mut self.checkboxes.iter_mut().enumerate() {
                         if i != idx {
                             checkbox.is_checked = false;
+                            checkbox.clear_draw_cache();
                         }
                     }
                 }

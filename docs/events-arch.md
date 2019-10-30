@@ -1,5 +1,6 @@
 # Events Architecture
 
+> This document is not finished. Please ignore for now.
 
 ## AnyEvent
 

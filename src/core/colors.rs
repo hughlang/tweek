@@ -166,4 +166,3 @@ impl HexColors {
     pub const DarkSlateGray: &'static str = "#2F4F4F";
     pub const Black: &'static str = "#000000";
 }
-

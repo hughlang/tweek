@@ -1,26 +1,17 @@
 /// Test area for scene animation
+
+mod helper;
+use helper::*;
 use tweek::prelude::*;
 
-mod demo_helper;
-use demo_helper::*;
-use demo_helper::constants::*;
-
 use std::any::TypeId;
-use std::cell::RefCell;
-use std::rc::Rc;
 
-#[allow(unused_imports)]
 use quicksilver::{
-    geom::{Rectangle, Shape, Transform, Vector},
-    graphics::{Background::Col, Background::Img, Color, FontStyle, Image, PixelFormat},
-    input::{ButtonState, Key, MouseButton, MouseCursor},
+    geom::{Rectangle, Vector},
+    graphics::{Color, FontStyle, MeshTask},
     lifecycle::{run_with, Event, Settings, State, Window},
     Error, Result,
 };
-
-#[allow(unused_imports)]
-use image::{imageops, DynamicImage, GenericImageView, ImageBuffer, Rgba};
-
 
 /// The main function serves as an entrypoint into the event loop
 fn main() {
@@ -50,28 +41,17 @@ struct MainApp {
 
 impl MainApp {
     fn new(screen: Vector) -> Result<MainApp> {
-
         let mut delegate = AppDelegate::new(screen.clone());
         let screen_size = screen.clone();
 
-        delegate.register_scene(move || {
-            SceneBuilder::load_modals_scene(screen_size)
-        });
-        delegate.register_scene(move || {
-            SceneBuilder::load_themes_demo(screen_size)
-        });
-        delegate.register_scene(move || {
-            SceneBuilder::build_dots_demo(screen_size)
-        });
+        delegate.add_stage_builder(move || StageBuilder::load_modals_scene(screen_size));
+        delegate.add_stage_builder(move || StageBuilder::load_themes_demo(screen_size));
+        delegate.add_stage_builder(move || StageBuilder::build_dots_demo(screen_size));
 
         // Set the nav scene
         delegate.set_nav_scene(DemoHelper::build_nav_scene(screen));
 
-        let mut app = MainApp {
-            delegate,
-            screen,
-            frames: 0,
-        };
+        let mut app = MainApp { delegate, screen, frames: 0 };
         app.delegate.application_ready();
         Ok(app)
     }
@@ -86,7 +66,6 @@ impl State for MainApp {
 
     fn update(&mut self, window: &mut Window) -> Result<()> {
         self.delegate.update(window)
-
     }
 
     fn draw(&mut self, window: &mut Window) -> Result<()> {
@@ -100,15 +79,15 @@ impl State for MainApp {
 }
 
 // ************************************************************************************
-// SceneBuilder loads a scene to showcase functionality
+// StageBuilder loads a scene to showcase functionality
 // ************************************************************************************
 
-struct SceneBuilder {}
+struct StageBuilder {}
 
 #[allow(dead_code)]
 #[allow(unused_mut)]
 #[allow(unused_variables)]
-impl SceneBuilder {
+impl StageBuilder {
     fn load_modals_scene(screen: Vector) -> Stage {
         let mut stage = Stage::new(Rectangle::new_sized(screen));
         stage.title = "Modal popup from bottom".to_string();
@@ -128,43 +107,52 @@ impl SceneBuilder {
             .background(BackgroundStyle::Solid(Color::from_hex(HexColors::DarkGreen)))
             .border(BorderStyle::SolidLine(Color::BLACK, 3.0))
             .with_text("Show modal");
+        button.set_id(99);
         button.layer.corner_radius = 3.0;
         button.layer.font_style = FontStyle::new(12.0, Color::WHITE);
+        button.layer.lock_style = true;
 
         ypos = 200.0;
+        let node = Node::new(MAIN_SCENE, TypeId::of::<Scene>());
         let mut command = Command::new(Box::new(button))
             .target(MAIN_SCENE, TypeId::of::<Scene>())
-            .result(SceneEvent::Show(MAIN_SCENE))
-            .transition(PropSet::new(vec![position(modal_x, ypos)], 0.5)
-                .for_type(TweenType::Move)
-                .ease(Ease::SineInOut)
-                .delay(0.5)
+            .event(SceneEvent::Show(node.clone()))
+            .animate(
+                PropSet::new(vec![position(modal_x, ypos)], 0.5)
+                    .for_type(TweenType::Move)
+                    .ease(Ease::SineInOut)
+                    .delay(0.5),
             );
         bg_scene.add_command(command);
-        stage.scenes.push(bg_scene);
+        stage.add_scene(bg_scene);
 
         xpos = (screen.x - modal_w) / 2.0;
         ypos = screen.y; // Below window view
 
         let frame = Rectangle::new((xpos, ypos), (modal_w, modal_h));
         let mut modal_scene = Scene::new(frame).with_id(MAIN_SCENE, "Main");
-        modal_scene.layer.apply_props(&[border("#333333", 2.0, 1.0)]);
+        // modal_scene.layer.apply_props(&[border("#333333", 2.0, 1.0)]);
         modal_scene.layer.bg_style = BackgroundStyle::Solid(Color::WHITE);
         modal_scene.layer.border_style = BorderStyle::SolidLine(Color::BLACK, 1.0);
+
 
         // Add title. Define frame relative to 0,0 origin.
         ypos = 0.0;
         let frame = modal_scene.sub_frame((0.0, 0.0), (modal_w, 50.0));
-        let label = Label::new(frame, "Example");
-        modal_scene.add_view(Box::new(label));
+        let mut text = Text::new(frame, "Example");
+        text.layer.font_style = FontStyle::new(18.0, Color::BLACK);
+        text.text_align(TextAlign::Center);
+
+        modal_scene.add_control(Box::new(text));
 
         // Add body text to modal scene
         ypos += 50.0;
         let frame = modal_scene.sub_frame((0.0, ypos), (modal_w, 100.0));
         println!("initial text frame={:?}", frame);
-        let string = "This project will take some time to complete. We are dependent on future improvements to Quicksilver, \
-        and so we have time to make as close to perfect as possible. Keep iterating and start building with it. \
-        When it finally goes live at version 1.0, it will be fully tested and proven.";
+        let string =
+            "This project will take some time to complete. We are dependent on future improvements to Quicksilver, \
+             and so we have time to make as close to perfect as possible. Keep iterating and start building with it. \
+             When it finally goes live at version 1.0, it will be fully tested and proven.";
         let mut text = Text::new(frame, string).margin(8.0, 5.0);
         text.layer.font_style = FontStyle::new(14.0, Color::BLACK);
         text.multiline = true;
@@ -174,7 +162,8 @@ impl SceneBuilder {
         xpos = (modal_scene.layer.frame.width() - button_w) / 2.0;
         ypos += frame.height() + 5.0;
         let frame = modal_scene.sub_frame((xpos, ypos), (button_w, 40.0));
-        let mut button = Button::new(frame).with_text("Close")
+        let mut button = Button::new(frame)
+            .with_text("Close")
             .background(BackgroundStyle::Solid(Color::from_hex(HexColors::DarkRed)));
         button.layer.corner_radius = 3.0;
         button.layer.font_style = FontStyle::new(12.0, Color::WHITE);
@@ -183,14 +172,25 @@ impl SceneBuilder {
 
         let mut command = Command::new(Box::new(button))
             .target(MAIN_SCENE, TypeId::of::<Scene>())
-            .result(SceneEvent::Hide(MAIN_SCENE))
-            .transition(PropSet::new(vec![position(modal_x, ypos)], 0.5)
-                .for_type(TweenType::Move)
-                .ease(Ease::SineInOut)
-                .delay(0.5)
+            .event(SceneEvent::Hide(node))
+            .animate(
+                PropSet::new(vec![position(modal_x, ypos)], 0.5)
+                    .for_type(TweenType::Move)
+                    .ease(Ease::SineInOut)
+                    .delay(0.5),
             );
         modal_scene.add_command(command);
-        stage.scenes.push(modal_scene);
+
+        let frame = Rectangle::new_sized(screen);
+        let mut fill_color = Color::from_hex("#CCCCCC");
+        fill_color.a = 0.3;
+        let mut mask = DrawShape::rectangle(&frame, Some(fill_color), None, 0.0, 0.0);
+        let mut mesh_task = MeshTask::new(0);
+        mesh_task.append(&mut mask);
+        modal_scene.bg_mask = Some(mesh_task);
+
+        let mask =
+        stage.add_scene(modal_scene);
         stage
     }
 
@@ -215,8 +215,8 @@ impl SceneBuilder {
         // OK button
         ypos += 50.0;
         let frame = scene.sub_frame((xpos, ypos), (100.0, 50.0));
-        let mut button = Button::new(frame).with_text("OK")
-            .background(BackgroundStyle::Solid(Color::from_hex("#D2B48C")));
+        let mut button =
+            Button::new(frame).with_text("OK").background(BackgroundStyle::Solid(Color::from_hex("#D2B48C")));
         button.layer.corner_radius = 3.0;
         scene.add_control(Box::new(button));
 
@@ -237,7 +237,7 @@ impl SceneBuilder {
         ypos += 50.0;
         let frame = scene.sub_frame((xpos, ypos), (200.0, 105.0));
         let mut options = OptionGroup::new(frame);
-        options.set_layout(OptionGroupLayout::HorizontalGrid(10.0, 5.0));
+        options.set_layout(OptionGroupLayout::Vertical(5.0));
         options.multi_select = false;
         options.check_style = CheckStyle::Radio;
         options.set_options(list.clone());
@@ -248,7 +248,8 @@ impl SceneBuilder {
 
         ypos += 130.0;
         let frame = scene.sub_frame((xpos, ypos), (200.0, 80.0));
-        let mut listbox = ListBox::new(frame).datasource(ds);
+        let mut listbox = ListBox::new(frame);
+        listbox.set_datasource(ds);
         scene.add_control(Box::new(listbox));
         scene.layer.apply_props(&[border("#333333", 3.0, 1.0)]);
 
@@ -272,7 +273,7 @@ impl SceneBuilder {
         });
         scene.add_control(Box::new(button));
 
-        stage.scenes.push(scene);
+        stage.add_scene(scene);
         stage
     }
 
@@ -303,8 +304,7 @@ impl SceneBuilder {
             let mut color = Color::RED;
             let alpha = 1.0 - (i as f32 / dot_count as f32) / 2.0;
             color.a = alpha;
-            let mut dot = ShapeView::new(frame, ShapeDef::Circle)
-                .with_background(BackgroundStyle::Solid(color));
+            let mut dot = ShapeView::new(frame, ShapeDef::Circle).with_background(BackgroundStyle::Solid(color));
             // dot.layer.anchor_pt = Vector::new(0.0, 100.0);
             dot.layer.anchor_pt = center_pt;
             dot.build();
@@ -323,7 +323,7 @@ impl SceneBuilder {
 
         // let timeline = Timeline::add(tweens).stagger(0.12);
         // stage.timelines.push(timeline);
-        stage.scenes.push(scene);
+        stage.add_scene(scene);
 
         stage
     }

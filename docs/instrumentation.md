@@ -1,5 +1,7 @@
 # Instrumentation
 
+> This document is not finished. Please ignore for now.
+
 ## Overview
 
 * Scene debugging
@@ -11,6 +13,10 @@
 * Show values for each view: layer_id, type, frame, props, etc
 * Non-repetitive. Only print changed objects once.
 * Use EventBus to publish logging events
+
+# Logging
+
+    std::env::set_var("RUST_LOG", "main=debug,tweek=trace,tweek::tools=debug");
 
 # Scene hierarchy
 
@@ -46,7 +52,7 @@ objects and print them out on request.
 
 ## Notifications
 
-The EventBus architecture is also used for the Notifications system that is designed for event handling at the Displayable/Layer level. If you recall, a Displayable is a graphical component that can receive calls during the run loop to update and render itself. Each Displayable has a Layer that composes much of the properties and functionality for component rendering. This also includes an optional Tween animation property that is responsible for animations. 
+The EventBus architecture is also used for the Notifications system that is designed for event handling at the Displayable/Layer level. If you recall, a Displayable is a graphical component that can receive calls during the run loop to update and render itself. Each Displayable has a Layer that composes much of the properties and functionality for component rendering. This also includes an optional Tween animation property that is responsible for animations.
 
 One of the challenges of building a GUI where things can animate and move is ensuring that the animation begins and ends successfully. In Rust and in this code, it is difficult to bind functions that need to manipulate external scope and make the graphical changes. In this document, we address how the Notifications system helps to communicate events from the lowest level where Tween animations are calculated to higher level Displayable objects.
 
@@ -58,11 +64,6 @@ This is an AnyEvent that is designed to carry an event from a lower level and co
 level. For example, a Tween object does not know anything about its parent Layer or Displayable and therefore, it cannot
 emit useful logging data.
 
-### LogEvent
-
-A LogEvent is generically a message from a lower level of the code placed on the EventBus to get logged at a higher
-level. This will allow for better control of what gets logged. For example, a Layer may have debug = true and thus it
-can decide what gets logged.
 
 ## GPU Rendering
 

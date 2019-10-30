@@ -1,14 +1,8 @@
-/// Animation demos
-///
+/// Test area for scene animation
+
+mod helper;
+use helper::*;
 use tweek::prelude::*;
-
-mod demo_helper;
-use demo_helper::*;
-use demo_helper::constants::*;
-
-use std::any::TypeId;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 #[allow(unused_imports)]
 use quicksilver::{
@@ -22,14 +16,90 @@ use quicksilver::{
 #[allow(unused_imports)]
 use image::{imageops, DynamicImage, GenericImageView, ImageBuffer, Rgba};
 
-struct SceneBuilder {}
+/// The main function serves as an entrypoint into the event loop
+fn main() {
+    std::env::set_var("RUST_LOG", "main=debug,tweek=trace,tweek::gui=trace");
+
+    #[cfg(not(target_arch = "wasm32"))]
+    env_logger::builder().default_format_timestamp(false).default_format_module_path(true).init();
+    #[cfg(not(target_arch = "wasm32"))]
+    color_backtrace::install();
+
+    let screen = Vector::new(800, 600);
+    run_with("Tweek UI", screen, Settings::default(), || MainApp::new(screen));
+}
+
+// *****************************************************************************************************
+// MainApp is representative of a windowed-application that conforms to Quicksilver's run loop
+// and event model
+// *****************************************************************************************************
+
+#[allow(dead_code)]
+#[allow(unused_variables)]
+struct MainApp {
+    delegate: AppDelegate,
+    screen: Vector,
+    frames: usize,
+}
+
+impl MainApp {
+    fn new(screen: Vector) -> Result<MainApp> {
+        let mut delegate = AppDelegate::new(screen.clone());
+        let screen_size = screen.clone();
+
+        delegate.add_stage_builder(move || StageBuilder::animate_square(screen_size));
+        delegate.add_stage_builder(move || StageBuilder::balloon_demo(screen_size));
+        delegate.add_stage_builder(move || StageBuilder::rolling_image(screen_size));
+        delegate.add_stage_builder(move || StageBuilder::pink_snake(screen_size));
+
+        // Set the nav scene
+        delegate.set_nav_scene(DemoHelper::build_nav_scene(screen));
+
+        let mut app = MainApp { delegate, screen, frames: 0 };
+        app.delegate.application_ready();
+        Ok(app)
+    }
+}
+
+#[allow(dead_code)]
+#[allow(unused_variables)]
+impl State for MainApp {
+    fn new() -> Result<MainApp> {
+        Err(Error::ContextError("Use run_with to execute custom new method".to_string()))
+    }
+
+    fn update(&mut self, window: &mut Window) -> Result<()> {
+        self.delegate.update(window)
+    }
+
+    fn draw(&mut self, window: &mut Window) -> Result<()> {
+        self.delegate.draw(window)
+    }
+
+    #[allow(unused_assignments)]
+    fn event(&mut self, event: &Event, window: &mut Window) -> Result<()> {
+        self.delegate.event(event, window)
+    }
+}
+
+// ************************************************************************************
+// StageBuilder loads scenes and returns a Stage object
+// ************************************************************************************
+
+struct StageBuilder {}
 
 #[allow(dead_code)]
 #[allow(unused_mut)]
 #[allow(unused_variables)]
-impl SceneBuilder {
+impl StageBuilder {
 
-    fn animate_square(screen: Vector) -> Scene {
+    fn animate_square(screen: Vector) -> Stage {
+        let frame = Rectangle::new_sized(screen);
+
+        let mut stage = Stage::new(frame.clone());
+        stage.title = "Animate Square".to_string();
+        let mut scene = Scene::new(frame);
+
         let draw_area = DemoHelper::get_draw_area(screen);
         let frame = Rectangle::new((0.0, 0.0), (screen.x, screen.y));
         let mut scene = Scene::new(frame);
@@ -38,30 +108,37 @@ impl SceneBuilder {
         let draw_area = DemoHelper::get_draw_area(screen);
         let frame = Rectangle::new((draw_area.pos.x, 200.0), (80.0, 80.0));
         let fill_color = Color::RED;
-        // let mut mesh = DrawShape::rectangle(&frame, Some(fill_color), None, 2.0, 0.0);
-        let mut square = ShapeView::new(frame, ShapeDef::Rectangle)
-            .with_background(BackgroundStyle::Solid(fill_color));
+        let mut square = ShapeView::new(frame, ShapeDef::Rectangle).with_background(BackgroundStyle::Solid(fill_color));
         square.build();
 
         let target_x = draw_area.pos.x + draw_area.size.x - 120.0;
+
+        // let propset = PropSet::new(vec![shift(2.0, 2.0)], 0.1).for_type(TweenType::Click);
+
         let mut tween1 = Tween::with(item_id, &square.layer)
             .to(&[position(target_x, 400.0), size(120.0, 120.0), color(HexColors::Gold)])
             .duration(1.0)
             .ease(Ease::SineInOut)
-            .repeat(9, 0.2)
+            .repeat(-1, 0.2)
             .yoyo();
 
         // square.layer.animate_with_props(propset.clone());
         square.layer.start_animation(tween1);
+        // square.layer.tween_type = TweenType::Move;
         scene.add_view(Box::new(square));
 
-        scene
+        stage.add_scene(scene);
+        stage
     }
 
-    fn balloon(screen: Vector) -> Scene {
-        let draw_area = DemoHelper::get_draw_area(screen);
-        let frame = Rectangle::new((0.0, 0.0), (screen.x, screen.y));
+    fn balloon_demo(screen: Vector) -> Stage {
+        let frame = Rectangle::new_sized(screen);
+
+        let mut stage = Stage::new(frame.clone());
+        stage.title = "Balloon?".to_string();
         let mut scene = Scene::new(frame);
+
+        let draw_area = DemoHelper::get_draw_area(screen);
 
         let center_pt = Vector { x: screen.x / 2.0 - 140.0, y: screen.y / 2.0 - 40.0 };
         log::debug!("center_pt={:?} y={:?}", center_pt, 0);
@@ -69,8 +146,8 @@ impl SceneBuilder {
         // Add a circle
         let frame = Rectangle::new(center_pt, (80.0, 80.0));
         let item_id = 2;
-        let mut shape = ShapeView::new(frame, ShapeDef::Circle)
-            .with_background(BackgroundStyle::Solid(Color::from_hex("#CD09AA")));
+        let mut shape =
+            ShapeView::new(frame, ShapeDef::Circle).with_background(BackgroundStyle::Solid(Color::from_hex("#CD09AA")));
         shape.build();
 
         let mut tween = Tween::with(item_id, &shape.layer)
@@ -91,14 +168,19 @@ impl SceneBuilder {
         shape.layer.start_animation(tween);
         scene.add_view(Box::new(shape));
 
-        scene
+        stage.add_scene(scene);
+        stage
     }
 
     /// An image that rolls across the screen
-    fn rolling_image(screen: Vector) -> Scene {
-        let draw_area = DemoHelper::get_draw_area(screen);
-        let frame = Rectangle::new((0.0, 0.0), (screen.x, screen.y));
+    fn rolling_image(screen: Vector) -> Stage {
+        let frame = Rectangle::new_sized(screen);
+
+        let mut stage = Stage::new(frame.clone());
+        stage.title = "Rolling Image".to_string();
         let mut scene = Scene::new(frame);
+
+        let draw_area = DemoHelper::get_draw_area(screen);
 
         let item_id = 3;
         let image = Image::from_bytes(include_bytes!("../../static/tile.png")).unwrap();
@@ -114,11 +196,15 @@ impl SceneBuilder {
         image_view.layer.start_animation(tween);
         scene.add_view(Box::new(image_view));
 
-        scene
+        stage.add_scene(scene);
+        stage
     }
 
-    fn pink_snake(screen: Vector) -> Scene {
-        let frame = Rectangle::new((0.0, 0.0), (screen.x, screen.y));
+    fn pink_snake(screen: Vector) -> Stage {
+        let frame = Rectangle::new_sized(screen);
+
+        let mut stage = Stage::new(frame.clone());
+        stage.title = "Pink Snake".to_string();
         let mut scene = Scene::new(frame);
 
         let draw_area = DemoHelper::get_draw_area(screen);
@@ -162,212 +248,22 @@ impl SceneBuilder {
         shape.layer.start_animation(tween);
         scene.add_view(Box::new(shape));
 
-        scene
+        stage.add_scene(scene);
+        stage
     }
+    /// This is a template for creating a new stage.
+    fn empty_template(screen: Vector) -> Stage {
+        let frame = Rectangle::new_sized(screen);
 
-    /// ********************************************************************************
-    /// This is a template for creating a new animation.
-    /// Copy it and try out different animation techniques.
-    /// Add an entry to the Demo enum below to make it part of the Next/Previous cycle.
-    fn empty_template(screen: Vector) -> Scene {
-        let frame = Rectangle::new((0.0, 0.0), (screen.x, screen.y));
+        let mut stage = Stage::new(frame.clone());
+        stage.title = "Example".to_string();
         let mut scene = Scene::new(frame);
 
         // =====================================================
         // Create scene here
         // =====================================================
 
-        scene
+        stage.add_scene(scene);
+        stage
     }
-}
-
-#[allow(dead_code)]
-#[derive(Copy, Clone, Debug)]
-enum Demo {
-    Square,
-    Balloon,
-    RollingImage,
-    Snake,
-}
-
-#[allow(dead_code)]
-#[allow(unused_variables)]
-struct MainState {
-    grid: Grid,
-    screen: Vector,
-    scene: Scene,
-    nav_scene: Scene,
-    theme: Theme,
-    app_state: AppState,
-    demo_index: usize,
-    demo_list: Vec<Demo>,
-    is_running: bool,
-    frames: usize,
-}
-
-impl MainState {
-    fn new(screen: Vector) -> Result<MainState> {
-        let mut theme = DemoHelper::load_theme();
-        let grid = DemoHelper::build_grid(screen.x, screen.y, 16.0, Color::from_hex("#CCCCCC"));
-        let mut s = MainState {
-            grid,
-            screen,
-            scene: SceneBuilder::empty_template(screen),
-            nav_scene: DemoHelper::build_nav_scene(screen),
-            theme: theme,
-            app_state: AppState::new(),
-            demo_index: 0,
-            demo_list: Vec::new(),
-            is_running: false,
-            frames: 0,
-        };
-
-        s.demo_list.push(Demo::Square);
-        s.demo_list.push(Demo::Balloon);
-        s.demo_list.push(Demo::RollingImage);
-        s.demo_list.push(Demo::Snake);
-
-        s.demo_index = 1;
-        let demo = s.demo_list[s.demo_index].clone();
-        s.load_demo(screen, &demo);
-        Ok(s)
-    }
-
-    fn load_demo(&mut self, screen: Vector, demo: &Demo) {
-        let mut scene = match demo {
-            Demo::Square => SceneBuilder::animate_square(screen),
-            Demo::RollingImage => SceneBuilder::rolling_image(screen),
-            Demo::Balloon => SceneBuilder::balloon(screen),
-            Demo::Snake => SceneBuilder::pink_snake(screen),
-            // _ => SceneBuilder::empty_template(screen),
-        };
-        scene.set_theme(&mut self.theme);
-        self.scene = scene;
-        self.scene.notify(&DisplayEvent::Ready);
-    }
-}
-
-#[allow(dead_code)]
-#[allow(unused_variables)]
-impl State for MainState {
-    fn new() -> Result<MainState> {
-        Err(Error::ContextError("Use run_with to execute custom new method".to_string()))
-    }
-
-    fn update(&mut self, window: &mut Window) -> Result<()> {
-        for event in self.app_state.event_bus.into_iter() {
-            if let Ok(evt) = event.downcast_ref::<SceneEvent>() {
-                log::debug!("SceneEvent={:?}", evt);
-                self.scene.handle_event(evt);
-            }
-            if let Ok(evt) = event.downcast_ref::<NavEvent>() {
-                log::debug!("NavEvent={:?}", evt);
-                match evt {
-                    NavEvent::Next => {
-                        self.demo_index += 1;
-                        if self.demo_index == self.demo_list.len() {
-                            self.demo_index = 0;
-                        }
-                        let next = &self.demo_list[self.demo_index].clone();
-
-                        &self.load_demo(window.screen_size(), next);
-                        return Ok(());
-
-                    }
-                    NavEvent::Back => {
-                        if self.demo_index == 0 {
-                            self.demo_index = self.demo_list.len() - 1;
-                        } else {
-                            self.demo_index -= 1;
-                        }
-                        let next = &self.demo_list[self.demo_index].clone();
-                        &self.load_demo(window.screen_size(), next);
-                        return Ok(());
-                    }
-                    _ => ()
-                }
-            }
-        }
-
-        let _ = self.scene.update(window, &mut self.app_state);
-        // Sorry, bad hacks
-        self.app_state.zero_offset();
-        let _ = self.nav_scene.update(window, &mut self.app_state);
-
-        self.frames += 1;
-        if (self.frames % FPS_FRAMES_INTERVAL) == 0 {
-            let out = format!("FPS: {:.2}", window.current_fps());
-            self.nav_scene.set_field_value(&FieldValue::Text(out), TypeId::of::<Text>(), FPS_TAG);
-        }
-        Ok(())
-    }
-
-    fn draw(&mut self, window: &mut Window) -> Result<()> {
-        // Remove any lingering artifacts from the previous frame
-        window.clear(Color::WHITE)?;
-
-        for line in &self.grid.lines {
-            window.draw_ex(&line.with_thickness(1.0), Col(self.grid.color), Transform::IDENTITY, 0);
-        }
-
-        let _ = self.nav_scene.render(&mut self.theme, window);
-        let _ = self.scene.render(&mut self.theme, window);
-
-        Ok(())
-    }
-
-    #[allow(unused_assignments)]
-    fn event(&mut self, event: &Event, window: &mut Window) -> Result<()> {
-        match event {
-            Event::Focused => {
-                log::debug!("size={:?} y={:?}", window.screen_size(), 0);
-            }
-            Event::MouseMoved(pt) => {
-                let hover1 = self.nav_scene.handle_mouse_at(pt);
-                let hover2 = self.scene.handle_mouse_at(pt);
-                if hover1 || hover2 {
-                    window.set_cursor(MouseCursor::Hand);
-                } else {
-                    window.set_cursor(MouseCursor::Default);
-                }
-            }
-            Event::MouseButton(MouseButton::Left, ButtonState::Pressed) => {
-                self.scene.handle_mouse_down(&window.mouse().pos(), &mut self.app_state);
-            }
-            Event::MouseButton(MouseButton::Left, ButtonState::Released) => {
-                self.scene.handle_mouse_up(&window.mouse().pos(), &mut self.app_state);
-                self.nav_scene.handle_mouse_up(&window.mouse().pos(), &mut self.app_state);
-            }
-            Event::MouseWheel(xy) => {
-                self.scene.handle_mouse_scroll(xy, &mut self.app_state);
-            }
-            Event::Key(key, ButtonState::Pressed) => match key {
-                Key::Escape => {
-                    window.close();
-                }
-                _ => {
-                    self.scene.handle_key_command(key, window);
-                }
-            },
-            Event::Typed(c) => {
-                self.scene.handle_key_press(*c, window);
-            }
-            _ => {}
-        };
-        Ok(())
-    }
-}
-
-// The main isn't that important in Quicksilver: it just serves as an entrypoint into the event
-// loop
-fn main() {
-    std::env::set_var("RUST_LOG", "main=debug,tweek=debug");
-
-    #[cfg(not(target_arch = "wasm32"))]
-    env_logger::builder().default_format_timestamp(false).default_format_module_path(false).init();
-    #[cfg(not(target_arch = "wasm32"))]
-    color_backtrace::install();
-
-    let screen = Vector::new(800, 600);
-    run_with("Tweek UI", screen, Settings::default(), || MainState::new(screen));
 }

@@ -25,16 +25,21 @@
 #![crate_type = "lib"]
 
 #[macro_use]
+extern crate float_cmp;
+#[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate unwrap_to;
 #[macro_use]
 extern crate log;
 extern crate env_logger;
+// extern crate unicode_normalization;
 
 #[cfg(target_arch = "wasm32")]
 #[macro_use]
 extern crate stdweb;
+
+extern crate image as image_rs;
 
 pub mod core;
 pub mod events;

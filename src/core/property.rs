@@ -2,8 +2,8 @@
 ///
 use super::ease::*;
 use crate::events::*;
-use std::fmt;
 use cgmath::*;
+use std::fmt;
 
 /*
 The following type aliases are used for human readable names for cgmath Vector types that are used in the
@@ -54,44 +54,29 @@ impl fmt::Debug for Prop {
     /// Special debug output that trims the extra Vector wrappers.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Prop::Alpha(val) => {
-                write!(f, "Alpha({:.2})", val[0])
-            },
-            Prop::Color(rgba) => {
-                write!(f, "Color({}, {}, {}) Alpha({})", rgba[0], rgba[1], rgba[2], rgba[3])
-            }
-            Prop::Tint(rgba) => {
-                write!(f, "Color({}, {}, {}) Alpha({})", rgba[0], rgba[1], rgba[2], rgba[3])
-            }
-            Prop::Rotate(val) => {
-                write!(f, "Rotate({:.2})", val[0])
-            },
-            Prop::Position(pos) => {
-                write!(f, "Position({:.2}, {:.2})", pos[0], pos[1])
-            }
-            Prop::Size(size) => {
-                write!(f, "Size({:.2}, {:.2})", size[0], size[1])
-            }
+            Prop::Alpha(val) => write!(f, "Alpha({:.2})", val[0]),
+            Prop::Color(rgba) => write!(f, "Color({}, {}, {}) Alpha({})", rgba[0], rgba[1], rgba[2], rgba[3]),
+            Prop::Tint(rgba) => write!(f, "Color({}, {}, {}) Alpha({})", rgba[0], rgba[1], rgba[2], rgba[3]),
+            Prop::Rotate(val) => write!(f, "Rotate({:.2})", val[0]),
+            Prop::Position(pos) => write!(f, "Position({:.2}, {:.2})", pos[0], pos[1]),
+            Prop::Size(size) => write!(f, "Size({:.2}, {:.2})", size[0], size[1]),
             Prop::Border(rgba, width) => {
                 if let Some(rgba) = rgba {
-                    write!(f, "Border(width({}), color({}, {}, {}) alpha({}))", width[0], rgba[0], rgba[1], rgba[2], rgba[3])
+                    write!(
+                        f,
+                        "Border(width({}), color({}, {}, {}) alpha({}))",
+                        width[0], rgba[0], rgba[1], rgba[2], rgba[3]
+                    )
                 } else {
                     write!(f, "Border(None)")
                 }
             }
-            Prop::Shift(pos) => {
-                write!(f, "Shift({:.2}, {:.2})", pos[0], pos[1])
-            }
-            Prop::Resize(size) => {
-                write!(f, "Resize({:.2}, {:.2})", size[0], size[1])
-            }
-            _ => {
-                write!(f, "{:?}", self)
-            }
+            Prop::Shift(pos) => write!(f, "Shift({:.2}, {:.2})", pos[0], pos[1]),
+            Prop::Resize(size) => write!(f, "Resize({:.2}, {:.2})", size[0], size[1]),
+            _ => write!(f, "{:?}", self),
         }
     }
 }
-
 
 impl Eq for Prop {}
 
@@ -158,7 +143,7 @@ impl Prop {
 }
 
 /// A wrapper to hold an array of Props used in Animator for Tween animation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PropSet {
     /// Array of Props based on user-specified animation directives
     pub props: Vec<Prop>,
@@ -180,34 +165,34 @@ pub struct PropSet {
 
 impl Default for PropSet {
     fn default() -> Self {
-        PropSet {
-            props: Vec::new(),
-            duration: 0.0,
-            delay: 0.0,
-            ease: Ease::Linear,
-            event: TweenType::None,
-        }
+        PropSet { props: Vec::new(), duration: 0.0, delay: 0.0, ease: Ease::Linear, event: TweenType::None }
     }
 }
 
 impl PropSet {
     /// Constructor
     pub fn new(props: Vec<Prop>, secs: f64) -> Self {
-        PropSet {
-            props: props,
-            duration: secs,
-            delay: 0.0,
-            ease: Ease::Linear,
-            event: TweenType::Generic,
-        }
+        PropSet { props: props, duration: secs, delay: 0.0, ease: Ease::Linear, event: TweenType::Animation }
     }
 
     /// Builder method to define the TweenType type.
-    pub fn for_type(mut self, evt:TweenType) -> Self { self.event = evt; self }
+    pub fn for_type(mut self, evt: TweenType) -> Self {
+        self.event = evt;
+        self
+    }
     /// Builder method to set the delay
-    pub fn delay(mut self, secs: f64) -> Self { self.delay = secs; self }
+    pub fn delay(mut self, secs: f64) -> Self {
+        self.delay = secs;
+        self
+    }
     /// Builder method to set the ease formula
-    pub fn ease(mut self, ease: Ease) -> Self { self.ease = ease; self }
+    pub fn ease(mut self, ease: Ease) -> Self {
+        self.ease = ease;
+        self
+    }
+
+    // pub fn repeat(mut self, )
+
 
     /// Get a specific Prop based on the numeric prop_id
     pub fn get_prop_value(&self, prop_id: u32) -> Prop {

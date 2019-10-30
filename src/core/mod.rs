@@ -26,16 +26,23 @@ mod tween;
 /// Helper function to convert hex color string to rgb tuple, each in range 0.0 to 255.0
 /// Copied from Quicksilver Color::from_hex function. Only allows format "#FFFFFF" and
 /// not the shortened 3-character form.
-pub fn rgb_from_hex(hex: &str) -> (f32, f32, f32) {
+pub fn rgb_from_hex(hex: &str) -> (f32, f32, f32, f32) {
     let trimmed_hex = hex.trim_start_matches('#');
     match trimmed_hex.len() {
         6 => {
             let red = u8::from_str_radix(&trimmed_hex[0..=1], 16).unwrap();
             let green = u8::from_str_radix(&trimmed_hex[2..=3], 16).unwrap();
             let blue = u8::from_str_radix(&trimmed_hex[4..=5], 16).unwrap();
-            (red as f32, green as f32, blue as f32)
-        },
-        _ => panic!("Malformed hex string")
+            (red as f32, green as f32, blue as f32, 255.0)
+        }
+        8 => {
+            let red = u8::from_str_radix(&trimmed_hex[0..=1], 16).unwrap();
+            let green = u8::from_str_radix(&trimmed_hex[2..=3], 16).unwrap();
+            let blue = u8::from_str_radix(&trimmed_hex[4..=5], 16).unwrap();
+            let alpha = u8::from_str_radix(&trimmed_hex[6..=7], 16).unwrap();
+            (red as f32, green as f32, blue as f32, alpha as f32)
+        }
+        _ => panic!("Malformed hex string"),
     }
 }
 

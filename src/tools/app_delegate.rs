@@ -1,22 +1,26 @@
 /// This AppDelegate is provided as an example of how to integrate with the Quicksilver backend and translate runloop
-/// calls to the Tweek UI architecture. The Tweek struct is used as the interface to communicate calls and events
-/// to its own array of Scenes and down the hierarchy of child views and controls. Tweek should not have a visible
-/// layer that is rendered, but instead is handled by child Scenes etc.
+/// calls to the Tweek UI architecture. That is why it is located in the tools module. Also, the AppDelegate
+/// uses the Stage struct to group together all of the Scenes and pass calls and events to to its own array of Scenes
+/// and down the hierarchy of child views and controls. A Stage should not have a visible layer that is rendered, but
+/// instead is handled by child Scenes etc.
 ///
 /// When creating your own application, you may choose to create your own version of this AppDelegate that conforms
 /// to your application needs. This example is designed for a simple UI designed for showcasing the examples in this
 /// project.
 ///
 use crate::core::*;
-use crate::gui::*;
 use crate::events::*;
+use crate::gui::*;
 
-use std::any::TypeId;
+use std::{
+    any::TypeId,
+    // collections::{BTreeMap}
+};
 
 use quicksilver::{
     geom::{Rectangle, Vector},
     graphics::Color,
-    input::{ButtonState, Key, MouseButton, MouseCursor},
+    input::{ButtonState, Key, MouseButton},
     lifecycle::{Event, State, Window},
     Error, Result,
 };
@@ -37,7 +41,7 @@ pub struct AppDelegate {
     theme: Theme,
     theme_picker: ThemePicker,
     app_state: AppState,
-    scene_builders: Vec<Box<dyn Fn() -> Stage + 'static>>,
+    stage_builders: Vec<Box<dyn Fn() -> Stage + 'static>>,
     view_index: usize,
     frames: usize,
 }
@@ -61,13 +65,16 @@ impl AppDelegate {
         let frame = Rectangle::new_sized(screen);
         let nav_scene = Scene::new(frame);
         let stage = Stage::new(frame);
+        let mut app_state = AppState::new();
+        app_state.window_size = (screen.x, screen.y);
+
         let app = AppDelegate {
             stage,
             nav_scene,
             theme,
             theme_picker,
-            app_state: AppState::new(),
-            scene_builders: Vec::new(),
+            app_state,
+            stage_builders: Vec::new(),
             view_index: 0,
             frames: 0,
         };
@@ -78,12 +85,12 @@ impl AppDelegate {
         self.nav_scene = scene;
     }
 
-    /// Save a Scene closure to load later
-    pub fn register_scene<C>(&mut self, cb: C)
+    /// Save a Stage closure to load later
+    pub fn add_stage_builder<C>(&mut self, cb: C)
     where
         C: Fn() -> Stage + 'static,
     {
-        self.scene_builders.push(Box::new(cb));
+        self.stage_builders.push(Box::new(cb));
     }
 
     /// Application lifecycle event called before runloop starts
@@ -91,18 +98,17 @@ impl AppDelegate {
         self.load_scene();
     }
 
-    pub fn load_scene(&mut self)
-    {
-        if let Some(cb) = self.scene_builders.get_mut(self.view_index) {
+    pub fn load_scene(&mut self) {
+        if let Some(cb) = self.stage_builders.get_mut(self.view_index) {
             let mut group = cb();
             self.nav_scene.set_field_value(&FieldValue::Text(group.title), TypeId::of::<Text>(), TITLE_TAG);
             self.stage.scenes.clear();
             self.stage.scenes.append(&mut group.scenes);
+            self.stage.set_theme(&mut self.theme);
             self.stage.notify(&DisplayEvent::Ready);
         }
     }
 }
-
 
 // ************************************************************************************
 // ************************************************************************************
@@ -111,7 +117,7 @@ impl AppDelegate {
 #[allow(unused_variables)]
 impl State for AppDelegate {
     fn new() -> Result<AppDelegate> {
-        Err(Error::ContextError("The AppDelegate should not be run directly. ".to_string()))
+        Err(Error::ContextError("The AppDelegate should not be run directly. Use the new(screen) method".to_string()))
     }
 
     fn update(&mut self, window: &mut Window) -> Result<()> {
@@ -121,7 +127,7 @@ impl State for AppDelegate {
                 match evt {
                     NavEvent::Next => {
                         self.view_index += 1;
-                        if self.view_index == self.scene_builders.len() {
+                        if self.view_index == self.stage_builders.len() {
                             self.view_index = 0;
                         }
                         self.load_scene();
@@ -129,18 +135,19 @@ impl State for AppDelegate {
                     }
                     NavEvent::Back => {
                         if self.view_index == 0 {
-                            self.view_index = self.scene_builders.len() - 1;
+                            self.view_index = self.stage_builders.len() - 1;
                         } else {
                             self.view_index -= 1;
                         }
                         self.load_scene();
                         return Ok(());
                     }
-                    _ => ()
+                    _ => (),
                 }
             }
             if let Ok(evt) = event.downcast_ref::<SceneEvent>() {
                 log::debug!("SceneEvent={:?}", evt);
+                log::debug!("Source={:?}", event.event_info());
                 match evt {
                     SceneEvent::Show(_) => {
                         self.nav_scene.is_interactive = false;
@@ -148,9 +155,9 @@ impl State for AppDelegate {
                     SceneEvent::Hide(_) => {
                         self.nav_scene.is_interactive = true;
                     }
-                    // _ => ()
+                    _ => ()
                 }
-                self.stage.handle_event(evt);
+                self.stage.handle_event(evt, &event.event_info());
             }
             if let Ok(evt) = event.downcast_ref::<ThemeEvent>() {
                 log::debug!("ThemeEvent={:?}", evt);
@@ -160,15 +167,14 @@ impl State for AppDelegate {
                             self.theme = theme;
                             self.stage.set_theme(&mut self.theme);
                         }
-                    }
-                    _ => ()
+                    } // _ => ()
                 }
             }
         }
 
         self.app_state.zero_offset();
-        let _ = self.stage.update(window, &mut self.app_state);
         let _ = self.nav_scene.update(window, &mut self.app_state);
+        let _ = self.stage.update(window, &mut self.app_state);
 
         self.frames += 1;
         if (self.frames % FPS_INTERVAL) == 0 {
@@ -185,8 +191,8 @@ impl State for AppDelegate {
         // TODO: Theme should define this color
         window.clear(self.theme.bg_color)?;
 
-        let _ = self.stage.render(&mut self.theme, window);
         let _ = self.nav_scene.render(&mut self.theme, window);
+        let _ = self.stage.render(&mut self.theme, window);
 
         Ok(())
     }
@@ -202,15 +208,10 @@ impl State for AppDelegate {
                 // FIXME: This hover value overrides previous result.
                 // hover = self.scene.handle_mouse_at(pt);
                 if self.nav_scene.is_interactive {
-                    hover = self.nav_scene.handle_mouse_at(pt);
+                    hover = self.nav_scene.handle_mouse_at(pt, window);
                 }
                 if !hover {
-                    hover = self.stage.handle_mouse_at(pt);
-                }
-                if hover {
-                    window.set_cursor(MouseCursor::Hand);
-                } else {
-                    window.set_cursor(MouseCursor::Default);
+                    hover = self.stage.handle_mouse_at(pt, window);
                 }
             }
             Event::MouseButton(MouseButton::Left, ButtonState::Pressed) => {
@@ -244,5 +245,4 @@ impl State for AppDelegate {
         Ok(())
     }
 }
-
 

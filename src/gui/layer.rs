@@ -5,17 +5,12 @@ use crate::core::*;
 use crate::events::*;
 use crate::tools::*;
 
-use std::{
-    any::TypeId,
-    fmt,
-    cell::RefCell,
-    rc::Rc,
-};
+use std::{any::TypeId, cell::RefCell, fmt, rc::Rc};
 
 #[allow(unused_imports)]
 use quicksilver::{
     geom::{Line, Rectangle, Shape, Transform, Vector},
-    graphics::{Background::Col, Color, Mesh, MeshTask, FontStyle},
+    graphics::{Background::Col, Color, FontStyle, Mesh, MeshTask},
     lifecycle::{run, Settings, State, Window},
 };
 
@@ -26,10 +21,12 @@ use quicksilver::{
 pub struct Layer {
     /// Arbitrary id value. TBD
     id: u32,
+    /// The rectangular position and size bounds of the object
+    pub frame: Rectangle,
     /// Identifies the object type this layer belongs to.
     pub(super) type_id: TypeId,
-    /// The rectangular position and size bounds of the object
-    pub frame: Rectangle, // TODO: make private
+    /// The path hierarchy as an array
+    pub(super) node_path: Vec<Node>,
     /// The initial frame for the object
     pub(crate) initial: Rectangle,
     /// The starting Props for an object
@@ -38,6 +35,8 @@ pub struct Layer {
     /// with a click animation. FIXME: Need to merge animations with time offsets or define rules for
     /// overrides
     pub(super) animation: Option<Tween>,
+    /// Cached mesh from previous render pass
+    pub(super) meshes: Vec<MeshTask>,
     /// Props that are modified during Tween animation
     pub(super) transition: Transition,
     /// The rotation of the object in degrees, where 0 degrees points to "3 o'clock" (TBD)
@@ -46,7 +45,7 @@ pub struct Layer {
     pub corner_radius: f32,
     /// Experimental point outside of the frame for rotation
     pub anchor_pt: Vector,
-    /// Enum to describe background of object. TODO: deprecate bg_color
+    /// Enum to describe background of object.
     pub bg_style: BackgroundStyle,
     /// Background color for the scene. Otherwise it's transparent
     pub border_style: BorderStyle,
@@ -60,10 +59,12 @@ pub struct Layer {
     pub(super) click_effect: Option<PropSet>,
     /// Callback method for handling click action
     pub(super) on_click: Option<Box<dyn FnMut(&mut AppState) + 'static>>,
+    /// Callback method for handling click action
+    pub(super) click_action: Option<Box<dyn FnMut(&mut AppState, String) + 'static>>,
     /// Notifications
     pub(super) notifications: Rc<RefCell<Notifications>>,
     /// The currently executing animations
-    pub(self) tween_type: TweenType,
+    pub(super) tween_type: TweenType,
     /// Should the layer move/resize with the parent scene?
     pub lock_frame: bool,
     /// Should the layer move/resize with the parent scene?
@@ -72,16 +73,52 @@ pub struct Layer {
     pub debug: bool,
 }
 
+
+impl Clone for Layer {
+    /// This is just a shallow copy that only clones visual attributes
+    fn clone(&self) -> Self {
+        Layer {
+            id: 0,
+            frame: self.frame,
+            type_id: self.type_id, // the default
+            node_path: Vec::new(),
+            initial: self.frame,
+            defaults: Vec::new(),
+            animation: None,
+            meshes: Vec::new(),
+            transition: self.transition.clone(),
+            rotation: self.rotation,
+            corner_radius: self.corner_radius,
+            anchor_pt: Vector::ZERO,
+            bg_style: self.bg_style,
+            border_style: self.border_style,
+            font_style: self.font_style,
+            mouse_state: MouseState::None,
+            hover_effect: self.hover_effect.clone(),
+            click_effect: self.click_effect.clone(),
+            on_click: None,
+            click_action: None,
+            notifications: Notifications::new(),
+            tween_type: TweenType::None,
+            lock_frame: false,
+            lock_style: false,
+            debug: false,
+        }
+    }
+}
+
 impl Layer {
     /// Constructor
     pub fn new(frame: Rectangle) -> Self {
         Layer {
             id: 0,
-            type_id: TypeId::of::<Layer>(), // the default
             frame,
+            type_id: TypeId::of::<Layer>(), // the default
+            node_path: Vec::new(),
             initial: frame,
             defaults: Vec::new(),
             animation: None,
+            meshes: Vec::new(),
             transition: Transition::new(frame, Color::WHITE, 0.0),
             rotation: 0.0,
             corner_radius: 0.0,
@@ -93,21 +130,41 @@ impl Layer {
             hover_effect: None,
             click_effect: None,
             on_click: None,
+            click_action: None,
             notifications: Notifications::new(),
             tween_type: TweenType::None,
             lock_frame: false,
             lock_style: false,
-            debug: true,
+            debug: false,
         }
     }
 
     /// Setter for id
-    pub fn set_id(&mut self, id: u32) { self.id = id }
+    pub fn set_id(&mut self, id: u32) {
+        self.id = id
+    }
     /// Getter for id
-    pub fn get_id(&self) -> u32 { self.id }
+    pub fn get_id(&self) -> u32 {
+        self.id
+    }
+
+    /// A setter to set the parent path and append this layer to the path
+    pub fn set_path(&mut self, path: &[Node]) -> Vec<Node> {
+        let mut path = path.to_vec();
+        path.push(Node::new(self.id, self.type_id));
+        self.node_path = path.clone();
+        path
+    }
+
+    pub fn full_path(&self) -> String {
+        let path = print_full_path(self.node_path.clone());
+        path
+    }
 
     /// Setter for Tween animation. Only needed outside of the Tweek crate
-    pub fn set_animation(&mut self, tween: Tween) { self.animation = Some(tween) }
+    pub fn set_animation(&mut self, tween: Tween) {
+        self.animation = Some(tween)
+    }
 
     /// Should be called when SceneEvent::Ready notify event is sent
     pub(super) fn on_ready(&mut self) {
@@ -118,13 +175,27 @@ impl Layer {
 
     /// Called by Displayable after notify(DisplayEvent::Move)
     pub(super) fn on_move_complete(&mut self) {
-        self.init_props();
+        log::debug!(
+            "on_move_complete: <{}> [{}] >> {}",
+            gui_print_type(&self.type_id),
+            self.get_id(),
+            self.debug_style()
+        );
+        self.save_props();
         self.initial = self.frame;
         self.defaults = Tween::load_props(self);
     }
 
     /// Set the default animations
-    pub(super) fn apply_theme(&mut self, theme: &mut Theme) {
+    pub(super) fn apply_theme(&mut self, theme: &mut Theme) -> bool {
+        if self.lock_style {
+            log::debug!("Style locked: <{}> [{}]", gui_print_type(&self.type_id), self.get_id());
+            return false;
+        }
+        // General style rules
+        self.font_style = FontStyle::new(theme.font_size, theme.fg_color);
+
+        // Style rules for GUI input fields
         if GUI_INPUTS.contains(&self.type_id) {
             self.border_style = BorderStyle::SolidLine(theme.input_fg_color, theme.border_width);
             self.bg_style = BackgroundStyle::Solid(theme.input_bg_color);
@@ -132,6 +203,7 @@ impl Layer {
                 self.hover_effect = Some(theme.on_view_hover.clone());
             }
         }
+        // Button style rules
         if self.type_id == TypeId::of::<Button>() {
             if self.hover_effect.is_none() {
                 self.hover_effect = Some(theme.on_button_hover.clone());
@@ -142,6 +214,8 @@ impl Layer {
             self.bg_style = BackgroundStyle::Solid(theme.button_bg_color);
             self.font_style = FontStyle::new(theme.font_size, theme.button_fg_color);
         }
+        log::debug!("apply_theme: <{}> [{}] >> {}", gui_print_type(&self.type_id), self.get_id(), self.debug_style());
+        true
     }
 
     /// If animation is running, run updates
@@ -153,8 +227,7 @@ impl Layer {
 
             // Tell tween to update its state
             tween.status(&mut notifier);
-            let result = tween.request_update(&mut notifier);
-            if let Some(propset) = result {
+            if let Some(propset) = tween.request_update(&mut notifier, None) {
                 self.update_props(&*propset.props);
             }
             // Filter for TweenEvents
@@ -166,30 +239,21 @@ impl Layer {
                     TweenEvent::Status(id, state) => {
                         match state {
                             PlayState::Starting => {
-                                log::debug!("<{}> [{}] {:?} {:?}", gui_print_type(&self.type_id), id, state, self.tween_type);
+                                log::debug!("{} {:?} {:?}", self.debug_id(), state, self.tween_type);
                             }
                             PlayState::Completed => {
-                                log::debug!("<{}> [{}] {:?} {:?}", gui_print_type(&self.type_id), id, state, self.tween_type);
+                                log::debug!("{} {:?} {:?}", self.debug_id(), state, self.tween_type);
+                                // self.save_props();
+                                // self.defaults = Tween::load_props(self);
+                                // self.initial = self.frame;
                                 match self.tween_type {
-                                    TweenType::Move => {
-                                        self.defaults = Tween::load_props(self);
-                                        self.initial = self.frame;
-                                        notifier.notify(LayerEvent::Move(id, self.type_id, state))
-                                    }
-                                    TweenType::Hover => {
-                                        self.defaults = Tween::load_props(self);
-                                        self.initial = self.frame;
-                                        notifier.notify(LayerEvent::Hover(id, self.type_id, state))
-                                    }
-                                    TweenType::Click => {
-                                        self.defaults = Tween::load_props(self);
-                                        self.initial = self.frame;
-                                        notifier.notify(LayerEvent::Click(id, self.type_id, state))
-                                    }
-                                    _ => ()
+                                    TweenType::Move => notifier.notify(LayerEvent::Move(id, self.type_id, state)),
+                                    TweenType::Hover => notifier.notify(LayerEvent::Hover(id, self.type_id, state)),
+                                    TweenType::Click => notifier.notify(LayerEvent::Click(id, self.type_id, state)),
+                                    _ => (),
                                 }
                             }
-                            _ => ()
+                            _ => (),
                         }
                     }
                     // TweenEvent::EndState(id, props) => {
@@ -261,7 +325,7 @@ impl Layer {
 
     /// Method to call when starting an animation. This will copy the current properties into Transition
     pub fn start_animation(&mut self, mut tween: Tween) {
-        // FIXME: Log every detail. Record the event type
+        self.tween_type = TweenType::Animation;  // Identify this as a pure animation
         self.init_props();
         &mut tween.play();
         self.animation = Some(tween);
@@ -277,25 +341,34 @@ impl Layer {
     pub(super) fn draw_background(&self, window: &mut Window) {
         let border: (Option<Color>, f32) = {
             match self.border_style {
-                BorderStyle::None => {
-                    (None, 0.0)
-                }
-                BorderStyle::SolidLine(color, width) => {
-                    (Some(color), width)
-                }
+                BorderStyle::None => (None, 0.0),
+                BorderStyle::SolidLine(color, width) => (Some(color), width),
             }
         };
         let mut mesh = match self.bg_style {
             BackgroundStyle::Solid(color) => {
                 if self.is_animating() {
-                    DrawShape::rectangle(&self.frame, Some(self.transition.color), border.0, border.1, self.corner_radius)
+                    DrawShape::rectangle(
+                        &self.frame,
+                        Some(self.transition.color),
+                        border.0,
+                        border.1,
+                        self.corner_radius,
+                    )
                 } else {
                     DrawShape::rectangle(&self.frame, Some(color), border.0, border.1, self.corner_radius)
                 }
             }
-            _ => { Mesh::new() }
+            _ => Mesh::new(),
         };
         if mesh.vertices.len() > 0 {
+            // for v in &mesh.vertices {
+            //     eprintln!("{:?} {:?} {:?}", self.debug_id(), v.pos, v.col);
+            // }
+            // for g in &mesh.triangles {
+            //     eprintln!("{:?} {:?}", self.debug_id(), g.indices);
+            // }
+
             let mut task = MeshTask::new(0);
             task.vertices.append(&mut mesh.vertices);
             task.triangles.append(&mut mesh.triangles);
@@ -310,7 +383,7 @@ impl Layer {
                 // TODO: allow rounded corners?
                 DrawShape::rectangle(&self.frame, None, Some(color), width, self.corner_radius)
             }
-            _ => { Mesh::new() }
+            _ => Mesh::new(),
         };
         if mesh.vertices.len() > 0 {
             let mut task = MeshTask::new(0);
@@ -329,7 +402,6 @@ impl Layer {
         Vector::ZERO
     }
 
-
     /// Returns a Rect within the parent rect padded by the specified values, using
     /// the coordinate system of this Layer object. That is, the origin is based on (0.0, 0.0)
     /// in this self.frame
@@ -337,7 +409,7 @@ impl Layer {
     /// TBD: Should we follow CSS pattern or Apple's UIEdgeInsets pattern?
     /// – CSS margins: https://developer.mozilla.org/en-US/docs/Web/CSS/margin
     /// – Apple iOS insets: https://developer.apple.com/documentation/uikit/1624475-uiedgeinsetsmake
-    /// It seems more logical to use top-left-right-bottom, so mapping the x, y of a Rect is more obvious.
+    /// It seems more logical to use left-top-right-bottom, so mapping the x, y of a Rect is more obvious.
     pub(super) fn inset_by(&self, left: f32, top: f32, right: f32, bottom: f32) -> Rectangle {
         Rectangle::new(
             (self.frame.pos.x + left, self.frame.pos.y + top),
@@ -354,16 +426,12 @@ impl Layer {
         )
     }
 
-    /// Helper method to get the Lines that outline an object frame
-    pub(super) fn get_border_lines(&self, width: f32) -> Vec<Line> {
-        let lines = UITools::make_border_lines(&self.frame, width);
-        lines
-    }
-
+    /// Check if animation tween exists
     pub fn has_animation(&self) -> bool {
         self.animation.is_some()
     }
 
+    /// More detailed: Does the tween animation exist and is it running?
     pub fn is_animating(&self) -> bool {
         if let Some(tween) = &self.animation {
             match tween.state {
@@ -376,6 +444,70 @@ impl Layer {
             }
         }
         false
+    }
+
+    /// TODO: Use from Displayable base.rs or discard
+    pub fn node_id(&self) -> String {
+        format!("{}-{}", gui_print_type(&self.type_id), self.id)
+    }
+
+    /// TODO: Use from Displayable base.rs or discard
+    pub fn debug_id(&self) -> String {
+        format!("<{}> [{}]", gui_print_type(&self.type_id), self.id)
+    }
+
+    /**
+     * Print all style details:
+        – font style
+        – background
+        – border
+    */
+    pub fn debug_style(&self) -> String {
+        let mut lines: Vec<String> = Vec::new();
+        let color = self.font_style.get_color();
+        let out = format!(
+            "Font: #{:02X}{:02X}{:02X} size={}",
+            (color.r * 255.0) as u8,
+            (color.g * 255.0) as u8,
+            (color.b * 255.0) as u8,
+            self.font_style.get_size()
+        );
+        lines.push(out);
+        let color = self.bg_style.get_color();
+        let out = format!(
+            "BG: #{:02X}{:02X}{:02X} alpha={:1}",
+            (color.r * 255.0) as u8,
+            (color.g * 255.0) as u8,
+            (color.b * 255.0) as u8,
+            color.a
+        );
+        lines.push(out);
+        let border = self.border_style.get_border();
+        let out = format!(
+            "Border: #{:02X}{:02X}{:02X} alpha={:1} width={:1}",
+            (border.0.r * 255.0) as u8,
+            (border.0.g * 255.0) as u8,
+            (border.0.b * 255.0) as u8,
+            border.0.a,
+            border.1
+        );
+        lines.push(out);
+        let result = lines.join(" // ");
+        result
+    }
+}
+
+impl fmt::Debug for Layer {
+    /// Special debug output that trims the extra Vector wrappers.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "LAYER: <{}>-[{}]-Pos({:.2})-Size({:.2})",
+            gui_print_type(&self.type_id),
+            self.id,
+            self.frame.pos,
+            self.frame.size
+        )
     }
 }
 
@@ -404,15 +536,18 @@ impl Tweenable for Layer {
             Prop::Rotate(_) => Prop::Rotate(FloatProp::new(self.rotation)),
             Prop::Position(_) => Prop::Position(Point2D::new(self.frame.pos.x, self.frame.pos.y)),
             Prop::Size(_) => Prop::Size(Frame2D::new(self.frame.size.x, self.frame.size.y)),
-            Prop::Border(_, _) => {
-                match self.border_style {
-                    BorderStyle::None => Prop::Border(None, FloatProp::new(0.0)),
-                    BorderStyle::SolidLine(color, width) => {
-                        let rgb = (color.r * 255.0 as f32, color.g * 255.0 as f32, color.b * 255.0 as f32, color.a * 255.0 as f32);
-                        Prop::Border(Some(ColorRGBA::new(rgb.0, rgb.1, rgb.2, rgb.3)), FloatProp::new(width))
-                    }
+            Prop::Border(_, _) => match self.border_style {
+                BorderStyle::None => Prop::Border(None, FloatProp::new(0.0)),
+                BorderStyle::SolidLine(color, width) => {
+                    let rgb = (
+                        color.r * 255.0 as f32,
+                        color.g * 255.0 as f32,
+                        color.b * 255.0 as f32,
+                        color.a * 255.0 as f32,
+                    );
+                    Prop::Border(Some(ColorRGBA::new(rgb.0, rgb.1, rgb.2, rgb.3)), FloatProp::new(width))
                 }
-            }
+            },
             _ => Prop::None,
         }
     }
@@ -447,7 +582,8 @@ impl Tweenable for Layer {
                 if let Some(rgba) = rgba {
                     self.transition.border_width = width[0] as f32;
                     // Apply rgb values in range 0.0 to 1.0
-                    let color = Color { r: rgba[0] / 255.0, g: rgba[1] / 255.0, b: rgba[2] / 255.0, a: rgba[3] / 255.0 };
+                    let color =
+                        Color { r: rgba[0] / 255.0, g: rgba[1] / 255.0, b: rgba[2] / 255.0, a: rgba[3] / 255.0 };
                     self.transition.border_color = color;
                 }
             }
@@ -471,32 +607,31 @@ impl Tweenable for Layer {
             BackgroundStyle::Solid(_) => {
                 self.bg_style = BackgroundStyle::Solid(self.transition.color);
             }
-            _ => ()
+            _ => (),
         }
         match self.border_style {
             BorderStyle::SolidLine(_, _) => {
                 self.border_style = BorderStyle::SolidLine(self.transition.border_color, self.transition.border_width);
             }
-            _ => ()
+            _ => (),
         }
         self.initial = self.frame;
     }
 
     fn apply(&mut self, prop: &Prop) {
         match prop {
-            Prop::Alpha(val) => {
-                self.transition.color.a = val[0] as f32
-            }
+            Prop::Alpha(val) => self.transition.color.a = val[0] as f32,
             Prop::Color(rgba) => {
                 if rgba[3] == 0.0 {
                     self.bg_style = BackgroundStyle::None;
                 } else {
-                    let color = Color { r: rgba[0] / 255.0, g: rgba[1] / 255.0, b: rgba[2] / 255.0, a: rgba[3] / 255.0 };
+                    let color =
+                        Color { r: rgba[0] / 255.0, g: rgba[1] / 255.0, b: rgba[2] / 255.0, a: rgba[3] / 255.0 };
                     self.bg_style = BackgroundStyle::Solid(color);
                 }
             }
             Prop::Tint(rgba) => {
-                let color = Color { r: rgba[0] / 255.0, g: rgba[1] / 255.0, b: rgba[2] / 255.0, a: rgba[3] / 255.0 };
+                let _color = Color { r: rgba[0] / 255.0, g: rgba[1] / 255.0, b: rgba[2] / 255.0, a: rgba[3] / 255.0 };
             }
             Prop::Rotate(val) => self.rotation = val[0] as f32,
             Prop::Position(pos) => {
@@ -509,7 +644,8 @@ impl Tweenable for Layer {
             }
             Prop::Border(rgba, width) => {
                 if let Some(rgba) = rgba {
-                    let color = Color { r: rgba[0] / 255.0, g: rgba[1] / 255.0, b: rgba[2] / 255.0, a: rgba[3] / 255.0 };
+                    let color =
+                        Color { r: rgba[0] / 255.0, g: rgba[1] / 255.0, b: rgba[2] / 255.0, a: rgba[3] / 255.0 };
                     self.border_style = BorderStyle::SolidLine(color, width[0] as f32)
                 } else {
                     self.border_style = BorderStyle::None
@@ -530,13 +666,6 @@ impl Playable for Layer {
         if let Some(tween) = &mut self.animation {
             tween.tick();
         }
-    }
-}
-
-impl fmt::Debug for Layer {
-    /// Special debug output that trims the extra Vector wrappers.
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "<{}>-{}-Pos({:.2})-Size({:.2})", self.id, gui_print_type(&self.type_id), self.frame.pos, self.frame.size)
     }
 }
 
@@ -575,9 +704,7 @@ impl BackgroundStyle {
                 color.a = 0.0;
                 color
             }
-            BackgroundStyle::Solid(color) => {
-                *color
-            }
+            BackgroundStyle::Solid(color) => *color,
         }
     }
 }
@@ -588,7 +715,7 @@ pub enum BorderStyle {
     /// No border
     None,
     /// Has border with specified width
-    SolidLine(Color, f32)
+    SolidLine(Color, f32),
 }
 
 impl BorderStyle {
@@ -599,15 +726,14 @@ impl BorderStyle {
                 color.a = 0.0;
                 (color, 0.0)
             }
-            BorderStyle::SolidLine(color, width) => {
-                (*color, *width)
-            }
+            BorderStyle::SolidLine(color, width) => (*color, *width),
         }
     }
 }
 
 /// A wrapper for Tweenable values that is modified through update_props()
-pub(super) struct Transition {
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Transition {
     /// The position and size Rectangle
     // pub frame: Rectangle,
     /// The current color

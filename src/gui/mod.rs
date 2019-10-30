@@ -90,9 +90,19 @@ lazy_static! {
         array.push(TypeId::of::<TextArea>());
         array.push(TypeId::of::<TextField>());
         array.push(TypeId::of::<OptionGroup>());
+        // array.push(TypeId::of::<Scene>());
         array
     };
 }
+
+// lazy_static! {
+//     #[allow(missing_docs)]
+//     pub static ref GUI_PANELS: Vec<TypeId> = {
+//         let mut array = Vec::new();
+//         array.push(TypeId::of::<Scene>());
+//         array
+//     };
+// }
 
 /// Helper to get the string for a given GUI component
 pub fn gui_print_type(type_id: &TypeId) -> &'static str {
@@ -103,3 +113,7 @@ pub fn gui_print_type(type_id: &TypeId) -> &'static str {
     }
 }
 
+pub fn print_full_path(nodes: Vec<Node>) -> String {
+    let paths: Vec<String> = nodes.iter().map(|x| x.id_string() ).collect();
+    format!("/{}", paths.join("/"))
+}

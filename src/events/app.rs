@@ -1,6 +1,7 @@
 /// Events related to navigation requests and actions
 ///
-use super::{AnyEvent};
+use super::AnyEvent;
+use crate::gui::Node;
 
 /// An enum for specifying the common navigation events a GUI might need
 /// More types to consider:
@@ -28,9 +29,13 @@ impl AnyEvent for NavEvent {}
 /// An enum for specifying arbitrary actions
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SceneEvent {
+    /// Nothing is happening
+    None,
     /// Show something
-    Show(u32),
+    Show(Node),
     /// Hide something
-    Hide(u32),
+    Hide(Node),
+    /// Theme changed to the number that identifies it
+    ChangeTheme(u32),
 }
 impl AnyEvent for SceneEvent {}

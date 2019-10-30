@@ -5,14 +5,16 @@ use crate::core::*;
 use crate::events::*;
 use crate::tools::*;
 
+use image_rs::{imageops, DynamicImage};
+
+#[allow(unused_imports)]
 use quicksilver::{
     geom::{Rectangle, Shape, Vector},
-    graphics::{Background::Col, Background::Img, Color, FontStyle, Image, PixelFormat},
-    input::{Key},
+    graphics::{Background::Col, Color, Image, MeshTask},
+    input::{ButtonState, Key, MouseButton, MouseCursor},
     lifecycle::Window,
 };
 
-use glyph_brush::HorizontalAlign as HAlign;
 use std::any::TypeId;
 use std::ops::Range;
 
@@ -32,8 +34,6 @@ pub struct TextArea {
     pub cursor: Option<Cursor>,
     /// The internal frame for text display (inset from the outer frame)
     input_frame: Rectangle,
-    /// Cached image text that is unchanged until the user scrolls or tries to start editing.
-    image_text: Option<Image>,
     /// The editor utility that manages all text state while user edits text.
     editor: TextAreaEditor,
     // draw_font: DrawFont,
@@ -46,16 +46,15 @@ pub struct TextArea {
 
 impl TextArea {
     /// Constructor
-    pub fn new(frame: Rectangle, theme: &mut Theme, can_edit: bool) -> Self {
+    pub fn new(frame: Rectangle, can_edit: bool) -> Self {
         // FIXME: The default() does not load a font and therefore requires a font to be set in set_theme()
         let layer = Layer::new(frame);
 
         let input_frame = layer.inset_by(10.0, 10.0, 10.0, 10.0);
         // log::debug!("outer frame={:?} input frame={:?}", frame, input_frame);
 
-        let mut editor = TextAreaEditor::create(theme)
+        let mut editor = TextAreaEditor::default()
             .with_frame((input_frame.x(), input_frame.y()), (input_frame.width(), input_frame.height()));
-
 
         // temporary hack to test scroll bar
         editor.ctx.frame.max.x = editor.ctx.frame.max.x - 10.0;
@@ -66,7 +65,6 @@ impl TextArea {
             placeholder: None,
             cursor: None,
             input_frame,
-            image_text: None,
             editor,
             is_editing: false,
             is_hovering: false,
@@ -97,17 +95,21 @@ impl TextArea {
     }
 
     /// Tells the editor to switch to the editing state.
-    fn start_editing(&mut self) {
+    fn start_editing(&mut self, position: Option<usize>) {
         log::debug!("TextArea start_editing");
+        if !self.is_editing {
+            self.layer.meshes.clear();
+        }
 
         self.layer.mouse_state = MouseState::Focus;
         self.is_editing = true;
-        self.editor.ctx.start_editing();
+        self.editor.ctx.start_editing(position);
 
         let rect = self.input_frame;
         let pt1 = Vector::new(rect.x(), rect.y());
         let pt2 = Vector::new(rect.x(), rect.y() + rect.height());
-        let cursor = Cursor::new(pt1, pt2, 2.0).default_animation();
+        let mut cursor = Cursor::new(pt1, pt2, 2.0).default_animation();
+        cursor.set_id(self.get_id());
         self.cursor = Some(cursor);
     }
 
@@ -115,14 +117,43 @@ impl TextArea {
     fn stop_editing(&mut self) {
         self.is_editing = false;
         self.cursor = None;
-        self.image_text = None;
-        self.editor.update_rendered_text();
+        self.update_rendered_text();
+    }
+
+    fn update_rendered_text(&mut self) {
+        self.editor.tex_info = None;
+        if self.get_text().len() == 0 {
+            return;
+        }
+        // let style = FontStyle::new(self.editor.ctx.font_size, self.ctx.font_color);
+        let frame = self.input_frame;
+        let params = TextParams::new(self.layer.font_style.clone())
+            .frame(frame.clone())
+            .text(self.get_text())
+            .multiline(true);
+
+        let (imgbuf, _text_w, text_h) = self.editor.ctx.draw_font.render_pixels(params);
+        self.editor.full_render = Some(imgbuf.clone());
+
+        // Create a new image to overlay the rendered text onto. Otherwise, problems with rendering can happen.
+        // It seems that the output from render_pixels is not right.
+        let text_w = 300;
+        let mut canvas = DynamicImage::new_rgba8(text_w, text_h);
+        imageops::overlay(&mut canvas, &imgbuf, 0, 0);
+        let raw = canvas.to_rgba().into_raw();
+
+        if let Some(idx) = DrawImage::upload_image(&self.node_key(), raw.as_slice(), text_w, text_h) {
+            let tex = GPUTexture::new(idx, text_w, text_h);
+            self.editor.tex_info = Some(tex);
+            self.editor.ctx.text_size = (text_w, text_h);
+        }
     }
 }
 
 impl Displayable for TextArea {
-
-    fn get_id(&self) -> u32 { self.layer.get_id() }
+    fn get_id(&self) -> u32 {
+        self.layer.get_id()
+    }
 
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
@@ -133,9 +164,9 @@ impl Displayable for TextArea {
         TypeId::of::<TextArea>()
     }
 
-    fn get_layer_mut(&mut self) -> &mut Layer {
-        &mut self.layer
-    }
+    fn get_layer(&self) -> &Layer { &self.layer }
+
+    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -147,10 +178,20 @@ impl Displayable for TextArea {
     }
 
     fn set_theme(&mut self, theme: &mut Theme) {
-        if self.layer.lock_style { return }
-        self.layer.apply_theme(theme);
-        self.editor.ctx.font_size = theme.font_size;
+        let ok = self.layer.apply_theme(theme);
+        if !ok {
+            return;
+        }
+
+        // self.editor.ctx.update_metrics();
+        // self.editor.update_textarea();
+        self.layer.meshes.clear();
+        self.update_rendered_text();
+
+        let data = theme.data_for_font(Theme::DEFAULT_FONT).clone();
+        self.editor.ctx.set_font_data(data, theme.font_size);
         self.layer.border_style = BorderStyle::SolidLine(theme.border_color, theme.border_width);
+        self.layer.bg_style = BackgroundStyle::None;
     }
 
     fn get_perimeter_frame(&self) -> Option<Rectangle> {
@@ -161,7 +202,7 @@ impl Displayable for TextArea {
     fn notify(&mut self, event: &DisplayEvent) {
         match event {
             DisplayEvent::Activate => {
-                self.start_editing();
+                self.start_editing(None);
             }
             DisplayEvent::Deactivate => {
                 self.stop_editing();
@@ -169,9 +210,10 @@ impl Displayable for TextArea {
             DisplayEvent::Ready => {
                 self.layer.on_ready();
                 if self.get_text().len() > 0 {
-                    self.editor.update_rendered_text();
+                    self.editor.ctx.update_metrics();
+                    self.editor.update_textarea();
+                    self.update_rendered_text();
                 }
-                // self.start_editing();
             }
             DisplayEvent::Moved => {
                 self.layer.on_move_complete();
@@ -183,7 +225,6 @@ impl Displayable for TextArea {
     fn update(&mut self, window: &mut Window, state: &mut AppState) {
         let offset = Vector::new(state.offset.0, state.offset.1);
         self.layer.frame.pos = self.layer.initial.pos + offset;
-        // self.input_frame = self.layer.inset_by(10.0, 10.0, 10.0, 10.0);
         self.layer.tween_update();
         if let Some(cursor) = &mut self.cursor {
             cursor.update(window, state);
@@ -200,51 +241,60 @@ impl Displayable for TextArea {
 
         if self.is_editing {
             self.editor.update_textarea();
-            let cursor_space = 0.0;
             if self.get_text().len() > 0 {
-                if let Some(mesh_task) = &self.editor.ctx.cached_mesh {
+                if let Some(mesh_task) = &self.editor.ctx.draw_font.cached_mesh {
                     window.add_task(mesh_task.clone());
                 } else {
                     if let Some(text) = self.editor.get_visible_text(self.scroll_offset.y) {
-                        let style = FontStyle::new(theme.font_size, Color::BLUE);
-                        if let Some(task) = self.editor.ctx.draw_font.draw(
-                            &text,
-                            &style,
-                            HAlign::Left,
-                            &self.input_frame,
-                            window,
-                            true
-                        ) {
-                            self.editor.ctx.cached_mesh = Some(task.clone());
+                        let params = TextParams::new(self.layer.font_style)
+                            .frame(self.input_frame.clone())
+                            .text(&text)
+                            .multiline(true);
+                        if let Some(task) = self.editor.ctx.draw_font.draw(params)
+                        {
                             window.add_task(task);
                         }
                     }
                 }
             }
             if let Some(cursor) = &mut self.cursor {
-                let cursor_pt =
-                    Vector::new(self.editor.ctx.cursor_origin.0 + cursor_space, self.editor.ctx.cursor_origin.1);
-                cursor.render_at_point(&cursor_pt, &theme, window);
+                let mut pt = self.editor.ctx.cursor_origin;
+
+                let cursor_height = theme.font_size;
+                let y2 = pt.1 + cursor_height * 0.2;
+                let y1 = y2 - cursor_height;
+
+                let pt1 = Vector::new(pt.0, y1);
+                let pt2 = Vector::new(pt.0, y2);
+                let mut line = cursor.render_line(&pt1, &pt2, &theme);
+
+                let mut mesh = MeshTask::new(0);
+                mesh.append(&mut line);
+                window.add_task(mesh.clone());
+
                 // log::debug!("frame={:?} cursor={:?}", self.input_frame, cursor_pt);
             }
         } else {
-            if let Some(img) = &self.image_text {
-                window.draw(&img.area().constrain(&self.input_frame), Img(&img));
+            if self.layer.meshes.len() > 0 {
+                for task in &self.layer.meshes {
+                    window.add_task(task.clone());
+                }
             } else {
-                if let Some(imgbuf) = self.editor.crop_cached_render(
-                    0,
-                    self.scroll_offset.y as u32,
-                    self.editor.ctx.frame.width() as u32,
-                    self.editor.ctx.frame.height() as u32,
-                ) {
-                    let (text_w, text_h) = imgbuf.dimensions();
-                    // log::debug!("image text w={:?} h={:?}", text_w, text_h);
-                    let img: Image =
-                        Image::from_raw(imgbuf.into_raw().as_slice(), text_w, text_h, PixelFormat::RGBA).unwrap();
-                    window.draw(&img.area().constrain(&self.input_frame), Img(&img));
-                    self.image_text = Some(img);
+                if let Some(tex) = &mut self.editor.tex_info {
+                    let full_size = Vector::new(self.input_frame.width(), tex.height as f32);
+                    let region = Rectangle::new((0.0, self.scroll_offset.y), self.input_frame.size);
+                    // log::debug!("Render texture idx={} full_size={:?} region={:?}", tex.0, full_size, region);
+
+                    let tex_quad = DrawImage::normalize_tex_quad(full_size, region);
+                    let color = self.layer.font_style.get_color();
+                    if let Some(mesh) = DrawImage::sub_texture(tex.idx, self.input_frame.clone(), Some(tex_quad), color) {
+                        window.add_task(mesh.clone());
+                        self.layer.meshes.push(mesh);
+                    } else {
+                        log::error!("DrawImage failed ");
+                    }
                 } else {
-                    log::debug!("NO IMAGE x={:?} y={:?}", 0, 0);
+                    log::error!("Full render is missing");
                 }
             }
         }
@@ -252,6 +302,7 @@ impl Displayable for TextArea {
         // Render scrollbar
         let content_height = self.editor.ctx.text_size.1 as f32;
         if let Some(rect) = UITools::get_scrollbar_frame(content_height, &self.layer.frame, self.scroll_offset.y) {
+            // FIXME: use theme for scrollbar color
             window.draw(&rect, Col(Color::from_hex(UITools::SCROLLBAR_COLOR)));
         }
 
@@ -259,8 +310,19 @@ impl Displayable for TextArea {
         self.layer.draw_border(window);
     }
 
-    fn handle_mouse_at(&mut self, pt: &Vector) -> bool {
+    fn handle_mouse_at(&mut self, pt: &Vector, window: &mut Window) -> bool {
         self.is_hovering = self.layer.handle_mouse_over(pt);
+        if self.is_hovering {
+            if pt.overlaps_rectangle(&self.input_frame) {
+                window.set_cursor(MouseCursor::Text);
+                // let local_pt = *pt - self.layer.frame.pos;
+                // self.editor.find_cursor_position(local_pt.x, local_pt.y, self.scroll_offset.y);
+            } else {
+                window.set_cursor(MouseCursor::Hand);
+            }
+        } else {
+            window.set_cursor(MouseCursor::Default);
+        }
         return self.is_hovering;
     }
 }
@@ -276,7 +338,6 @@ impl Responder for TextArea {
         }
         if self.can_edit && c.is_ascii() {
             self.editor.ctx.insert_char(c);
-            self.image_text = None;
         } else {
             // log::debug!("### non ascii={}", c);
         }
@@ -301,7 +362,6 @@ impl Responder for TextArea {
             Key::Return => {
                 if self.is_editing && self.can_edit {
                     self.editor.ctx.insert_char('\n');
-                    self.image_text = None;
                 }
             }
             _ => (),
@@ -310,11 +370,11 @@ impl Responder for TextArea {
     }
 
     fn handle_mouse_down(&mut self, pt: &Vector, _state: &mut AppState) -> bool {
-        if pt.overlaps_rectangle(&self.layer.frame) {
-            if self.is_editing {
-                return true;
-            }
-            self.start_editing();
+        if pt.overlaps_rectangle(&self.input_frame) {
+            let local_pt = *pt - self.input_frame.pos;
+            eprintln!("local_pt={:?}", local_pt);
+            let pos = self.editor.find_cursor_position(local_pt.x, local_pt.y, self.scroll_offset.y);
+            self.start_editing(pos);
             return true;
         }
         false
@@ -326,7 +386,21 @@ impl Responder for TextArea {
             let upper_limit = self.editor.ctx.text_size.1 as f32 - self.layer.frame.height();
             let eval_y = (self.scroll_offset.y + pt.y).max(0.0).min(upper_limit);
             self.scroll_offset.y = eval_y;
-            self.image_text = None;
+            // log::debug!(">>> self.scroll_offset.y {}", self.scroll_offset.y);
+            self.layer.meshes.clear();
         }
     }
+}
+
+
+//-- Support -----------------------------------------------------------------------
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum EditState {
+    /// User is idle
+    Idle,
+    /// User is typing and scrolling is disabled
+    Typing,
+    /// Scrolling underway and edits not allowed. Cursor is not visible.
+    Scrolling,
 }

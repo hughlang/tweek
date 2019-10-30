@@ -20,6 +20,8 @@ pub enum PlayState {
     Finishing,
     /// The playback has completed
     Completed,
+    /// Animation is restarting after being Idle. This happens for animations that repeat
+    Restarting,
 }
 
 /// Enum to define what kind of animation is executing or has completed.
@@ -28,7 +30,7 @@ pub enum TweenType {
     /// No tween yet. Use as default until defined within PropSet
     None,
     /// Use for any kind of raw animation not triggered by a user
-    Generic,
+    Animation,
     /// A Scene or other object is moving
     Move,
     /// A hover animation
@@ -36,4 +38,3 @@ pub enum TweenType {
     /// A click animation
     Click,
 }
-
