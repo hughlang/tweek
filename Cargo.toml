@@ -43,9 +43,9 @@ float-cmp = "0.5"
 [dependencies.quicksilver]
 default-features = false
 features = ["fonts", "complex_shapes"]
-path = "../quicksilver"
-# git = "https://github.com/hughlang/quicksilver"
-# branch = "modular_gl"
+# path = "../quicksilver"
+git = "https://github.com/hughlang/quicksilver"
+branch = "modular_gl"
 
 [dependencies.uuid]
 version = "0.7"
