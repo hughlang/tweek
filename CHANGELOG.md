@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+[Unreleased]: https://github.com/wasm-network/tweek-rust/compare/0.1.0...HEAD
+
 ### Changes to come
 – Replace Quicksilver with a more complete graphics backend.
 – Redesign the Theme system
@@ -21,10 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 – Theme support for all components (WIP)
 – Prototype AppDelegate that translates Quicksilver run loop events/calls to Tweek
 – Support for WebAssembly and WebGL display (WIP)
+– Instrumentation that prints detailed info about GUI layout, styling, and animation.
 
 ### Changed
 – Added Quicksilver as the backend 2D graphics engine (plus windowing, inputs, etc) to replace GGEZ.
-– Timeline animation is less functional now.
+– Timeline animation is somewhat broken now.
 
 ### Removed
 – GGEZ was removed as a dependency.
@@ -38,7 +41,3 @@ rotation).
 ### Added
 - Prototype animation framework using Tween principles found in Greensock AS3.
 
-
-[Unreleased]: https://github.com/wasm-network/tweek-rust/compare/0.1.0...HEAD
-
-<!-- [1.0.0]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.3.0...v1.0.0 -->

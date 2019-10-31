@@ -45,11 +45,11 @@ impl MainApp {
         let screen_size = screen.clone();
 
         delegate.add_stage_builder(move || StageBuilder::load_modals_scene(screen_size));
-        delegate.add_stage_builder(move || StageBuilder::load_themes_demo(screen_size));
-        delegate.add_stage_builder(move || StageBuilder::build_dots_demo(screen_size));
+        // delegate.add_stage_builder(move || StageBuilder::load_themes_demo(screen_size));
+        // delegate.add_stage_builder(move || StageBuilder::build_dots_demo(screen_size));
 
         // Set the nav scene
-        delegate.set_nav_scene(DemoHelper::build_nav_scene(screen));
+        // delegate.set_nav_scene(DemoHelper::build_nav_scene(screen));
 
         let mut app = MainApp { delegate, screen, frames: 0 };
         app.delegate.application_ready();
@@ -105,10 +105,10 @@ impl StageBuilder {
         let frame = Rectangle::new((xpos, ypos), (button_w, 50.0));
         let mut button = Button::new(frame)
             .background(BackgroundStyle::Solid(Color::from_hex(HexColors::DarkGreen)))
-            .border(BorderStyle::SolidLine(Color::BLACK, 3.0))
+            .border(BorderStyle::SolidLine(Color::BLACK, 2.0))
             .with_text("Show modal");
         button.set_id(99);
-        button.layer.corner_radius = 3.0;
+        button.layer.corner_radius = 5.0;
         button.layer.font_style = FontStyle::new(12.0, Color::WHITE);
         button.layer.lock_style = true;
 
@@ -146,15 +146,16 @@ impl StageBuilder {
         modal_scene.add_control(Box::new(text));
 
         // Add body text to modal scene
-        ypos += 50.0;
+        ypos += 40.0;
         let frame = modal_scene.sub_frame((0.0, ypos), (modal_w, 100.0));
         println!("initial text frame={:?}", frame);
         let string =
-            "This project will take some time to complete. We are dependent on future improvements to Quicksilver, \
-             and so we have time to make as close to perfect as possible. Keep iterating and start building with it. \
-             When it finally goes live at version 1.0, it will be fully tested and proven.";
-        let mut text = Text::new(frame, string).margin(8.0, 5.0);
+            "This modal is a Scene that is initially positioned outside of the window view. \
+            The green button triggers a Command which targets the modal with animation functions \
+            and tells it to move to the center of the window. ";
+        let mut text = Text::new(frame, string).margin(8.0, 0.0);
         text.layer.font_style = FontStyle::new(14.0, Color::BLACK);
+        text.layer.lock_style = true;
         text.multiline = true;
         modal_scene.add_control(Box::new(text));
 

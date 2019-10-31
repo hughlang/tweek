@@ -214,7 +214,7 @@ impl Layer {
             self.bg_style = BackgroundStyle::Solid(theme.button_bg_color);
             self.font_style = FontStyle::new(theme.font_size, theme.button_fg_color);
         }
-        log::debug!("apply_theme: <{}> [{}] >> {}", gui_print_type(&self.type_id), self.get_id(), self.debug_style());
+        log::trace!("apply_theme: <{}> [{}] >> {}", gui_print_type(&self.type_id), self.get_id(), self.debug_style());
         true
     }
 

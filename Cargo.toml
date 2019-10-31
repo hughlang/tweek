@@ -1,7 +1,7 @@
 [package]
 name = "tweek"
 description = "GUI library with tween animation"
-version = "0.2.0-rc3"
+version = "0.2.0-rc4"
 authors = ["Hugh Lang <hughlang@gmail.com>"]
 keywords = ["animation", "graphics", "gui"]
 license = "LGPL"
@@ -24,8 +24,8 @@ name = "gui"
 path = "examples/quicksilver/gui.rs"
 
 [[example]]
-name = "screens"
-path = "examples/quicksilver/screens.rs"
+name = "modals"
+path = "examples/quicksilver/modals.rs"
 
 [dependencies]
 cgmath = "0.17.0"
@@ -35,7 +35,7 @@ unwrap_to = "0.1.0"
 image = { version = "0.22", default-features = false, features = ["png_codec"] }
 glyph_brush = "0.5"
 float-cmp = "0.5"
-unicode-normalization = "0.1.8"
+# unicode-normalization = "0.1.8"
 # approx = "0.3"
 # euclid = "0.20"
 # fnv = "1.0"

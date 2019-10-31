@@ -47,10 +47,10 @@ impl MainApp {
         let mut delegate = AppDelegate::new(screen.clone());
         let screen_size = screen.clone();
 
-        delegate.add_stage_builder(move || StageBuilder::animate_square(screen_size));
-        delegate.add_stage_builder(move || StageBuilder::balloon_demo(screen_size));
         delegate.add_stage_builder(move || StageBuilder::rolling_image(screen_size));
         delegate.add_stage_builder(move || StageBuilder::pink_snake(screen_size));
+        delegate.add_stage_builder(move || StageBuilder::balloon_demo(screen_size));
+        delegate.add_stage_builder(move || StageBuilder::animate_square(screen_size));
 
         // Set the nav scene
         delegate.set_nav_scene(DemoHelper::build_nav_scene(screen));

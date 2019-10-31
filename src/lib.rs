@@ -32,8 +32,9 @@ extern crate lazy_static;
 extern crate unwrap_to;
 #[macro_use]
 extern crate log;
+
+#[cfg(not(target_arch = "wasm32"))]
 extern crate env_logger;
-// extern crate unicode_normalization;
 
 #[cfg(target_arch = "wasm32")]
 #[macro_use]

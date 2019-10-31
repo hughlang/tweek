@@ -118,17 +118,18 @@ impl StageBuilder {
         listbox.row_border_style = BorderStyle::SolidLine(Color::from_hex("#EEEEEE"), 1.0);
         scene.add_control(Box::new(listbox));
 
-        let frame = Rectangle::new((500.0, 200.0), (200.0, 30.0));
-        let mut text = Text::new(frame, "Clip this title");
-        text.layer.font_style = FontStyle::new(20.0, Color::BLACK);
-        text.layer.lock_style = true;
-        text.text_align = TextAlign::Left;
-        text.vert_align = VertAlign::Bottom;
-        text.layer.debug = true;
-        text.layer.border_style = BorderStyle::SolidLine(Color::from_hex("#CCCCCC"), 0.5);
-        let subframe = Rectangle::new((500.0, 220.0), (200.0, 10.0));
-        text.subframe = Some(subframe);
-        scene.add_control(Box::new(text));
+        /* Ignore: This is just an experiment in text clipping */
+        // let frame = Rectangle::new((500.0, 200.0), (200.0, 30.0));
+        // let mut text = Text::new(frame, "Clip this title");
+        // text.layer.font_style = FontStyle::new(20.0, Color::BLACK);
+        // text.layer.lock_style = true;
+        // text.text_align = TextAlign::Left;
+        // text.vert_align = VertAlign::Bottom;
+        // text.layer.debug = true;
+        // text.layer.border_style = BorderStyle::SolidLine(Color::from_hex("#CCCCCC"), 0.5);
+        // let subframe = Rectangle::new((500.0, 220.0), (200.0, 10.0));
+        // text.subframe = Some(subframe);
+        // scene.add_control(Box::new(text));
 
         stage.add_scene(scene);
         stage
@@ -457,7 +458,9 @@ impl StageBuilder {
         let shape = ShapeView::new(frame, ShapeDef::Quad).with_mesh(&mut mesh);
         scene.add_view(Box::new(shape));
 
-        ypos = 200.0;
+        // FIXME: why are coords off?
+        xpos = 600.0;
+        ypos = 650.0;
         let frame = Rectangle::new((xpos, ypos), (100.0, 100.0));
         let img = DrawImage::load_image_file("icons/png/ios-heart.png").unwrap();
         println!(">>> load_image_file {:?} color {:?}", img.dimensions(), img.color());

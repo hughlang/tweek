@@ -100,9 +100,9 @@ pub struct ListBox {
     /// The array of visible ListBoxRow objects
     rows: Vec<ListBoxRow>,
     /// Hover animation for the ListBoxRow. Unused
-    on_row_hover: Option<PropSet>,
+    pub on_row_hover: Option<PropSet>,
     /// Animation for row select
-    on_row_select: Option<PropSet>,
+    pub on_row_select: Option<PropSet>,
     /// Stores the scroll offset
     scroll_offset: f32,
 }
@@ -390,7 +390,7 @@ impl Responder for ListBox {
             if index < self.datasource.len() {
                 state.row_target = Some(index);
                 self.select_row = Some(index);
-                for (i, data) in &mut self.datasource.iter_mut().enumerate() {
+                for (_, data) in &mut self.datasource.iter_mut().enumerate() {
                     if !self.multiselect && data.layer.is_some() {
                         data.layer = None;
                         data.row_state = MouseState::None;
