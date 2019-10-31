@@ -4,7 +4,7 @@
 use super::*;
 
 // use glyph_brush::rusttype::{point, Font as RTFont, GlyphId, PositionedGlyph, Rect, Scale};
-use image_rs::{DynamicImage};
+use image_rs::DynamicImage;
 
 use quicksilver::{
     geom::{Rectangle, Vector},
@@ -21,7 +21,7 @@ pub struct GPUTexture {
 
 impl GPUTexture {
     pub fn new(idx: usize, width: u32, height: u32) -> Self {
-        GPUTexture {idx, width, height}
+        GPUTexture { idx, width, height }
     }
 }
 
@@ -31,7 +31,6 @@ impl GPUTexture {
 pub struct DrawImage {}
 
 impl DrawImage {
-
     /// Helper method to load an image from a relative file path.
     pub fn load_image_file(path: &str) -> Option<DynamicImage> {
         if let Ok(im) = image::open(&Path::new(path)) {
@@ -45,7 +44,6 @@ impl DrawImage {
     /// Upload bytes to GPU, which returns a Texture index number from the backend
     /// If bytes array is empty, the Texture is created anyway with the expectation of writing to it later.
     pub fn upload_image(name: &str, data: &[u8], width: u32, height: u32) -> Option<usize> {
-
         let mut texture = Texture::new(name).with_shaders(VERTEX_SHADER, FRAGMENT_SHADER).with_fields(
             TEX_FIELDS,
             serialize_vertex,
@@ -61,6 +59,7 @@ impl DrawImage {
             let result = texture.upload(idx, data, width, height, PixelFormat::RGBA);
             if result.is_err() {
                 log::error!("activate, upload: {:?}", result);
+                return None;
             }
             return Some(idx);
         }
@@ -81,7 +80,6 @@ impl DrawImage {
 
     /// Generate a Mesh from a GPU texture and the specified region to display
     pub fn sub_texture(idx: usize, frame: Rectangle, tex_quad: Option<[Vector; 4]>, color: Color) -> Option<MeshTask> {
-
         let mut task = MeshTask::new(idx);
 
         let offset = 0;
@@ -96,19 +94,11 @@ impl DrawImage {
         };
 
         // top left
-        let v = Vertex::new(
-            frame.top_left(),
-            Some(tex_quad[0]),
-            Col(color),
-        );
+        let v = Vertex::new(frame.top_left(), Some(tex_quad[0]), Col(color));
         task.vertices.push(v);
 
         // top right
-        let v = Vertex::new(
-            Vector::new(frame.x() + frame.width(), frame.y()),
-            Some(tex_quad[1]),
-            Col(color),
-        );
+        let v = Vertex::new(Vector::new(frame.x() + frame.width(), frame.y()), Some(tex_quad[1]), Col(color));
         task.vertices.push(v);
 
         // bottom right
@@ -120,11 +110,7 @@ impl DrawImage {
         task.vertices.push(v);
 
         // bottom left
-        let v = Vertex::new(
-            Vector::new(frame.x(), frame.y() + frame.height()),
-            Some(tex_quad[3]),
-            Col(color),
-        );
+        let v = Vertex::new(Vector::new(frame.x(), frame.y() + frame.height()), Some(tex_quad[3]), Col(color));
         task.vertices.push(v);
 
         // Add triangles based on clockwise insertion of vertices from top-left
@@ -136,25 +122,16 @@ impl DrawImage {
 
     /// Create a MeshTask using the specified Texture index
     pub fn draw_texture(idx: usize, frame: &Rectangle, color: Color) -> Option<MeshTask> {
-
         let mut task = MeshTask::new(idx);
 
         let offset = 0;
 
         // top left
-        let v = Vertex::new(
-            frame.pos,
-            Some(Vector::ZERO),
-            Col(color),
-        );
+        let v = Vertex::new(frame.pos, Some(Vector::ZERO), Col(color));
         task.vertices.push(v);
 
         // top right
-        let v = Vertex::new(
-            Vector::new(frame.x() + frame.width(), frame.y()),
-            Some(Vector::X),
-            Col(color),
-        );
+        let v = Vertex::new(Vector::new(frame.x() + frame.width(), frame.y()), Some(Vector::X), Col(color));
         task.vertices.push(v);
 
         // bottom right
@@ -166,11 +143,7 @@ impl DrawImage {
         task.vertices.push(v);
 
         // bottom left
-        let v = Vertex::new(
-            Vector::new(frame.x(), frame.y() + frame.height()),
-            Some(Vector::Y),
-            Col(color),
-        );
+        let v = Vertex::new(Vector::new(frame.x(), frame.y() + frame.height()), Some(Vector::Y), Col(color));
         task.vertices.push(v);
 
         // Add triangles based on clockwise insertion of vertices from top-left
@@ -212,13 +185,13 @@ void main() {
     outColor = Color * tex_color;
 }"#;
 
-    // if (Uses_texture != 0) {
-    //     float alpha = texture(font_tex, Tex_coord).a;
-    //     outColor = Color * vec4(1.0, 1.0, 1.0, alpha);
-    // } else {
-    //     float alpha = texture(font_tex, Tex_coord).a;
-    //     outColor = Color;
-    // }
+// if (Uses_texture != 0) {
+//     float alpha = texture(font_tex, Tex_coord).a;
+//     outColor = Color * vec4(1.0, 1.0, 1.0, alpha);
+// } else {
+//     float alpha = texture(font_tex, Tex_coord).a;
+//     outColor = Color;
+// }
 
 #[cfg(target_arch = "wasm32")]
 const VERTEX_SHADER: &str = r#"attribute vec2 position;

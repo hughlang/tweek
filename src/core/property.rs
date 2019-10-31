@@ -193,7 +193,6 @@ impl PropSet {
 
     // pub fn repeat(mut self, )
 
-
     /// Get a specific Prop based on the numeric prop_id
     pub fn get_prop_value(&self, prop_id: u32) -> Prop {
         let mut iter = self.props.iter().filter(|x| x.prop_id() == prop_id);

@@ -267,7 +267,7 @@ impl UITools {
                         quad[1] = vert;
                     }
                 }
-                _ => ()
+                _ => (),
             }
         }
     }
@@ -283,4 +283,3 @@ pub enum RectSide {
     LeftRight,
     TopBottom,
 }
-

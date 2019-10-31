@@ -50,7 +50,13 @@ impl Checkbox {
     pub fn new(frame: Rectangle) -> Self {
         let layer = Layer::new(frame);
 
-        Checkbox { layer, text: String::default(), is_checked: false, check_style: CheckStyle::X, content_size: Vector::ZERO }
+        Checkbox {
+            layer,
+            text: String::default(),
+            is_checked: false,
+            check_style: CheckStyle::X,
+            content_size: Vector::ZERO,
+        }
     }
 
     /// Builder method to set the text
@@ -89,9 +95,13 @@ impl Displayable for Checkbox {
         TypeId::of::<Checkbox>()
     }
 
-    fn get_layer(&self) -> &Layer { &self.layer }
+    fn get_layer(&self) -> &Layer {
+        &self.layer
+    }
 
-    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -206,10 +216,7 @@ impl Displayable for Checkbox {
         }
 
         let text_frame = Rectangle::new((frame.x() + 30.0, frame.y()), (frame.width() - 30.0, frame.height()));
-        let params = TextParams::new(self.layer.font_style)
-            .frame(text_frame.clone())
-            .text(&self.text)
-            .multiline(false);
+        let params = TextParams::new(self.layer.font_style).frame(text_frame.clone()).text(&self.text).multiline(false);
 
         if let Some(task) = theme.default_font.draw(params) {
             self.content_size = Vector::new(task.content_size.0 + 30.0, task.content_size.1);

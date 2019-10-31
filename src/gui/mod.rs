@@ -114,6 +114,6 @@ pub fn gui_print_type(type_id: &TypeId) -> &'static str {
 }
 
 pub fn print_full_path(nodes: Vec<Node>) -> String {
-    let paths: Vec<String> = nodes.iter().map(|x| x.id_string() ).collect();
+    let paths: Vec<String> = nodes.iter().map(|x| x.id_string()).collect();
     format!("/{}", paths.join("/"))
 }

@@ -73,7 +73,6 @@ pub struct Layer {
     pub debug: bool,
 }
 
-
 impl Clone for Layer {
     /// This is just a shallow copy that only clones visual attributes
     fn clone(&self) -> Self {
@@ -255,10 +254,9 @@ impl Layer {
                             }
                             _ => (),
                         }
-                    }
-                    // TweenEvent::EndState(id, props) => {
-                    //     log::debug!("<{}> [{}] Target={:?}", gui_print_type(&self.type_id), id, props);
-                    // }
+                    } // TweenEvent::EndState(id, props) => {
+                      //     log::debug!("<{}> [{}] Target={:?}", gui_print_type(&self.type_id), id, props);
+                      // }
                 }
             }
         }
@@ -325,7 +323,7 @@ impl Layer {
 
     /// Method to call when starting an animation. This will copy the current properties into Transition
     pub fn start_animation(&mut self, mut tween: Tween) {
-        self.tween_type = TweenType::Animation;  // Identify this as a pure animation
+        self.tween_type = TweenType::Animation; // Identify this as a pure animation
         self.init_props();
         &mut tween.play();
         self.animation = Some(tween);

@@ -49,9 +49,13 @@ impl Displayable for ImageView {
         TypeId::of::<ImageView>()
     }
 
-    fn get_layer(&self) -> &Layer { &self.layer }
+    fn get_layer(&self) -> &Layer {
+        &self.layer
+    }
 
-    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;

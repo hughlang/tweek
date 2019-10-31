@@ -34,17 +34,14 @@ impl Cursor {
     /// and call start_animation directly.
     /// TBD: Maybe move this into the Displayable trait.
     pub fn default_animation(mut self) -> Self {
-        self.start_animation(&[color("#000000EE")], 0.25);  // Hex color for black with very low alpha
+        self.start_animation(&[color("#000000EE")], 0.25); // Hex color for black with very low alpha
         self
     }
 
     /// Start the animation with the specified Props and flashing duration
     /// TODO: allow repeat delay to be customized
     pub fn start_animation(&mut self, props: &[Prop], seconds: f64) {
-        let mut tween = Tween::with(0, &self.layer)
-            .to(&props.to_vec())
-            .duration(seconds).repeat(-1, 0.1).yoyo()
-            ;
+        let mut tween = Tween::with(0, &self.layer).to(&props.to_vec()).duration(seconds).repeat(-1, 0.1).yoyo();
         &tween.play();
         self.layer.animation = Some(tween);
         self.layer.tween_type = TweenType::Animation;
@@ -54,11 +51,10 @@ impl Cursor {
     /// TODO: Evaluate different from render_at_point
     pub fn render_line(&self, pt1: &Vector, pt2: &Vector, _theme: &Theme) -> Mesh {
         let color = self.layer.transition.color;
-        let pts: [&Vector; 2] = [ pt1, pt2 ];
+        let pts: [&Vector; 2] = [pt1, pt2];
         let line = DrawShape::line(&pts, color, 2.0);
         line
     }
-
 }
 
 impl Displayable for Cursor {
@@ -75,9 +71,13 @@ impl Displayable for Cursor {
         TypeId::of::<Cursor>()
     }
 
-    fn get_layer(&self) -> &Layer { &self.layer }
+    fn get_layer(&self) -> &Layer {
+        &self.layer
+    }
 
-    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;

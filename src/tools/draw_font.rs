@@ -13,8 +13,8 @@ use quicksilver::{
     geom::{Rectangle, Vector},
     graphics::{Background::Col, Color, FontStyle, GpuTriangle, Image, MeshTask, PixelFormat, Texture, Vertex},
 };
-use std::f32;
 use std::collections::HashMap;
+use std::f32;
 
 /// Utility for Theme struct for drawing live text using glyph_brush crate
 pub struct DrawFont {
@@ -49,7 +49,7 @@ impl DrawFont {
             index: 0,
             cached_mesh: None,
             glyph_db: HashMap::new(),
-            char_db: HashMap::new()
+            char_db: HashMap::new(),
         };
         if let Some(index) = tex_id {
             log::error!("Re-using tex: {:?}", index);
@@ -67,7 +67,6 @@ impl DrawFont {
 
     /// Initialize GPU
     pub fn setup_gpu(&mut self, width: u32, height: u32) {
-
         let mut texture = Texture::new("DrawFont").with_shaders(VERTEX_SHADER, FRAGMENT_SHADER).with_fields(
             TEX_FIELDS,
             self::serialize_vertex,
@@ -89,10 +88,7 @@ impl DrawFont {
     }
 
     /// Draw word-wrapped text in the given rect using glyph_brush
-    pub fn draw(
-        &mut self,
-        params: TextParams,
-    ) -> Option<MeshTask> {
+    pub fn draw(&mut self, params: TextParams) -> Option<MeshTask> {
         let mut origin: (f32, f32) = (params.frame.x(), params.frame.y());
         let rect = params.frame;
         let h_align = params.text_align.to_glyph_align();
@@ -213,9 +209,7 @@ impl DrawFont {
                 self.cached_mesh = Some(task.clone());
                 Some(task)
             }
-            BrushAction::ReDraw => {
-                self.cached_mesh.clone()
-            },
+            BrushAction::ReDraw => self.cached_mesh.clone(),
         }
     }
 
@@ -232,11 +226,7 @@ impl DrawFont {
             VertexPoint::BottomRight => Vector::new(glvertex.tex_frame.max.x, glvertex.tex_frame.min.y),
             VertexPoint::BottomLeft => Vector::new(glvertex.tex_frame.min.x, glvertex.tex_frame.min.y),
         };
-        Vertex::new(
-            vector,
-            Some(tex_vector),
-            Col(color),
-        )
+        Vertex::new(vector, Some(tex_vector), Col(color))
     }
 
     fn clip_vertex(&self, glv: &mut GLVertex, subframe: &Rectangle, side: GlyphSide) {
@@ -282,10 +272,7 @@ impl DrawFont {
     }
 
     /// Render text to image buffer
-    pub fn render_pixels(
-        &mut self,
-        params: TextParams,
-    ) -> (RgbaImage, u32, u32) {
+    pub fn render_pixels(&mut self, params: TextParams) -> (RgbaImage, u32, u32) {
         let layout = {
             if params.multiline {
                 Layout::default_wrap()
@@ -296,7 +283,11 @@ impl DrawFont {
         let section = VariedSection {
             layout,
             bounds: (params.frame.width(), f32::INFINITY),
-            text: vec![SectionText { text: &params.text, scale: Scale::uniform(params.style.get_size()), ..SectionText::default() }],
+            text: vec![SectionText {
+                text: &params.text,
+                scale: Scale::uniform(params.style.get_size()),
+                ..SectionText::default()
+            }],
             ..VariedSection::default()
         };
 
@@ -339,11 +330,7 @@ impl DrawFont {
 
     /// Render the text as an image with no cropping
     pub fn render(&mut self, text: &str, style: &FontStyle, rect: &Rectangle, multiline: bool) -> Option<Image> {
-
-        let params = TextParams::new(style.clone())
-            .frame(rect.clone())
-            .text(text)
-            .multiline(multiline);
+        let params = TextParams::new(style.clone()).frame(rect.clone()).text(text).multiline(multiline);
 
         let (mut imgbuf, width, height) = self.render_pixels(params);
         log::debug!(">>> render_pixels size w={:?} h={:?}", width, height);
@@ -419,9 +406,7 @@ impl DrawFont {
 //     type Update = MeshTask;
 //     type Params = TextParams;      // Not in use yet, but possibly use this to request PropSet for specific time in seconds
 
-
 // }
-
 
 // ************************************************************************************
 // Support
@@ -487,7 +472,6 @@ impl TextParams {
         self.debug = true;
         self
     }
-
 }
 
 /// Enum for Horizontal Alignment

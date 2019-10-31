@@ -519,7 +519,7 @@ impl Playable for Tween {
 
 impl NotifyDispatcher for Tween {
     type Update = PropSet;
-    type Params = f64;      // Not in use yet, but possibly use this to request PropSet for specific time in seconds
+    type Params = f64; // Not in use yet, but possibly use this to request PropSet for specific time in seconds
 
     /// This replaces the tick() method which was used to tell Tween to check if it's state is changing based on the
     /// time elapsed. The Layer expects to receive notifications when state changes to PlayState::Starting
@@ -565,7 +565,11 @@ impl NotifyDispatcher for Tween {
 
     /// This call requests a PropSet response about the current Props that are animating so that the parent Layer can
     /// update the display. The Layer expects to receive notifications when state changes to PlayState::Completed
-    fn request_update(&mut self, notifier: &mut Notifier, _params: Option<Box<Self::Params>>) -> Option<Box<Self::Update>> {
+    fn request_update(
+        &mut self,
+        notifier: &mut Notifier,
+        _params: Option<Box<Self::Params>>,
+    ) -> Option<Box<Self::Update>> {
         match self.state {
             PlayState::Running => {
                 let elapsed = elapsed_time(self.started_at);

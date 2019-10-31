@@ -171,7 +171,7 @@ impl Scene {
             SceneEvent::Hide(_) => {
                 self.bg_mask = None;
             }
-            _ => ()
+            _ => (),
         }
     }
 
@@ -265,9 +265,13 @@ impl Displayable for Scene {
         TypeId::of::<Scene>()
     }
 
-    fn get_layer(&self) -> &Layer { &self.layer }
+    fn get_layer(&self) -> &Layer {
+        &self.layer
+    }
 
-    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -375,7 +379,6 @@ impl Displayable for Scene {
     /// The top-level objects in the scene should all use the scene's coordinate system and
     /// therefore, this render() method should only call render() for child Displayable objects.
     fn render(&mut self, theme: &mut Theme, window: &mut Window) {
-
         if let Some(mask) = &self.bg_mask {
             // println!(">>> self.bg_mask");
 

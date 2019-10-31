@@ -148,13 +148,7 @@ pub trait Displayable: Any {
 
     fn debug_frame(&self) -> String {
         let frame = self.get_frame();
-        format!(
-            "Pos({:.1},{:.1}) Size({:.1},{:.1})",
-            frame.pos.x,
-            frame.pos.y,
-            frame.size.x,
-            frame.size.y)
-
+        format!("Pos({:.1},{:.1}) Size({:.1},{:.1})", frame.pos.x, frame.pos.y, frame.size.x, frame.size.y)
     }
 
     /// Simplistic way of providing an identifier for the Type and Id of the object, which gets combined with parent

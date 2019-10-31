@@ -2,9 +2,7 @@ use crate::core::*;
 use crate::events::*;
 use crate::tools::*;
 
-use quicksilver::{
-    graphics::{Color},
-};
+use quicksilver::graphics::Color;
 
 use std::{
     collections::HashMap,
@@ -25,7 +23,6 @@ pub enum ThemeType {
     /// dark theme
     Dark,
 }
-
 
 /// A single Theme holds all of the custom display attributes for rendering a Scene.
 /// The current Theme is passed with every render() call to all child objects that implement
@@ -160,7 +157,6 @@ impl Theme {
     // pub fn draw_image(&mut self, params: &DrawParams) -> Option<Image> {
     //     None
     // }
-
 }
 
 // ************************************************************************************

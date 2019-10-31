@@ -115,5 +115,9 @@ pub trait NotifyDispatcher {
     fn status(&mut self, _notifier: &mut Notifier) {}
     /// This is a generic method to get an expected Update object, along with notifications dispatched during the
     /// request_update() call.
-    fn request_update(&mut self, notifier: &mut Notifier, params: Option<Box<Self::Params>>) -> Option<Box<Self::Update>>;
+    fn request_update(
+        &mut self,
+        notifier: &mut Notifier,
+        params: Option<Box<Self::Params>>,
+    ) -> Option<Box<Self::Update>>;
 }

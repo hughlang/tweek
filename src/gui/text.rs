@@ -6,7 +6,7 @@ use crate::tools::*;
 
 use quicksilver::{
     geom::{Rectangle, Transform, Vector},
-    graphics::{MeshTask},
+    graphics::MeshTask,
     lifecycle::Window,
 };
 
@@ -91,9 +91,13 @@ impl Displayable for Text {
         TypeId::of::<Text>()
     }
 
-    fn get_layer(&self) -> &Layer { &self.layer }
+    fn get_layer(&self) -> &Layer {
+        &self.layer
+    }
 
-    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;

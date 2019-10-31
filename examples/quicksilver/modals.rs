@@ -1,5 +1,4 @@
 /// Test area for scene animation
-
 mod helper;
 use helper::*;
 use tweek::prelude::*;
@@ -135,7 +134,6 @@ impl StageBuilder {
         modal_scene.layer.bg_style = BackgroundStyle::Solid(Color::WHITE);
         modal_scene.layer.border_style = BorderStyle::SolidLine(Color::BLACK, 1.0);
 
-
         // Add title. Define frame relative to 0,0 origin.
         ypos = 0.0;
         let frame = modal_scene.sub_frame((0.0, 0.0), (modal_w, 50.0));
@@ -149,10 +147,9 @@ impl StageBuilder {
         ypos += 40.0;
         let frame = modal_scene.sub_frame((0.0, ypos), (modal_w, 100.0));
         println!("initial text frame={:?}", frame);
-        let string =
-            "This modal is a Scene that is initially positioned outside of the window view. \
-            The green button triggers a Command which targets the modal with animation functions \
-            and tells it to move to the center of the window. ";
+        let string = "This modal is a Scene that is initially positioned outside of the window view. \
+                      The green button triggers a Command which targets the modal with animation functions \
+                      and tells it to move to the center of the window. ";
         let mut text = Text::new(frame, string).margin(8.0, 0.0);
         text.layer.font_style = FontStyle::new(14.0, Color::BLACK);
         text.layer.lock_style = true;
@@ -190,8 +187,7 @@ impl StageBuilder {
         mesh_task.append(&mut mask);
         modal_scene.bg_mask = Some(mesh_task);
 
-        let mask =
-        stage.add_scene(modal_scene);
+        let mask = stage.add_scene(modal_scene);
         stage
     }
 

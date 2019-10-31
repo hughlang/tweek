@@ -26,7 +26,6 @@ pub struct Command {
 }
 
 impl Command {
-
     /// Constructor that takes a Button or Responder object as the "source" of the command
     pub fn new(source: Box<dyn Any>) -> Self {
         Command {
@@ -70,7 +69,6 @@ impl Command {
         self
     }
 }
-
 
 // ************************************************************************************
 // Support

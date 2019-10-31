@@ -17,7 +17,6 @@ use quicksilver::{
 pub struct DrawShape {}
 
 impl DrawShape {
-
     pub fn line(points: &[&Vector; 2], color: Color, line_width: f32) -> Mesh {
         let mut mesh = Mesh::new();
         let pt1 = point(points[0].x, points[0].y);

@@ -1,10 +1,9 @@
 /// Test area for scene animation
-
 mod helper;
 use helper::*;
 use tweek::prelude::*;
 
-use image::{GenericImageView};
+use image::GenericImageView;
 
 use quicksilver::{
     geom::{Rectangle, Shape, Vector},
@@ -13,7 +12,7 @@ use quicksilver::{
     Error, Result,
 };
 
-use std::char;
+// use std::char;
 // use unicode_normalization::char::compose;
 // use unicode_normalization::UnicodeNormalization;
 
@@ -54,11 +53,11 @@ impl MainApp {
         // This is where all the demos are loaded. Each builder function returns a container object that
         // can lazy load a scene that is displayed through the AppDelegate. Each demo builder appears in
         // sequence by navigating with the Previous/Next buttons.
+        delegate.add_stage_builder(move || StageBuilder::shapes_demo(screen_size));
         delegate.add_stage_builder(move || StageBuilder::listbox_demo(screen_size));
         delegate.add_stage_builder(move || StageBuilder::text_editor_demo(screen_size));
-        delegate.add_stage_builder(move || StageBuilder::buttons_demo(screen_size));
+        // delegate.add_stage_builder(move || StageBuilder::buttons_demo(screen_size));
         delegate.add_stage_builder(move || StageBuilder::checkboxes_demo(screen_size));
-        delegate.add_stage_builder(move || StageBuilder::shapes_demo(screen_size));
 
         // Set the nav scene
         delegate.set_nav_scene(DemoHelper::build_nav_scene(screen));
@@ -101,7 +100,6 @@ struct StageBuilder {}
 #[allow(unused_mut)]
 #[allow(unused_variables)]
 impl StageBuilder {
-
     fn listbox_demo(screen: Vector) -> Stage {
         let frame = Rectangle::new_sized(screen);
         let mut stage = Stage::new(frame.clone());
@@ -285,22 +283,22 @@ impl StageBuilder {
         let mut xpos = 200.0;
         let mut ypos = 200.0;
 
-        let frame = Rectangle::new((xpos, ypos), (150.0, 40.0));
+        let frame = Rectangle::new((xpos, ypos), (200.0, 40.0));
         let mut textfield = TextField::new(frame, true);
-        textfield.set_text("ABCDEFGHIJK");
+        // textfield.set_text("ABCDEFGHIJK");
         textfield.set_placeholder("Enter email address");
         // textfield.set_text("čćdđe ёєжзѕиіїйјк");  // FIXME: Special chars not accepted
         scene.add_control(Box::new(textfield));
 
-        xpos += 170.0;
-        let frame = Rectangle::new((xpos, ypos), (150.0, 40.0));
-        let dot = char::from_u32(0x26AB).unwrap();
+        // xpos += 170.0;
+        // let frame = Rectangle::new((xpos, ypos), (150.0, 40.0));
+        // let dot = char::from_u32(0x26AB).unwrap();
 
-        let mut textfield = TextField::new(frame, true).with_type(TextFieldType::Secure(dot));
-        textfield.set_placeholder("Enter password");
-        scene.add_control(Box::new(textfield));
+        // let mut textfield = TextField::new(frame, true).with_type(TextFieldType::Secure(dot));
+        // textfield.set_placeholder("Enter password");
+        // scene.add_control(Box::new(textfield));
 
-        ypos += 80.0;
+        ypos += 50.0;
 
         let frame = Rectangle::new((xpos, ypos), (320.0, 200.0));
         let mut textarea = TextArea::new(frame, true);
@@ -424,10 +422,8 @@ impl StageBuilder {
         ypos = 200.0;
 
         let frame = Rectangle::new((xpos, ypos), (100.0, 100.0));
-        let pts: [&Vector; 2] = [
-            &Vector::new(frame.x(), frame.y()),
-            &Vector::new(frame.x() - frame.width(), frame.y() + frame.height()),
-        ];
+        let pts: [&Vector; 2] =
+            [&Vector::new(frame.x(), frame.y()), &Vector::new(frame.x() - frame.width(), frame.y() + frame.height())];
         let line_color = Color::from_hex("#46F02F");
         let mut line = DrawShape::line(&pts, line_color, 4.0);
         let mut shape = ShapeView::new(frame, ShapeDef::Line).with_mesh(&mut line);
@@ -459,15 +455,14 @@ impl StageBuilder {
         scene.add_view(Box::new(shape));
 
         // FIXME: why are coords off?
-        xpos = 600.0;
-        ypos = 650.0;
-        let frame = Rectangle::new((xpos, ypos), (100.0, 100.0));
-        let img = DrawImage::load_image_file("icons/png/ios-heart.png").unwrap();
-        println!(">>> load_image_file {:?} color {:?}", img.dimensions(), img.color());
-        let image = Image::from_raw(&img.to_rgba(), 512, 512, PixelFormat::RGBA).unwrap();
-        let mut image_view = ImageView::new(frame, image);
-        scene.add_view(Box::new(image_view));
-
+        // xpos = 600.0;
+        // ypos = 650.0;
+        // let frame = Rectangle::new((xpos, ypos), (100.0, 100.0));
+        // let img = DrawImage::load_image_file("icons/png/ios-heart.png").unwrap();
+        // println!(">>> load_image_file {:?} color {:?}", img.dimensions(), img.color());
+        // let image = Image::from_raw(&img.to_rgba(), 512, 512, PixelFormat::RGBA).unwrap();
+        // let mut image_view = ImageView::new(frame, image);
+        // scene.add_view(Box::new(image_view));
 
         stage.add_scene(scene);
         stage

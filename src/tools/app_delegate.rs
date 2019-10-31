@@ -12,10 +12,7 @@ use crate::core::*;
 use crate::events::*;
 use crate::gui::*;
 
-use std::{
-    any::TypeId,
-    // collections::{BTreeMap}
-};
+use std::any::TypeId;
 
 use quicksilver::{
     geom::{Rectangle, Vector},
@@ -155,7 +152,7 @@ impl State for AppDelegate {
                     SceneEvent::Hide(_) => {
                         self.nav_scene.is_interactive = true;
                     }
-                    _ => ()
+                    _ => (),
                 }
                 self.stage.handle_event(evt, &event.event_info());
             }
@@ -245,4 +242,3 @@ impl State for AppDelegate {
         Ok(())
     }
 }
-

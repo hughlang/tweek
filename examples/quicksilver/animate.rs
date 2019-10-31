@@ -1,5 +1,4 @@
 /// Test area for scene animation
-
 mod helper;
 use helper::*;
 use tweek::prelude::*;
@@ -92,7 +91,6 @@ struct StageBuilder {}
 #[allow(unused_mut)]
 #[allow(unused_variables)]
 impl StageBuilder {
-
     fn animate_square(screen: Vector) -> Stage {
         let frame = Rectangle::new_sized(screen);
 

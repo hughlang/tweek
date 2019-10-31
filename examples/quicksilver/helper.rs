@@ -1,5 +1,4 @@
 /// Miscellaneous helpers
-
 use quicksilver::{
     geom::{Rectangle, Vector},
     graphics::{Color, FontStyle, MeshTask},
@@ -35,20 +34,14 @@ impl DemoHelper {
         // Vertical lines first
         let mut task = MeshTask::new(0);
         while xpos < width {
-            let pts: [&Vector; 2] = [
-                &Vector::new(xpos, 0.0),
-                &Vector::new(xpos, height),
-            ];
+            let pts: [&Vector; 2] = [&Vector::new(xpos, 0.0), &Vector::new(xpos, height)];
             let mut line = DrawShape::line(&pts, color, 0.5);
             task.append(&mut line);
             xpos += interval;
         }
         let mut ypos = 0.0;
         while ypos < height {
-            let pts: [&Vector; 2] = [
-                &Vector::new(0.0, ypos),
-                &Vector::new(width, ypos),
-            ];
+            let pts: [&Vector; 2] = [&Vector::new(0.0, ypos), &Vector::new(width, ypos)];
             let mut line = DrawShape::line(&pts, color, 0.5);
             task.append(&mut line);
             ypos += interval;
@@ -151,10 +144,14 @@ impl DemoHelper {
         let mut scene = Scene::new(frame).with_id(NAV_SCENE, "Nav Scene");
 
         let mut buttons = DemoHelper::make_next_prev_buttons(&screen);
-        buttons.drain(..).for_each(|x| { let _ =scene.add_control(Box::new(x)); });
+        buttons.drain(..).for_each(|x| {
+            let _ = scene.add_control(Box::new(x));
+        });
 
         let mut buttons = DemoHelper::make_theme_buttons(&screen);
-        buttons.drain(..).for_each(|x| { let _ =scene.add_control(Box::new(x)); });
+        buttons.drain(..).for_each(|x| {
+            let _ = scene.add_control(Box::new(x));
+        });
 
         let x = 20.0;
         let y = screen.y - 40.0;

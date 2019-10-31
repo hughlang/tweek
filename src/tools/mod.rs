@@ -23,11 +23,7 @@ pub const FLOAT_TOLERANCE: f32 = 0.001;
 
 use glyph_brush::rusttype::Rect as RTRect;
 
-use quicksilver::{
-    geom::Vector,
-    graphics::Vertex,
-};
-
+use quicksilver::{geom::Vector, graphics::Vertex};
 
 // ************************************************************************************
 // GPU stuff for OpenGL and WebGL
@@ -62,4 +58,3 @@ pub(super) fn serialize_vertex(vertex: Vertex) -> Vec<f32> {
     result.push(if vertex.tex_pos.is_some() { 1f32 } else { 0f32 });
     result
 }
-

@@ -8,7 +8,7 @@ use crate::tools::*;
 use quicksilver::{
     geom::{Rectangle, Shape, Transform, Vector},
     graphics::{Background::Col, Background::Img, Color, FontStyle, Image, MeshTask},
-    input::{MouseCursor},
+    input::MouseCursor,
     lifecycle::Window,
 };
 
@@ -61,12 +61,7 @@ pub struct RowData {
 
 impl RowData {
     pub fn new(text: String) -> Self {
-        RowData {
-            text,
-            row_state: MouseState::None,
-            render: None,
-            layer: None,
-        }
+        RowData { text, row_state: MouseState::None, render: None, layer: None }
     }
 }
 
@@ -167,9 +162,13 @@ impl Displayable for ListBox {
         TypeId::of::<ListBox>()
     }
 
-    fn get_layer(&self) -> &Layer { &self.layer }
+    fn get_layer(&self) -> &Layer {
+        &self.layer
+    }
 
-    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -240,10 +239,11 @@ impl Displayable for ListBox {
         self.layer.frame.pos = self.layer.initial.pos + offset;
         self.layer.tween_update();
 
-        self.datasource.iter_mut().for_each(|x| if let Some(ref mut layer) = x.layer {
-            layer.tween_update();
+        self.datasource.iter_mut().for_each(|x| {
+            if let Some(ref mut layer) = x.layer {
+                layer.tween_update();
+            }
         });
-
     }
 
     fn render(&mut self, _theme: &mut Theme, window: &mut Window) {
@@ -272,10 +272,7 @@ impl Displayable for ListBox {
             // Draw borders as row separators. Future: cache these lines
             if ypos > frame.y() {
                 if border.1 > 0.0 {
-                    let pts: [&Vector; 2] = [
-                        &Vector::new(rect.x(), ypos),
-                        &Vector::new(rect.x() + rect.width(), ypos),
-                    ];
+                    let pts: [&Vector; 2] = [&Vector::new(rect.x(), ypos), &Vector::new(rect.x() + rect.width(), ypos)];
                     let mut line = DrawShape::line(&pts, border.0, border.1);
                     graphics.append(&mut line);
                 }
@@ -449,13 +446,17 @@ impl ListBoxRow {
     pub fn new(frame: Rectangle) -> Self {
         let layer = Layer::new(frame);
 
-        ListBoxRow {
-            layer,
-        }
+        ListBoxRow { layer }
     }
 
     /// Method to render a row
-    pub fn render_row(&mut self, mut mesh: MeshTask, bounds: Rectangle, transition: Option<Transition>, window: &mut Window) {
+    pub fn render_row(
+        &mut self,
+        mut mesh: MeshTask,
+        bounds: Rectangle,
+        transition: Option<Transition>,
+        window: &mut Window,
+    ) {
         if let Some(transition) = transition {
             // Draw a background rectangle with the transition.color
             let mut bg_mesh = DrawShape::rectangle(&bounds, Some(transition.color), None, 0.0, 0.0);
@@ -487,9 +488,13 @@ impl Displayable for ListBoxRow {
         TypeId::of::<ListBoxRow>()
     }
 
-    fn get_layer(&self) -> &Layer { &self.layer }
+    fn get_layer(&self) -> &Layer {
+        &self.layer
+    }
 
-    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;

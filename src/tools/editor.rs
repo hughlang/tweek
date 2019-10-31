@@ -4,11 +4,9 @@
 use super::*;
 
 use glyph_brush::rusttype::{self, GlyphId, Scale};
-use glyph_brush::{
-    self, GlyphCruncher, Layout, Section, SectionText, VariedSection,
-};
+use glyph_brush::{self, GlyphCruncher, Layout, Section, SectionText, VariedSection};
 
-use image_rs::{RgbaImage};
+use image_rs::RgbaImage;
 use std::{collections::HashMap, f32, ops::Range};
 
 //-- Support -----------------------------------------------------------------------
@@ -30,7 +28,7 @@ pub struct CharData {
 
 impl CharData {
     pub fn new(x: f32, y: f32, width: f32, letter: char, row: usize) -> Self {
-        CharData {x, y, width, letter, row}
+        CharData { x, y, width, letter, row }
     }
 }
 
@@ -45,7 +43,7 @@ pub enum InsertMode {
     /// Intra-text
     Intra(bool),
     /// Special case for multiline where the cursor should append at end of previous line.
-    AppendPreviousLine
+    AppendPreviousLine,
 }
 
 //-- Main -----------------------------------------------------------------------
@@ -202,7 +200,7 @@ impl EditorContext {
                     *w
                 } else {
                     let (w, _) = self.draw_font.char_size(c, self.font_size);
-                    log::debug!("Insert in char_db [{:?}] width={:?}", c, w);
+                    log::trace!("Insert in char_db [{:?}] width={:?}", c, w);
                     self.char_db.insert(c, w);
                     w
                 }
@@ -284,19 +282,20 @@ impl EditorContext {
             self.update_metrics();
         }
         self.has_changed = true;
-        if self.is_multiline {
-            if let Some(position) = position {
-                self.cursor_pos = position;
-            } else {
-                self.cursor_pos = 0;
-            }
+        if let Some(position) = position {
+            log::debug!("position={:?} y={:?}", position, 0);
+            self.cursor_pos = position;
         } else {
-            if let Some(position) = position {
-                self.cursor_pos = position;
-            } else {
-                self.cursor_pos = 0;
-            }
+            self.cursor_pos = 0;
         }
+        // if self.is_multiline {
+        // } else {
+        //     if let Some(position) = position {
+        //         self.cursor_pos = position;
+        //     } else {
+        //         self.cursor_pos = 0;
+        //     }
+        // }
     }
 
     /// Switch read mode
@@ -373,7 +372,6 @@ impl Default for TextFieldEditor {
 }
 
 impl TextFieldEditor {
-
     /// Builder method with specified position and size. Avoid backend-specific parameters
     pub fn with_frame(mut self, origin: (f32, f32), size: (f32, f32)) -> Self {
         let frame = rusttype::Rect {
@@ -509,7 +507,6 @@ impl TextFieldEditor {
 
     /// Locate the closest cursor insertion point based on the mouse position
     pub fn find_cursor_position(&self, mouse_x: f32) -> Option<usize> {
-
         // if let Some(text) = self.get_visible_text(0.0) {
 
         // }
@@ -519,7 +516,7 @@ impl TextFieldEditor {
 
         let start_pos: usize = 0;
         for data in chars {
-            if mouse_x < data.x + data.width/2.0 {
+            if mouse_x < data.x + data.width / 2.0 {
                 // Found intra-text insertion point
                 break;
             } else {
@@ -528,7 +525,13 @@ impl TextFieldEditor {
             xpos += 1;
         }
         let cursor_pos = start_pos + xpos;
-        log::debug!("FOUND char mouse_x={} // start_pos={} + xpos={} = cursor_pos={}", mouse_x, start_pos, xpos, cursor_pos);
+        log::debug!(
+            "FOUND char mouse_x={} // start_pos={} + xpos={} = cursor_pos={}",
+            mouse_x,
+            start_pos,
+            xpos,
+            cursor_pos
+        );
         return Some(cursor_pos);
 
         // let y1 = scroll_y;
@@ -538,7 +541,6 @@ impl TextFieldEditor {
         // let results: String = filter.map(|m| m.3).collect();
         // Some(results)
     }
-
 }
 
 // *****************************************************************************************************
@@ -564,7 +566,6 @@ impl Default for TextAreaEditor {
 }
 
 impl TextAreaEditor {
-
     /// Builder method with specified position and size. Avoid backend-specific parameters
     pub fn with_frame(mut self, origin: (f32, f32), size: (f32, f32)) -> Self {
         let frame = rusttype::Rect {
@@ -637,7 +638,7 @@ impl TextAreaEditor {
                 let mut xpos: usize = 0;
                 // Find the closest insertion point, using char width to help find
                 for data in chars {
-                    if mouse_x < data.x + data.width/2.0 {
+                    if mouse_x < data.x + data.width / 2.0 {
                         // Found intra-text insertion point
                         break;
                     } else {
@@ -646,7 +647,13 @@ impl TextAreaEditor {
                     xpos += 1;
                 }
                 let cursor_pos = start_pos + xpos;
-                log::debug!("FOUND char mouse_x={} // start_pos={} + xpos={} = cursor_pos={}", mouse_x, start_pos, xpos, cursor_pos);
+                log::debug!(
+                    "FOUND char mouse_x={} // start_pos={} + xpos={} = cursor_pos={}",
+                    mouse_x,
+                    start_pos,
+                    xpos,
+                    cursor_pos
+                );
                 return Some(cursor_pos);
             }
         }

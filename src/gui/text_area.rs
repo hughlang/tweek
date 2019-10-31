@@ -127,10 +127,8 @@ impl TextArea {
         }
         // let style = FontStyle::new(self.editor.ctx.font_size, self.ctx.font_color);
         let frame = self.input_frame;
-        let params = TextParams::new(self.layer.font_style.clone())
-            .frame(frame.clone())
-            .text(self.get_text())
-            .multiline(true);
+        let params =
+            TextParams::new(self.layer.font_style.clone()).frame(frame.clone()).text(self.get_text()).multiline(true);
 
         let (imgbuf, _text_w, text_h) = self.editor.ctx.draw_font.render_pixels(params);
         self.editor.full_render = Some(imgbuf.clone());
@@ -164,9 +162,13 @@ impl Displayable for TextArea {
         TypeId::of::<TextArea>()
     }
 
-    fn get_layer(&self) -> &Layer { &self.layer }
+    fn get_layer(&self) -> &Layer {
+        &self.layer
+    }
 
-    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -202,7 +204,7 @@ impl Displayable for TextArea {
     fn notify(&mut self, event: &DisplayEvent) {
         match event {
             DisplayEvent::Activate => {
-                self.start_editing(None);
+                // self.start_editing(None);
             }
             DisplayEvent::Deactivate => {
                 self.stop_editing();
@@ -250,8 +252,7 @@ impl Displayable for TextArea {
                             .frame(self.input_frame.clone())
                             .text(&text)
                             .multiline(true);
-                        if let Some(task) = self.editor.ctx.draw_font.draw(params)
-                        {
+                        if let Some(task) = self.editor.ctx.draw_font.draw(params) {
                             window.add_task(task);
                         }
                     }
@@ -287,7 +288,8 @@ impl Displayable for TextArea {
 
                     let tex_quad = DrawImage::normalize_tex_quad(full_size, region);
                     let color = self.layer.font_style.get_color();
-                    if let Some(mesh) = DrawImage::sub_texture(tex.idx, self.input_frame.clone(), Some(tex_quad), color) {
+                    if let Some(mesh) = DrawImage::sub_texture(tex.idx, self.input_frame.clone(), Some(tex_quad), color)
+                    {
                         window.add_task(mesh.clone());
                         self.layer.meshes.push(mesh);
                     } else {
@@ -315,8 +317,8 @@ impl Displayable for TextArea {
         if self.is_hovering {
             if pt.overlaps_rectangle(&self.input_frame) {
                 window.set_cursor(MouseCursor::Text);
-                // let local_pt = *pt - self.layer.frame.pos;
-                // self.editor.find_cursor_position(local_pt.x, local_pt.y, self.scroll_offset.y);
+            // let local_pt = *pt - self.layer.frame.pos;
+            // self.editor.find_cursor_position(local_pt.x, local_pt.y, self.scroll_offset.y);
             } else {
                 window.set_cursor(MouseCursor::Hand);
             }
@@ -391,7 +393,6 @@ impl Responder for TextArea {
         }
     }
 }
-
 
 //-- Support -----------------------------------------------------------------------
 

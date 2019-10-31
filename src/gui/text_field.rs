@@ -170,9 +170,13 @@ impl Displayable for TextField {
         TypeId::of::<TextField>()
     }
 
-    fn get_layer(&self) -> &Layer { &self.layer }
+    fn get_layer(&self) -> &Layer {
+        &self.layer
+    }
 
-    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -285,7 +289,7 @@ impl Displayable for TextField {
                                     params.subframe = Some(input_rect.clone());
                                 }
                             }
-                            _ => ()
+                            _ => (),
                         }
                         if let Some(task) = self.editor.ctx.draw_font.draw(params) {
                             window.add_task(task);
@@ -304,9 +308,7 @@ impl Displayable for TextField {
                 mesh.append(&mut line);
                 window.add_task(mesh.clone());
             }
-
         } else {
-
             if self.get_text().len() > 0 {
                 if let Some(img) = &self.image_text {
                     window.draw(&img.area().constrain(&self.input_frame), Img(&img));

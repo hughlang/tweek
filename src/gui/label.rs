@@ -8,7 +8,7 @@ use crate::tools::{DrawImage, TextParams};
 use image_rs::{imageops, DynamicImage, GenericImageView};
 use quicksilver::{
     geom::{Rectangle, Vector},
-    graphics::{MeshTask},
+    graphics::MeshTask,
     lifecycle::Window,
 };
 
@@ -57,11 +57,11 @@ pub struct Label {
 }
 
 impl Label {
-
     /// Constructor with the text string
     pub fn new(frame: Rectangle) -> Self {
         let layer = Layer::new(frame);
-        Label { layer,
+        Label {
+            layer,
             text: None,
             raw_image: None,
             display: LabelDisplay::Text,
@@ -99,7 +99,7 @@ impl Label {
             }
             LabelDisplay::ImageAndText => {
                 /* Calculate how to best use the space between the text and image based on the
-                   LabelLayout value */
+                LabelLayout value */
                 if let (Some(_text), Some(raw_image)) = (self.text.as_ref(), self.raw_image.as_ref()) {
                     let (source_w, source_h) = raw_image.dimensions();
                     let _aspect = source_w as f32 / source_h as f32;
@@ -169,10 +169,8 @@ impl Label {
 
         let txt_render: Option<DynamicImage> = {
             if let Some(text) = &self.text {
-                let params = TextParams::new(self.layer.font_style.clone())
-                    .frame(txt_frame.clone())
-                    .text(text)
-                    .multiline(false);
+                let params =
+                    TextParams::new(self.layer.font_style.clone()).frame(txt_frame.clone()).text(text).multiline(false);
 
                 let (font_buf, text_w, text_h) = theme.default_font.render_pixels(params);
                 // Center the txt_frame
@@ -205,8 +203,9 @@ impl Label {
         }
 
         let raw = canvas.to_rgba().into_raw();
-        if let Some(idx) = DrawImage::upload_image(&self.node_key(), raw.as_slice(),
-                                                frame.width() as u32, frame.height() as u32) {
+        if let Some(idx) =
+            DrawImage::upload_image(&self.node_key(), raw.as_slice(), frame.width() as u32, frame.height() as u32)
+        {
             return DrawImage::draw_texture(idx, &self.layer.frame, self.layer.font_style.get_color());
         }
         None
@@ -227,9 +226,13 @@ impl Displayable for Label {
         TypeId::of::<Label>()
     }
 
-    fn get_layer(&self) -> &Layer { &self.layer }
+    fn get_layer(&self) -> &Layer {
+        &self.layer
+    }
 
-    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;

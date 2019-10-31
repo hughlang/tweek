@@ -56,4 +56,3 @@ impl AppState {
         self.offset = (0.0, 0.0);
     }
 }
-

@@ -168,9 +168,13 @@ impl Displayable for ShapeView {
         TypeId::of::<ShapeView>()
     }
 
-    fn get_layer(&self) -> &Layer { &self.layer }
+    fn get_layer(&self) -> &Layer {
+        &self.layer
+    }
 
-    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
@@ -207,7 +211,6 @@ impl Displayable for ShapeView {
     fn update(&mut self, _window: &mut Window, state: &mut AppState) {
         let offset = Vector::new(state.offset.0, state.offset.1);
         self.layer.frame.pos = self.layer.initial.pos + offset;
-
 
         let mut notifier = Notifier::new();
         self.layer.notifications.borrow_mut().attach(&mut notifier);

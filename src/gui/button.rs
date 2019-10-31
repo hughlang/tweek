@@ -8,7 +8,7 @@ use crate::tools::TextAlign;
 use quicksilver::{
     geom::{Rectangle, Shape, Vector},
     graphics::{Color, FontStyle},
-    input::{MouseCursor},
+    input::MouseCursor,
     lifecycle::Window,
 };
 use std::any::TypeId;
@@ -77,7 +77,6 @@ impl Button {
             state.event_bus.dispatch_event(event, source);
         }));
     }
-
 }
 
 // *****************************************************************************************************
@@ -104,9 +103,13 @@ impl Displayable for Button {
         TypeId::of::<Button>()
     }
 
-    fn get_layer(&self) -> &Layer { &self.layer }
+    fn get_layer(&self) -> &Layer {
+        &self.layer
+    }
 
-    fn get_layer_mut(&mut self) -> &mut Layer { &mut self.layer }
+    fn get_layer_mut(&mut self) -> &mut Layer {
+        &mut self.layer
+    }
 
     fn get_frame(&self) -> Rectangle {
         return self.layer.frame;
