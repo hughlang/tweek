@@ -1,14 +1,14 @@
 # Getting Started with the Basics
 
-This is a quick overview of some examples that show how to animate tweens. Conveniently, all of these can be found in a single file: [/examples/ggez/gg_basics.rs](https://github.com/wasm-network/tweek-rust/blob/master/examples/ggez/gg_basics.rs), which lets you browse and test various examples. If you have Rust nightly installed, you can run these examples like this:
+This is a quick overview of some examples that show how to animate tweens. Conveniently, all of these can be found in a single file: [/examples/ggez/gg_basics.rs](https://github.com/rayet-inc/tweek/blob/master/examples/ggez/gg_basics.rs), which lets you browse and test various examples. If you have Rust nightly installed, you can run these examples like this:
 
 ```
-cargo run --example basics 
+cargo run --example basics
 ```
 
 
 ## Animate square
-This is the relevant code that creates a square and animates the position, size, and color in a 1-second animation. It also uses the ease() function to alter the motion speed to make it more interesting. And finally, it specifies the repeat count and delay and tells it to apply the "yoyo" effect. 
+This is the relevant code that creates a square and animates the position, size, and color in a 1-second animation. It also uses the ease() function to alter the motion speed to make it more interesting. And finally, it specifies the repeat count and delay and tells it to apply the "yoyo" effect.
 
 ```rust
         let rect = Rect::new(150.0, 200.0, 80.0, 80.0);
@@ -32,7 +32,7 @@ Note that the `to()` function above accepts a vector of functions that define wh
 
 
 ## Balloon bounce
-This animation shows a purple circle that expands like a balloon and becomes more transparent, before it suddenly pops and deflates while flying off and bouncing off the walls. More specifically, this involves chaining animations within a Tween. Looking at the code sample below, you can see that multiple calls to the `to()` function are interpreted as sequenced animations in the overall Tween. 
+This animation shows a purple circle that expands like a balloon and becomes more transparent, before it suddenly pops and deflates while flying off and bouncing off the walls. More specifically, this involves chaining animations within a Tween. Looking at the code sample below, you can see that multiple calls to the `to()` function are interpreted as sequenced animations in the overall Tween.
 
 ```rust
         let mut item2 = Item::new(item_id, Shape::Circle(center_pt, 40.0))?;
@@ -49,14 +49,14 @@ This animation shows a purple circle that expands like a balloon and becomes mor
             .repeat(-1, 2.0);
 
         &tween2.play();
-``` 
+```
 
-Note that the `repeat(-1, 2.0)` function call at the end specifies that it should repeat forever with a 2 second delay before starting the animation again. 
+Note that the `repeat(-1, 2.0)` function call at the end specifies that it should repeat forever with a 2 second delay before starting the animation again.
 
 ![Balloon bounce](demos/balloon-bounce-hd.gif)
 
 ## Rolling image
-Here, we have an image loaded from the file system and rotated on its center axis while moving to the right. It uses the BounceOut ease to finish off the animation. 
+Here, we have an image loaded from the file system and rotated on its center axis while moving to the right. It uses the BounceOut ease to finish off the animation.
 
 ```rust
         let tile = graphics::Image::new(ctx, "/tile.png")?;
@@ -83,7 +83,7 @@ And this is a sequence of chained animations that takes a square block and draws
 ```rust
         let w = 640.0 as f64;
         let h = 400.0 as f64;
-        
+
         let item_id = 1;
         let mut item1 = Item::new(item_id, Shape::Rectangle(rect))?;
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::HotPink);

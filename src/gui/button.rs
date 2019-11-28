@@ -7,7 +7,7 @@ use crate::tools::TextAlign;
 
 use quicksilver::{
     geom::{Rectangle, Shape, Vector},
-    graphics::{Color, FontStyle},
+    graphics::Color,
     input::MouseCursor,
     lifecycle::Window,
 };
@@ -23,6 +23,8 @@ pub struct Button {
     text: Option<Text>,
     /// Optional Label which can have static image and/or text
     label: Option<Label>,
+    /// image
+    image: Option<ImageView>,
 }
 
 impl Button {
@@ -30,7 +32,7 @@ impl Button {
     pub fn new(frame: Rectangle) -> Self {
         let mut layer = Layer::new(frame);
         layer.bg_style = BackgroundStyle::Solid(Color::from_hex("#AAAAAA"));
-        Button { layer, text: None, label: None }
+        Button { layer, text: None, label: None, image: None }
     }
 
     /// Builder method to apply the specified background style
@@ -64,6 +66,10 @@ impl Button {
         self.label = Some(label);
     }
 
+    pub fn set_image(&mut self, image: ImageView) {
+        self.image = Some(image);
+    }
+
     /// Set the callback function for click action
     pub fn set_onclick<C>(&mut self, cb: C)
     where
@@ -74,6 +80,7 @@ impl Button {
 
     pub fn set_click_event<E: AnyEvent>(&mut self, event: E) {
         self.layer.click_action = Some(Box::new(move |state: &mut AppState, source: String| {
+            log::debug!("info={:?}", source);
             state.event_bus.dispatch_event(event, source);
         }));
     }
@@ -91,11 +98,14 @@ impl Displayable for Button {
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
         self.layer.type_id = self.get_type_id();
-        if let Some(text) = &mut self.text {
-            text.set_id(id);
+        if let Some(view) = &mut self.text {
+            view.set_id(id);
         }
-        if let Some(label) = &mut self.label {
-            label.set_id(id);
+        if let Some(view) = &mut self.label {
+            view.set_id(id);
+        }
+        if let Some(view) = &mut self.image {
+            view.set_id(id);
         }
     }
 
@@ -119,6 +129,34 @@ impl Displayable for Button {
         self.layer.frame.size
     }
 
+    fn set_origin(&mut self, origin: Vector) {
+        let offset = self.get_frame().pos - origin;
+        self.get_layer_mut().anchor_pt = offset;
+        if let Some(view) = &mut self.text {
+            view.set_origin(origin);
+        }
+        if let Some(view) = &mut self.label {
+            view.set_origin(origin);
+        }
+        if let Some(view) = &mut self.image {
+            view.set_origin(origin);
+        }
+    }
+
+    fn align_view(&mut self, origin: Vector) {
+        self.layer.frame.pos = self.layer.anchor_pt + origin;
+
+        if let Some(view) = &mut self.text {
+            view.align_view(origin);
+        }
+        if let Some(view) = &mut self.label {
+            view.align_view(origin);
+        }
+        if let Some(view) = &mut self.image {
+            view.align_view(origin);
+        }
+    }
+
     fn move_to(&mut self, pos: (f32, f32)) {
         self.layer.frame.pos.x = pos.0;
         self.layer.frame.pos.y = pos.1;
@@ -133,14 +171,49 @@ impl Displayable for Button {
         self.layer.bg_style = BackgroundStyle::Solid(theme.button_bg_color);
     }
 
+    fn handle_event(&mut self, event: &EventBox) {
+        if let Ok(evt) = event.downcast_ref::<PlayerEvent>() {
+            log::debug!("{} PlayerEvent={:?}", self.debug_id(), evt);
+            match evt {
+                PlayerEvent::Reset => {
+                    if let Some(view) = &mut self.text {
+                        view.get_layer_mut().reset();
+                    }
+                    if let Some(view) = &mut self.label {
+                        view.get_layer_mut().reset();
+                    }
+                    if let Some(view) = &mut self.image {
+                        view.get_layer_mut().reset();
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+
     fn notify(&mut self, event: &DisplayEvent) {
         match event {
             DisplayEvent::Ready => {
                 self.layer.on_ready();
+                if let Some(view) = &mut self.text {
+                    view.notify(event);
+                }
+                if let Some(view) = &mut self.label {
+                    view.notify(event);
+                }
+                if let Some(view) = &mut self.image {
+                    view.notify(event);
+                }
             }
             DisplayEvent::Moved => {
                 self.layer.on_move_complete();
                 if let Some(view) = &mut self.text {
+                    view.notify(event);
+                }
+                if let Some(view) = &mut self.label {
+                    view.notify(event);
+                }
+                if let Some(view) = &mut self.image {
                     view.notify(event);
                 }
             }
@@ -149,24 +222,29 @@ impl Displayable for Button {
     }
 
     fn update(&mut self, window: &mut Window, state: &mut AppState) {
-        self.layer.frame.pos = self.layer.initial.pos + Vector::new(state.offset.0, state.offset.1);
-        self.layer.tween_update();
+        self.layer.tween_update(state);
 
-        let events = self.layer.notifications.borrow_mut().events.filter::<LayerEvent>();
-        for evt in events {
-            match evt {
-                LayerEvent::Hover(_id, _type_id, state) | LayerEvent::Click(_id, _type_id, state) => match state {
-                    PlayState::Completed => {
-                        // Cleanup?
-                    }
-                    _ => (),
-                },
-                _ => (),
-            }
+        if let Some(view) = &mut self.text {
+            view.update(window, state);
         }
+        if let Some(view) = &mut self.label {
+            view.update(window, state);
+        }
+        if let Some(view) = &mut self.image {
+            view.update(window, state);
+        }
+    }
 
-        if let Some(text) = &mut self.text {
-            text.update(window, state);
+    fn render(&mut self, theme: &mut Theme, window: &mut Window) {
+        self.layer.draw_background(window);
+        if let Some(view) = &mut self.text {
+            view.render(theme, window);
+        }
+        if let Some(view) = &mut self.label {
+            view.render(theme, window);
+        }
+        if let Some(view) = &mut self.image {
+            view.render(theme, window);
         }
     }
 
@@ -178,16 +256,6 @@ impl Displayable for Button {
             window.set_cursor(MouseCursor::Default);
         }
         hover
-    }
-
-    fn render(&mut self, theme: &mut Theme, window: &mut Window) {
-        // TODO: Tween hover animation
-        self.layer.draw_background(window);
-        if let Some(text) = &mut self.text {
-            text.render(theme, window);
-        } else if let Some(label) = &mut self.label {
-            label.render(theme, window);
-        }
     }
 
     fn set_hover_animation(&mut self, props: PropSet) {
@@ -213,6 +281,10 @@ impl Displayable for Button {
             rows.push(out);
         }
         if let Some(view) = &self.label {
+            let out = format!("{}{} {}", "\n| ", view.debug_id(), view.debug_frame());
+            rows.push(out);
+        }
+        if let Some(view) = &self.image {
             let out = format!("{}{} {}", "\n| ", view.debug_id(), view.debug_frame());
             rows.push(out);
         }

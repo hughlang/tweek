@@ -3,12 +3,16 @@
 ///
 use super::*;
 
-// use glyph_brush::rusttype::{point, Font as RTFont, GlyphId, PositionedGlyph, Rect, Scale};
 use image_rs::DynamicImage;
 
 use quicksilver::{
     geom::{Rectangle, Vector},
-    graphics::{Background::Col, Color, GpuTriangle, MeshTask, PixelFormat, Texture, Vertex},
+    graphics::{
+        Background::{self, Col},
+        Color, GpuTriangle, MeshTask, PixelFormat, Texture, Vertex,
+    },
+    lifecycle::Asset,
+    load_file,
 };
 
 use std::path::Path;
@@ -31,14 +35,27 @@ impl GPUTexture {
 pub struct DrawImage {}
 
 impl DrawImage {
+    /// Doesn't work in wasm
+    pub fn load_file_bytes(path: &'static str) -> Vec<u8> {
+        let mut asset = Asset::new(load_file(path));
+        let mut bytes: Vec<u8> = Vec::new();
+        let _ = asset.execute(|data| {
+            bytes.append(data);
+            Ok(())
+        });
+        bytes
+    }
+
     /// Helper method to load an image from a relative file path.
+    /// Unused
     pub fn load_image_file(path: &str) -> Option<DynamicImage> {
-        if let Ok(im) = image::open(&Path::new(path)) {
-            return Some(im);
+        let im = image::open(&Path::new(path));
+        if im.is_err() {
+            log::error!("FAILED TO LOAD FILE");
+            return None;
         } else {
-            // log::error!("{:?}");
+            Some(im.unwrap())
         }
-        None
     }
 
     /// Upload bytes to GPU, which returns a Texture index number from the backend
@@ -121,29 +138,25 @@ impl DrawImage {
     }
 
     /// Create a MeshTask using the specified Texture index
-    pub fn draw_texture(idx: usize, frame: &Rectangle, color: Color) -> Option<MeshTask> {
+    pub fn draw_texture(idx: usize, frame: &Rectangle, bkg: Background) -> Option<MeshTask> {
         let mut task = MeshTask::new(idx);
 
         let offset = 0;
 
         // top left
-        let v = Vertex::new(frame.pos, Some(Vector::ZERO), Col(color));
+        let v = Vertex::new(frame.pos, Some(Vector::ZERO), bkg);
         task.vertices.push(v);
 
         // top right
-        let v = Vertex::new(Vector::new(frame.x() + frame.width(), frame.y()), Some(Vector::X), Col(color));
+        let v = Vertex::new(Vector::new(frame.x() + frame.width(), frame.y()), Some(Vector::X), bkg);
         task.vertices.push(v);
 
         // bottom right
-        let v = Vertex::new(
-            Vector::new(frame.x() + frame.width(), frame.y() + frame.height()),
-            Some(Vector::ONE),
-            Col(color),
-        );
+        let v = Vertex::new(Vector::new(frame.x() + frame.width(), frame.y() + frame.height()), Some(Vector::ONE), bkg);
         task.vertices.push(v);
 
         // bottom left
-        let v = Vertex::new(Vector::new(frame.x(), frame.y() + frame.height()), Some(Vector::Y), Col(color));
+        let v = Vertex::new(Vector::new(frame.x(), frame.y() + frame.height()), Some(Vector::Y), bkg);
         task.vertices.push(v);
 
         // Add triangles based on clockwise insertion of vertices from top-left

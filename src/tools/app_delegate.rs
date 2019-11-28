@@ -22,7 +22,7 @@ use quicksilver::{
     Error, Result,
 };
 
-// // Misc
+/// Misc
 pub const BG_SCENE_ID: u32 = 100;
 const FPS_INTERVAL: usize = 40;
 const FPS_TAG: u32 = 901;
@@ -141,22 +141,7 @@ impl State for AppDelegate {
                     }
                     _ => (),
                 }
-            }
-            if let Ok(evt) = event.downcast_ref::<SceneEvent>() {
-                log::debug!("SceneEvent={:?}", evt);
-                log::debug!("Source={:?}", event.event_info());
-                match evt {
-                    SceneEvent::Show(_) => {
-                        self.nav_scene.is_interactive = false;
-                    }
-                    SceneEvent::Hide(_) => {
-                        self.nav_scene.is_interactive = true;
-                    }
-                    _ => (),
-                }
-                self.stage.handle_event(evt, &event.event_info());
-            }
-            if let Ok(evt) = event.downcast_ref::<ThemeEvent>() {
+            } else if let Ok(evt) = event.downcast_ref::<ThemeEvent>() {
                 log::debug!("ThemeEvent={:?}", evt);
                 match evt {
                     ThemeEvent::Change(id) => {
@@ -166,6 +151,8 @@ impl State for AppDelegate {
                         }
                     } // _ => ()
                 }
+            } else {
+                self.stage.handle_event(&event);
             }
         }
 
@@ -184,8 +171,6 @@ impl State for AppDelegate {
 
     fn draw(&mut self, window: &mut Window) -> Result<()> {
         // Remove any lingering artifacts from the previous frame
-
-        // TODO: Theme should define this color
         window.clear(self.theme.bg_color)?;
 
         let _ = self.nav_scene.render(&mut self.theme, window);

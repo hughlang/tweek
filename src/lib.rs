@@ -20,9 +20,8 @@
 //     // unused_import_braces,
 //     // unused_qualifications
 // )]
-
-#![crate_name = "tweek"]
-#![crate_type = "lib"]
+// #![crate_name = "tweek"]
+// #![crate_type = "lib"]
 
 #[macro_use]
 extern crate float_cmp;

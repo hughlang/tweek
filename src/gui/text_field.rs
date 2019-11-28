@@ -35,7 +35,7 @@ use crate::tools::*;
 
 use quicksilver::{
     geom::{Rectangle, Shape, Vector},
-    graphics::{Background::Img, Color, FontStyle, Image, MeshTask},
+    graphics::{Background::Img, Color, Image, MeshTask},
     input::{Key, MouseCursor},
     lifecycle::Window,
 };
@@ -231,11 +231,9 @@ impl Displayable for TextField {
     }
 
     fn update(&mut self, window: &mut Window, state: &mut AppState) {
-        let offset = Vector::new(state.offset.0, state.offset.1);
-        self.layer.frame.pos = self.layer.initial.pos + offset;
         // FIXME: Make themeable
         // self.input_frame = self.layer.inset_by(10.0, 10.0, 10.0, 10.0);
-        self.layer.tween_update();
+        self.layer.tween_update(state);
         if let Some(cursor) = &mut self.cursor {
             cursor.update(window, state);
         }
@@ -339,10 +337,6 @@ impl Displayable for TextField {
                         window.draw(&img.area().constrain(&self.input_frame), Img(&img));
                         self.image_text = Some(img);
                     }
-
-                // let img = theme.font.render(&text, &style).unwrap();
-                // window.draw(&img.area().constrain(&self.input_frame), Img(&img));
-                // self.image_text = Some(img);
                 } else {
                     log::debug!("No cached image and no placeholder text");
                 }

@@ -1,7 +1,7 @@
 /// Miscellaneous helpers
 use quicksilver::{
     geom::{Rectangle, Vector},
-    graphics::{Color, FontStyle, MeshTask},
+    graphics::{Color, MeshTask},
 };
 use tweek::prelude::*;
 
@@ -21,11 +21,10 @@ pub struct DemoHelper {}
 #[allow(dead_code)]
 impl DemoHelper {
     pub fn get_draw_area(screen: Vector) -> Rectangle {
-        let margin = 80.0;
+        let margin = 100.0;
         let stage_width = screen.x - margin * 2.0;
         let stage_height = screen.y - margin * 2.0;
         let draw_area = Rectangle::new(((screen.x - stage_width) / 2.0, 120.0), (stage_width, stage_height));
-        println!("screen={:?} draw_area={:?}", screen, draw_area);
         draw_area
     }
 

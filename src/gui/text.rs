@@ -130,21 +130,23 @@ impl Displayable for Text {
             DisplayEvent::Moved => {
                 self.layer.on_move_complete();
                 self.mesh_task = None;
-                // if let Some(task) = &mut self.mesh_task {
-                //     for (_, vertex) in task.vertices.iter_mut().enumerate() {
-                //         vertex.pos = Transform::translate(self.offset) * vertex.pos;
-                //     }
-                // }
+                if let Some(task) = &mut self.mesh_task {
+                    for (_, vertex) in task.vertices.iter_mut().enumerate() {
+                        vertex.pos = Transform::translate(self.offset) * vertex.pos;
+                    }
+                }
             }
             _ => {}
         }
     }
 
     fn update(&mut self, _window: &mut Window, state: &mut AppState) {
-        let offset = Vector::new(state.offset.0, state.offset.1);
-        self.layer.frame.pos = self.layer.initial.pos + offset;
-        self.offset = offset;
-        self.layer.tween_update();
+        if self.layer.is_animating() {
+            self.offset = self.layer.get_movement_offset();
+        } else {
+            self.offset = state.offset;
+        }
+        self.layer.tween_update(state);
     }
 
     fn render(&mut self, theme: &mut Theme, window: &mut Window) {

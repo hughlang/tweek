@@ -3,7 +3,7 @@ use super::{current_time, elapsed_time};
 use crate::events::*;
 /// A Timeline represents a group of Tween animations that each have a start and stop time in seconds
 /// in the overall timeline.
-use crate::gui::{Displayable, Layer, Theme};
+use crate::gui::{Displayable, Layer, Scene, Theme};
 
 use quicksilver::{
     geom::{Rectangle, Vector},
@@ -24,14 +24,12 @@ pub struct Sprite {
     pub start: f64,
     /// The end time in float seconds
     pub end: f64,
-    /// The running state for this Tween
-    pub state: PlayState,
 }
 
 impl Sprite {
     /// Constructor
     fn new(view: Box<dyn Displayable>, start: f64, end: f64) -> Self {
-        Sprite { view, start, end, state: PlayState::Pending }
+        Sprite { view, start, end }
     }
 }
 
@@ -44,7 +42,11 @@ impl Sprite {
 pub struct Timeline {
     layer: Layer,
     sprites: Vec<Sprite>,
-    tl_start: f64,
+    timer_start: f64,
+    /// The running state for this Tween
+    pub state: PlayState,
+    /// Number of seconds to delay before starting
+    pub start_delay: f64,
     /// Number of times to repeat this Timeline animation
     pub repeat_count: u32,
     /// Delay before repeating next execution
@@ -57,19 +59,25 @@ impl Timeline {
     /// Constructor
     pub fn new(frame: Rectangle) -> Self {
         let layer = Layer::new(frame);
-        Timeline { layer, sprites: Vec::new(), tl_start: 0.0, repeat_count: 0, repeat_delay: 0.0, loop_forever: false }
+        Timeline {
+            layer,
+            sprites: Vec::new(),
+            timer_start: 0.0,
+            state: PlayState::Waiting,
+            start_delay: 1.0,
+            repeat_count: 0,
+            repeat_delay: 0.0,
+            loop_forever: false,
+        }
     }
 
     pub fn add_sprite(&mut self, mut view: Box<dyn Displayable>, start: f64) {
-        if view.get_layer_mut().has_animation() {
+        if !view.get_layer_mut().has_animation() {
             log::error!("No Tween has been set for this view");
             return;
         }
         let end = start + view.get_tween_duration();
-        // if end < EPSILON {
-        //     log::error!("Animation duration is 0");
-        //     return;
-        // }
+        log::debug!("Adding sprite with start={:?} end={:?}", start, end);
         if view.get_id() == 0 {
             view.set_id(self.sprites.len() as u32);
         }
@@ -80,27 +88,29 @@ impl Timeline {
     /// Builder method to set the start time of the Tweens as either:
     /// Normal: All start at the same time
     /// Sequence: Tweens play sequentially
-    pub fn align(&mut self, _alignment: SpriteAlign) {
-
-        // let mut start = 0.0 as f64;
-        // for id in &self.tween_ids {
-        //     if let Some(range) = self.children.get_mut(&id) {
-        //         let tween = range.tween.borrow();
-        //         let total_secs = (&*tween).total_time();
-        //         range.start = start;
-        //         range.end = range.start + total_secs;
-        //         log::debug!("align start={} end={}", range.start, range.end);
-
-        //         match alignment {
-        //             SpriteAlign::Normal => {}
-        //             SpriteAlign::Sequence => {
-        //                 start += total_secs;
-        //             }
-        //             _ => (),
-        //         }
-        //     }
-        // }
-        // self
+    pub fn align(&mut self, alignment: SpriteAlign) {
+        match alignment {
+            SpriteAlign::Normal => {
+                // TODO
+            }
+            SpriteAlign::Sequence => {
+                let mut next_start = 0.0 as f64;
+                for (i, sprite) in &mut self.sprites.iter_mut().enumerate() {
+                    let duration = sprite.view.get_tween_duration();
+                    sprite.start = i as f64 + next_start;
+                    sprite.end = sprite.start + duration;
+                    log::debug!(
+                        "Sequence {}/ duration={} start={} end={}",
+                        sprite.view.get_id(),
+                        duration,
+                        sprite.start,
+                        sprite.end
+                    );
+                    next_start += duration;
+                }
+            }
+            _ => (),
+        }
     }
 
     /// Builder method to set a fixed offset delay for all Tweens in a timeline
@@ -159,6 +169,12 @@ impl Displayable for Timeline {
         return self.layer.frame;
     }
 
+    fn align_view(&mut self, origin: Vector) {
+        for sprite in &mut self.sprites {
+            sprite.view.align_view(origin);
+        }
+    }
+
     fn move_to(&mut self, pos: (f32, f32)) {
         self.layer.frame.pos.x = pos.0;
         self.layer.frame.pos.y = pos.1;
@@ -170,23 +186,66 @@ impl Displayable for Timeline {
         }
     }
 
+    fn handle_event(&mut self, event: &EventBox) {
+        if let Ok(evt) = event.downcast_ref::<PlayerEvent>() {
+            log::debug!("{} PlayerEvent={:?}", self.debug_id(), evt);
+            match evt {
+                PlayerEvent::Play => {
+                    self.play();
+                }
+                PlayerEvent::Reset => {
+                    self.reset();
+                }
+                _ => (),
+            }
+        }
+    }
+
     fn notify(&mut self, event: &DisplayEvent) {
-        for sprite in &mut self.sprites {
-            sprite.view.notify(event);
+        match event {
+            DisplayEvent::Ready => {
+                for sprite in &mut self.sprites {
+                    sprite.view.notify(event);
+                }
+            }
+            DisplayEvent::Moved => {
+                // Do not force sprite layers to save props
+            }
+            _ => {}
         }
     }
 
     fn update(&mut self, window: &mut Window, state: &mut AppState) {
-        let elapsed = elapsed_time(self.tl_start);
-        for sprite in &mut self.sprites {
-            if sprite.start <= elapsed && sprite.end > elapsed {
-                // If not playing, start. Tween.play method checks play state first
-                // TODO: get PlayState from layer and handle it here
-                sprite.view.get_layer_mut().play();
+        match self.state {
+            PlayState::Pending => {
+                let elapsed = elapsed_time(self.timer_start);
+                if elapsed > self.start_delay {
+                    self.state = PlayState::Starting;
+                }
             }
-            sprite.view.update(window, state);
+            PlayState::Starting => {
+                self.timer_start = current_time();
+                let elapsed = elapsed_time(self.timer_start);
+                for sprite in &mut self.sprites {
+                    // sprite.view.get_layer_mut().reset();
+                    if sprite.start <= elapsed && sprite.end > elapsed {
+                        sprite.view.get_layer_mut().play();
+                    }
+                }
+                self.state = PlayState::Running;
+            }
+            PlayState::Running => {
+                let elapsed = elapsed_time(self.timer_start);
+                for sprite in &mut self.sprites {
+                    if sprite.start <= elapsed && sprite.end > elapsed {
+                        // If not playing, start. Tween.play method checks play state first
+                        sprite.view.get_layer_mut().play();
+                    }
+                    sprite.view.update(window, state);
+                }
+            }
+            _ => (),
         }
-        state.elapsed_time = elapsed_time(self.tl_start);
     }
 
     fn render(&mut self, theme: &mut Theme, window: &mut Window) {
@@ -213,7 +272,7 @@ impl Displayable for Timeline {
 
         for sprite in &mut self.sprites {
             for path in sprite.view.get_routes() {
-                let route = format!("/{}/{}", &base, path);
+                let route = format!("{}/{}", &base, path);
                 routes.push(route);
             }
         }
@@ -229,12 +288,22 @@ impl Playable for Timeline {
     /// The Timeline play method should only play the tweens where the start time
     /// is not greater than the current elapsed time.
     fn play(&mut self) {
-        self.tl_start = current_time();
+        match self.state {
+            PlayState::Waiting => {
+                self.state = PlayState::Pending;
+            }
+            _ => (),
+        }
+    }
+
+    fn reset(&mut self) {
+        self.state = PlayState::Waiting;
         for sprite in &mut self.sprites {
-            let elapsed = elapsed_time(self.tl_start);
-            if sprite.start <= elapsed && sprite.end > elapsed {
-                log::debug!("Play animation for: {:?}", sprite.view.debug_out());
-                sprite.view.get_layer_mut().play();
+            sprite.view.get_layer_mut().reset();
+            // A Scene in a timeline needs to inform its subviews about a Reset event to force them
+            // back to their original positions
+            if sprite.view.get_type_id() == TypeId::of::<Scene>() {
+                sprite.view.handle_event(&EventBox::new(PlayerEvent::Reset));
             }
         }
     }

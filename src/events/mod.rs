@@ -51,7 +51,7 @@ pub enum EventError {
 pub struct EventBox {
     event: Box<dyn Any>,
     event_type: TypeId,
-    info: Option<String>,
+    pub info: Option<String>,
 }
 
 impl EventBox {
@@ -105,15 +105,18 @@ impl EventBus {
         self.event_queue.append(other);
     }
 
+    /// Used by Notifier.
     pub fn add_event(&mut self, event: EventBox) {
         self.event_queue.push(event);
     }
 
-    /// Register an event?
+    /// Simple case for registering an event without a String parameter.
+    /// See dispatch_event for that option.
     pub fn register_event<E: AnyEvent>(&mut self, event: E) {
         self.event_queue.push(EventBox::new::<E>(event));
     }
 
+    /// Add an event to the queue with string info
     pub fn dispatch_event<E: AnyEvent>(&mut self, event: E, info: String) {
         let mut event = EventBox::new::<E>(event);
         event.info = Some(info);
@@ -144,16 +147,6 @@ impl EventBus {
         }
         results
     }
-
-    // pub fn query<E: AnyEvent>(&mut self) -> Vec<E> {
-    //     let mut results: Vec<E> = Vec::new();
-    //     for event in &self.event_queue {
-    //         if let Ok(evt) = event.downcast_ref::<E>() {
-    //             results.push(evt.clone());
-    //         }
-    //     }
-    //     results
-    // }
 }
 
 impl<'a> IntoIterator for &'a mut EventBus {

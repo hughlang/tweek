@@ -209,13 +209,10 @@ impl Displayable for ShapeView {
     }
 
     fn update(&mut self, _window: &mut Window, state: &mut AppState) {
-        let offset = Vector::new(state.offset.0, state.offset.1);
-        self.layer.frame.pos = self.layer.initial.pos + offset;
-
         let mut notifier = Notifier::new();
         self.layer.notifications.borrow_mut().attach(&mut notifier);
 
-        self.layer.tween_update();
+        self.layer.tween_update(state);
 
         // let alerts = self.layer.notifications.borrow_mut().queue().clone();
         // for alert in alerts {

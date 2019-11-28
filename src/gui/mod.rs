@@ -39,8 +39,35 @@ mod text_area;
 mod text_field;
 mod theme;
 
+use crate::core::Timeline;
 use std::any::TypeId;
 use std::collections::HashMap;
+
+use quicksilver::graphics::Color;
+
+/// A wrapper for Font styling. Removing dependency on Quicksilver fonts
+#[derive(Clone, Copy, Debug)]
+pub struct FontStyle {
+    pub(crate) size: f32,
+    pub(crate) color: Color,
+}
+
+impl FontStyle {
+    /// Create a new instantce of a font style
+    pub fn new(size: f32, color: Color) -> FontStyle {
+        FontStyle { size, color }
+    }
+
+    /// Getter for size. Returns f32
+    pub fn get_size(&self) -> f32 {
+        self.size
+    }
+
+    /// Getter for Color, which has r,g,b,a values of 0.0 to 1.0
+    pub fn get_color(&self) -> Color {
+        self.color
+    }
+}
 
 // HashMap that contains registry of all UI components in Tweek. This is used to
 // look up the string name of a component based on its TypeId
@@ -51,16 +78,17 @@ lazy_static! {
         map.insert(TypeId::of::<Button>(), "Button");
         map.insert(TypeId::of::<Checkbox>(), "Checkbox");
         map.insert(TypeId::of::<Cursor>(), "Cursor");
-        map.insert(TypeId::of::<ImageView>(), "ImageView");
+        map.insert(TypeId::of::<ImageView>(), "Image");
         map.insert(TypeId::of::<Label>(), "Label");
         map.insert(TypeId::of::<ListBox>(), "ListBox");
         map.insert(TypeId::of::<OptionGroup>(), "OptionGroup");
         map.insert(TypeId::of::<Scene>(), "Scene");
         map.insert(TypeId::of::<Stage>(), "Stage");
-        map.insert(TypeId::of::<ShapeView>(), "ShapeView");
+        map.insert(TypeId::of::<ShapeView>(), "Shape");
         map.insert(TypeId::of::<TextArea>(), "TextArea");
         map.insert(TypeId::of::<TextField>(), "TextField");
         map.insert(TypeId::of::<Text>(), "Text");
+        map.insert(TypeId::of::<Timeline>(), "Timeline");
         map
     };
 }

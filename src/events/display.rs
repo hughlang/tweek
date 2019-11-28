@@ -15,6 +15,8 @@ pub enum DisplayEvent {
     Deactivate,
     /// Event to signal that the view is ready to display
     Ready,
+    /// The Scene parent is moving
+    Moving,
     /// Event to tell child view that save the current position as the new position
     Moved,
 }

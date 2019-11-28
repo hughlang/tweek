@@ -109,8 +109,7 @@ impl Displayable for Cursor {
     }
 
     fn update(&mut self, _window: &mut Window, state: &mut AppState) {
-        self.layer.frame.pos = self.layer.initial.pos + Vector::new(state.offset.0, state.offset.1);
-        self.layer.tween_update();
+        self.layer.tween_update(state);
     }
 }
 

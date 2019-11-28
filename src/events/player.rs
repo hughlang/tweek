@@ -8,6 +8,8 @@ use super::AnyEvent;
 pub enum PlayerEvent {
     /// Start play
     Play,
+    /// Put everything back
+    Reset,
     /// Replay
     Replay,
     /// Pause

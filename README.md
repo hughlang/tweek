@@ -29,7 +29,7 @@ replaced, it doesn't make sense to over-develop the current version.
 
 * A complete suite of fully themeable GUI components
 * ... with the ability to animate anything using simple function parameters
-* ... that integrate into a complete application framework
+* ... that integrates into a complete application framework
 * ... which supports event handling and stateful data capture
 * ... that can run on any operating system and even in a web browser
 * ... and performs well.

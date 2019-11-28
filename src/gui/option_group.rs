@@ -113,7 +113,7 @@ impl OptionGroup {
                 }
                 OptionGroupLayout::HorizontalWrap(h_space, v_space) => {
                     let row_height = line_height + v_space;
-                    let add_size = theme.default_font.estimate_text(&checkbox.text, theme.font_size);
+                    let add_size = theme.default_font.measure_text(&checkbox.text, theme.font_size);
                     // eprintln!("row_size={:?} // add_size={:?}", row_size, add_size);
                     let mut xpos = self.layer.frame.x();
 
@@ -199,9 +199,7 @@ impl Displayable for OptionGroup {
     }
 
     fn update(&mut self, window: &mut Window, state: &mut AppState) {
-        let offset = Vector::new(state.offset.0, state.offset.1);
-        self.layer.frame.pos = self.layer.initial.pos + offset;
-        self.layer.tween_update();
+        self.layer.tween_update(state);
         for checkbox in &mut self.checkboxes {
             checkbox.update(window, state);
         }

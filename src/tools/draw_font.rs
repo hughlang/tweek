@@ -2,16 +2,18 @@
 /// – Currently an experiment
 ///
 use super::*;
-use glyph_brush::rusttype::{point, Font as RTFont, GlyphId, PositionedGlyph, Scale};
+use crate::gui::FontStyle;
+
+use glyph_brush::rusttype::{Font as RTFont, GlyphId, Scale};
 use glyph_brush::{
     self, BrushAction, BrushError, GlyphBrush, GlyphBrushBuilder, GlyphCalculator, GlyphCalculatorBuilder,
-    GlyphCruncher, HorizontalAlign as HAlign, Layout, Section, SectionText, VariedSection, VerticalAlign as VAlign,
+    GlyphCruncher, HorizontalAlign as HAlign, Layout, Section, VerticalAlign as VAlign,
 };
 use image_rs::{imageops, DynamicImage, Rgba, RgbaImage};
 
 use quicksilver::{
     geom::{Rectangle, Vector},
-    graphics::{Background::Col, Color, FontStyle, GpuTriangle, Image, MeshTask, PixelFormat, Texture, Vertex},
+    graphics::{Background::Col, Color, GpuTriangle, Image, MeshTask, PixelFormat, Texture, Vertex},
 };
 use std::collections::HashMap;
 use std::f32;
@@ -73,6 +75,7 @@ impl DrawFont {
             "outColor",
             "font_tex",
         );
+        // wth is this?
         let result = texture.activate();
         if result.is_err() {
             log::error!("activate: {:?}", result);
@@ -89,8 +92,8 @@ impl DrawFont {
 
     /// Draw word-wrapped text in the given rect using glyph_brush
     pub fn draw(&mut self, params: TextParams) -> Option<MeshTask> {
-        let mut origin: (f32, f32) = (params.frame.x(), params.frame.y());
         let rect = params.frame;
+        let mut origin: (f32, f32) = (params.frame.x(), params.frame.y());
         let h_align = params.text_align.to_glyph_align();
         let v_align = params.vert_align.to_glyph_align();
         let layout = {
@@ -144,7 +147,7 @@ impl DrawFont {
                 }
                 Err(BrushError::TextureTooSmall { suggested, .. }) => {
                     let (new_width, new_height) = suggested;
-                    log::debug!("Resizing glyph texture -> {}x{}", new_width, new_height);
+                    log::warn!("Resizing glyph texture -> {}x{}", new_width, new_height);
                     // FIXME: This needs to work
 
                     // let _ = window.create_texture(&[], new_width as u32, new_height as u32, PixelFormat::Alpha).unwrap();
@@ -273,37 +276,38 @@ impl DrawFont {
 
     /// Render text to image buffer
     pub fn render_pixels(&mut self, params: TextParams) -> (RgbaImage, u32, u32) {
+        let h_align = params.text_align.to_glyph_align();
+        let _v_align = params.vert_align.to_glyph_align();
         let layout = {
             if params.multiline {
-                Layout::default_wrap()
+                Layout::default_wrap().h_align(h_align)
             } else {
                 Layout::default_single_line()
             }
         };
-        let section = VariedSection {
+        let color = params.style.get_color();
+        let section = Section {
             layout,
-            bounds: (params.frame.width(), f32::INFINITY),
-            text: vec![SectionText {
-                text: &params.text,
-                scale: Scale::uniform(params.style.get_size()),
-                ..SectionText::default()
-            }],
-            ..VariedSection::default()
+            bounds: (params.frame.width(), params.frame.height()),
+            scale: Scale::uniform(params.style.get_size()),
+            text: &params.text,
+            color: [color.r, color.g, color.b, color.a],
+            ..Section::default()
         };
 
         let mut glyph_calc = self.glyph_calc.cache_scope();
-        let text_size: (u32, u32) = {
+        let text_size: (f32, f32) = {
             if let Some(rect) = glyph_calc.glyph_bounds_custom_layout(&section, &layout) {
-                // log::debug!(">>> New glyph_bounds_custom: {:?}", rect);
-                (rect.width().round() as u32, rect.height().round() as u32)
+                (rect.width().round(), rect.height().round())
             } else {
                 // This is the old calculation method that was too small and had to be buffered
                 let pixel_bounds = glyph_calc.pixel_bounds(&section).expect("None bounds");
-                (pixel_bounds.width() as u32, pixel_bounds.height() as u32)
+                (pixel_bounds.width() as f32, pixel_bounds.height() as f32)
             }
         };
+        let buf_size = (text_size.0 as u32, text_size.1 as u32);
         let glyphs = glyph_calc.glyphs(&section);
-        let mut imgbuf = DynamicImage::new_rgba8(text_size.0, text_size.1).to_rgba();
+        let mut imgbuf = DynamicImage::new_rgba8(buf_size.0, buf_size.1).to_rgba();
         let color = params.style.get_color();
         let red = (255.0 * color.r) as u8;
         let green = (255.0 * color.g) as u8;
@@ -313,8 +317,16 @@ impl DrawFont {
         for glyph in glyphs {
             // TODO: try exact_bounding_box
             if let Some(bounds) = glyph.pixel_bounding_box() {
-                log::trace!("id={:?} bounds={:?}", glyph.id(), bounds);
                 // Draw the glyph into the image per-pixel by using the draw closure
+                if bounds.min.x < 0
+                    || bounds.min.y < 0
+                    || bounds.max.x > text_size.0 as i32
+                    || bounds.max.y > text_size.1 as i32
+                {
+                    log::error!("Glyph out of bounds {:?}", bounds);
+                    continue;
+                }
+                // log::trace!("render_pixel for glyph id={:?} bounds={:?}", glyph.id(), bounds);
                 glyph.draw(|x, y, v| {
                     let alpha = (255.0 * v) as u8;
                     // Offset the position by the glyph bounding box
@@ -325,7 +337,19 @@ impl DrawFont {
             }
         }
 
-        (imgbuf, text_size.0, text_size.1)
+        (imgbuf, text_size.0 as u32, text_size.1 as u32)
+    }
+
+    /// Given the provided TextParams, call render_pixels and convert to QS Image
+    pub fn render_image(&mut self, params: TextParams) -> Option<Image> {
+        // let height = params.style.get_size() as u32;
+        let (mut imgbuf, width, height) = self.render_pixels(params);
+        log::debug!(">>> render_pixels size w={:?} h={:?}", width, height);
+        let subimg = imageops::crop(&mut imgbuf, 0, 0, width, height);
+        let img: Image =
+            Image::from_raw(subimg.to_image().into_raw().as_slice(), width, height, PixelFormat::RGBA).unwrap();
+
+        return Some(img);
     }
 
     /// Render the text as an image with no cropping
@@ -333,8 +357,7 @@ impl DrawFont {
         let params = TextParams::new(style.clone()).frame(rect.clone()).text(text).multiline(multiline);
 
         let (mut imgbuf, width, height) = self.render_pixels(params);
-        log::debug!(">>> render_pixels size w={:?} h={:?}", width, height);
-        let height = style.get_size() as u32;
+        // log::debug!(">>> render_pixels size w={:?} h={:?}", width, height);
         let subimg = imageops::crop(&mut imgbuf, 0, 0, width, height);
         let img: Image =
             Image::from_raw(subimg.to_image().into_raw().as_slice(), width, height, PixelFormat::RGBA).unwrap();
@@ -362,29 +385,6 @@ impl DrawFont {
         (w, h)
     }
 
-    /// A utility function for getting the size of specified text and calculate the cursor position.
-    /// This is only useful for single-line text. Since glyph_brush does not count trailing spaces in
-    /// pixel_bounds, we have to inspect the number of trailing spaces and pad the result.
-    /// Another use case is calculating the width of a password mask in TextField. In this case, trailing
-    /// spaces will not exist.
-    pub fn estimate_text(&self, text: &str, font_size: f32) -> (f32, f32) {
-        let scale = Scale::uniform(font_size);
-        let v_metrics = self.raw_font.v_metrics(scale);
-
-        let height = (v_metrics.ascent - v_metrics.descent).ceil();
-        let glyphs: Vec<PositionedGlyph<'_>> = self.raw_font.layout(text, scale, point(0.0, 0.0)).collect();
-        let mut width = glyphs
-            .iter()
-            .rev()
-            .map(|g| g.position().x as f32 + g.unpositioned().h_metrics().advance_width)
-            .next()
-            .unwrap_or(0.0);
-
-        // Shitty hack. This thing is not measuring properly
-        width += 30.0;
-        (width, height)
-    }
-
     pub fn measure_text(&self, text: &str, font_size: f32) -> (f32, f32) {
         let mut glyph_calc = self.glyph_calc.cache_scope();
         let layout = Layout::default();
@@ -392,8 +392,8 @@ impl DrawFont {
         let section = Section { layout, scale, text, ..Section::default() };
 
         let text_size: (f32, f32) = {
-            if let Some(size) = glyph_calc.pixel_bounds(&section) {
-                (size.width() as f32, size.height() as f32)
+            if let Some(rect) = glyph_calc.glyph_bounds_custom_layout(&section, &layout) {
+                (rect.width() as f32, rect.height() as f32)
             } else {
                 (0.0, 0.0)
             }

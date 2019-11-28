@@ -7,19 +7,20 @@ use std::any::TypeId;
 
 use quicksilver::{
     geom::{Rectangle, Vector},
-    graphics::{Color, FontStyle, MeshTask},
+    graphics::{Color, MeshTask},
     lifecycle::{run_with, Event, Settings, State, Window},
     Error, Result,
 };
 
 /// The main function serves as an entrypoint into the event loop
 fn main() {
+    #[cfg(not(target_arch = "wasm32"))]
     std::env::set_var("RUST_LOG", "main=debug,tweek=debug,tweek::gui=trace");
 
     #[cfg(not(target_arch = "wasm32"))]
     env_logger::builder().default_format_timestamp(false).default_format_module_path(true).init();
-    #[cfg(not(target_arch = "wasm32"))]
-    color_backtrace::install();
+    // #[cfg(not(target_arch = "wasm32"))]
+    // color_backtrace::install();
 
     let screen = Vector::new(800, 600);
     run_with("Tweek UI", screen, Settings::default(), || MainApp::new(screen));
@@ -45,10 +46,10 @@ impl MainApp {
 
         delegate.add_stage_builder(move || StageBuilder::load_modals_scene(screen_size));
         // delegate.add_stage_builder(move || StageBuilder::load_themes_demo(screen_size));
-        // delegate.add_stage_builder(move || StageBuilder::build_dots_demo(screen_size));
+        delegate.add_stage_builder(move || StageBuilder::build_dots_demo(screen_size));
 
         // Set the nav scene
-        // delegate.set_nav_scene(DemoHelper::build_nav_scene(screen));
+        delegate.set_nav_scene(DemoHelper::build_nav_scene(screen));
 
         let mut app = MainApp { delegate, screen, frames: 0 };
         app.delegate.application_ready();

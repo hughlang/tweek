@@ -2,11 +2,9 @@
 ///
 use super::*;
 
-#[allow(unused_imports)]
 use quicksilver::{
-    geom::{Line, Rectangle, Scalar, Shape, Transform, Vector},
-    graphics::{Background::Col, Color, Font, GpuTriangle, Mesh, MeshTask, Vertex},
-    input::Key,
+    geom::{Line, Rectangle, Vector},
+    graphics::{Background::Col, Color, GpuTriangle, MeshTask, Vertex},
 };
 
 use std::any::TypeId;
@@ -282,4 +280,16 @@ pub enum RectSide {
     All,
     LeftRight,
     TopBottom,
+}
+
+pub trait Container {
+    fn center_origin(&self, item_size: (f32, f32)) -> (f32, f32);
+}
+
+impl Container for Rectangle {
+    fn center_origin(&self, item_size: (f32, f32)) -> (f32, f32) {
+        let xpos = self.x() + (self.width() - item_size.0) / 2.0;
+        let ypos = self.y() + (self.height() - item_size.1) / 2.0;
+        (xpos, ypos)
+    }
 }

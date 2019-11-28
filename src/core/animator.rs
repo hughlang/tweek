@@ -75,8 +75,14 @@ impl Animator {
         }
         let ratio = self.ease.clone().get_ratio(progress as f32);
         progress = ratio as f64;
+
         // log::trace!("progress={} playhead={} total secs={}", progress, playhead, self.seconds);
         for (i, prop) in self.start_state.props.iter().enumerate() {
+            // FIXME: This will crash if end_state.props index out of bounds
+            if i >= self.end_state.props.len() {
+                log::error!("Index out of bounds for i={} and end_state.props len={}", i, self.end_state.props.len());
+                break;
+            }
             if prop == &self.end_state.props[i] {
                 // log::trace!("Unchanged start={:?} end={:?}", prop, &self.end_state.props[i]);
                 props.push(prop.clone());

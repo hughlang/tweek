@@ -1,17 +1,17 @@
 # Timeline Animations
 
-The [Tween Basics examples](1-basics.md) are a good starting point for learning and playing around with different animation behaviors. However, if you need to animate more than a small number of objects, it is probably best to use a Timeline which groups together Tween animations and schedules them to start at specific times. 
+The [Tween Basics examples](1-basics.md) are a good starting point for learning and playing around with different animation behaviors. However, if you need to animate more than a small number of objects, it is probably best to use a Timeline which groups together Tween animations and schedules them to start at specific times.
 
-These examples are all found within the file: [/examples/ggez/gg_demos.rs](https://github.com/wasm-network/tweek-rust/blob/master/examples/ggez/gg_demos.rs), which lets you browse the available demos easily. Please read the comments in this file which explain the important differences between running independent Tween animations versus a Timeline with several tweens. 
+These examples are all found within the file: [/examples/ggez/gg_demos.rs](https://github.com/rayet-inc/tweek/blob/master/examples/ggez/gg_demos.rs), which lets you browse the available demos easily. Please read the comments in this file which explain the important differences between running independent Tween animations versus a Timeline with several tweens.
 
 If you have Rust nightly installed, you can run these examples like this:
 
 ```
-cargo run --example demos 
+cargo run --example demos
 ```
 
 
-## Staggered bars 
+## Staggered bars
 The following is a simple collection of bars that start small and extend to the right in a staggered timeline. This is very similar to animating a single tween, except that the play() function for each tween is not called. Instead the timeline will be responsible for that.
 
 ```rust
@@ -46,7 +46,7 @@ The following is a simple collection of bars that start small and extend to the 
 
 ## Spinning dots in a circle
 
-This is a similar demo where a collection of dots rotate around in a circle in a staggered timeline with some variation in speed because of the ease function that is applied. 
+This is a similar demo where a collection of dots rotate around in a circle in a staggered timeline with some variation in speed because of the ease function that is applied.
 
 ```rust
     let dot_count = 8;
@@ -54,7 +54,7 @@ This is a similar demo where a collection of dots rotate around in a circle in a
     for i in 0..dot_count {
         let item_id = i + 10 as usize;
 
-        let mut item1 = Item::new(item_id, 
+        let mut item1 = Item::new(item_id,
 			Shape::Circle(mint::Point2{x: center_pt.x, y: center_pt.y - scene_radius}, dot_radius))?;
         item1.layer.graphics.color = Color::from_rgb_u32(HexColors::Red);
         let alpha = 1.0 - (i as f32 / dot_count as f32)/2.0;

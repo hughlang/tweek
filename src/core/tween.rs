@@ -8,10 +8,6 @@ use crate::events::*;
 
 use cgmath::*;
 use std::collections::HashSet;
-use std::hash::{Hash, Hasher};
-
-extern crate uuid;
-use uuid::Uuid;
 
 //-- Prop functions -----------------------------------------------------------------------
 /*
@@ -136,8 +132,6 @@ pub enum AnimType {
 pub struct Tween {
     /// User defined number that can be used for debug purposes or matching a Tween with an object
     pub tween_id: u32,
-    /// Unique ID that is automatically assigned a UUID. TODO: Explain
-    pub global_id: String,
     /// Time delay in seconds before starting play
     pub delay_s: f64,
     /// Epoch time in seconds when play started
@@ -169,14 +163,12 @@ pub struct Tween {
 impl Tween {
     /// Constructor
     pub fn new() -> Self {
-        let uuid = Uuid::new_v4();
         Tween {
             tween_id: 0,
-            global_id: uuid.to_string(),
             delay_s: 0.0,
             started_at: 0.0,
             duration: 0.0,
-            state: PlayState::Pending,
+            state: PlayState::Waiting,
             play_count: 0,
             repeat_count: 0,
             repeat_delay: 0.0,
@@ -258,7 +250,6 @@ impl Tween {
             animator.end_time = animator.start_time + animator.seconds as f64;
             time += animator.seconds as f64;
         }
-        self.duration = time;
 
         self
     }
@@ -321,10 +312,16 @@ impl Tween {
         if self.repeat_count < 1 {
             return time + self.delay_s;
         }
-
         let total = time + self.delay_s + (self.repeat_count as f64) * (time + self.repeat_delay);
-
         total
+    }
+
+    pub fn get_runtime(&self) -> f64 {
+        let mut time = self.delay_s;
+        for animator in &self.animators {
+            time += animator.seconds;
+        }
+        time
     }
 
     /// Function which reads the list of "to" props and finds the matching ones
@@ -488,10 +485,9 @@ impl Tween {
 
 impl Playable for Tween {
     fn play(&mut self) {
-        // TODO: move this to Dispatcher::status() to emit notifications
         match self.state {
-            PlayState::Pending => {
-                self.state = PlayState::Starting;
+            PlayState::Waiting => {
+                self.state = PlayState::Pending;
             }
             _ => (),
         }
@@ -512,7 +508,7 @@ impl Playable for Tween {
                 self.time_scale = self.time_scale.abs();
             }
         }
-        self.state = PlayState::Running;
+        self.state = PlayState::Waiting;
         self.started_at = current_time();
     }
 }
@@ -524,16 +520,23 @@ impl NotifyDispatcher for Tween {
     /// This replaces the tick() method which was used to tell Tween to check if it's state is changing based on the
     /// time elapsed. The Layer expects to receive notifications when state changes to PlayState::Starting
     fn status(&mut self, notifier: &mut Notifier) {
-        match self.state {
-            PlayState::Starting => {
-                self.sync_animators();
+        let duration = self.get_runtime();
+        let elapsed = elapsed_time(self.started_at);
 
+        match self.state {
+            PlayState::Pending => {
+                if elapsed > self.delay_s {
+                    self.state = PlayState::Starting;
+                }
+            }
+            PlayState::Starting => {
                 notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Starting));
+                self.sync_animators();
                 self.started_at = current_time();
                 self.state = PlayState::Running;
             }
             PlayState::Running => {
-                if elapsed_time(self.started_at) > self.duration as f64 {
+                if elapsed > duration {
                     self.play_count += 1;
                     if self.play_count > self.repeat_count as u32 {
                         // If repeat_count is zero, tween is Completed.
@@ -546,7 +549,7 @@ impl NotifyDispatcher for Tween {
             }
             PlayState::Idle => {
                 // If repeat_delay > 0, tween should wait until time elapsed passes it
-                if elapsed_time(self.started_at) > (self.duration + self.repeat_delay) as f64 {
+                if elapsed > (duration + self.repeat_delay) as f64 {
                     // log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
                     if self.repeat_count < 0 {
                         notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Restarting));
@@ -573,7 +576,7 @@ impl NotifyDispatcher for Tween {
         match self.state {
             PlayState::Running => {
                 let elapsed = elapsed_time(self.started_at);
-                let total_seconds = self.duration;
+                let total_seconds = self.total_time();
                 for animator in &mut self.animators {
                     if self.time_scale > 0.0 {
                         if animator.start_time < elapsed && animator.end_time >= elapsed {
@@ -581,7 +584,7 @@ impl NotifyDispatcher for Tween {
                             let ui_state = animator.update(playhead, self.time_scale as f64);
                             // TODO: log event
                             if self.debug {
-                                log::debug!("[{}.{}]  >>  {:?}", animator.id.0, animator.id.1, ui_state);
+                                log::trace!("request_update [{}.{}]  >>  {:?}", animator.id.0, animator.id.1, ui_state);
                             }
                             notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Running));
                             return Some(Box::new(ui_state));
@@ -622,22 +625,10 @@ impl NotifyDispatcher for Tween {
 
 //-- Support -----------------------------------------------------------------------
 
-impl Hash for Tween {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.global_id.hash(state);
-    }
-}
-
-impl PartialEq for Tween {
-    fn eq(&self, other: &Tween) -> bool {
-        self.global_id == other.global_id
-    }
-}
-
-impl Eq for Tween {}
-
 impl Drop for Tween {
     fn drop(&mut self) {
-        log::trace!("Dropping: {}", self.tween_id);
+        if self.debug {
+            log::trace!("Dropping: {}", self.tween_id);
+        }
     }
 }

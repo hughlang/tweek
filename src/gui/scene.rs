@@ -31,9 +31,9 @@ pub struct Scene {
     /// Display name
     pub(crate) name: String,
     /// The list of Displayable objects
-    views: Vec<Box<dyn Displayable>>,
+    pub views: Vec<Box<dyn Displayable>>,
     /// The list of Responder objects
-    controls: Vec<Box<dyn Responder>>,
+    pub controls: Vec<Box<dyn Responder>>,
     /// Index in controls vec of currently selected control (ie, textfield)
     active_control_idx: Option<usize>,
     /// Index in controls vec of the next selected control
@@ -51,7 +51,7 @@ pub struct Scene {
     /// A timeline to coordinate scene animations
     timeline: Option<Timeline>,
     /// Running count of views added to this scene. Used in assigning new id values
-    view_count: u32,
+    pub view_count: u32,
     /// Cac
     screen_size: Vector,
 }
@@ -62,7 +62,7 @@ impl Scene {
         let layer = Layer::new(frame);
         Scene {
             layer,
-            name: "Scene".to_string(),
+            name: "untitled".to_string(),
             views: Vec::new(),
             controls: Vec::new(),
             active_control_idx: None,
@@ -90,6 +90,12 @@ impl Scene {
         self.timeline = Some(timeline);
     }
 
+    pub fn append_timeline(&mut self, view: Box<dyn Displayable>, start: f64) {
+        if let Some(timeline) = &mut self.timeline {
+            timeline.add_sprite(view, start);
+        }
+    }
+
     /// Add a Displayable and set the position based on Scene origin
     /// If the object is actually a Responder, warn and do not add.
     pub fn add_view(&mut self, mut view: Box<dyn Displayable>) -> Vec<Node> {
@@ -106,8 +112,8 @@ impl Scene {
         if view.get_id() == 0 {
             view.set_id(self.get_id() + self.view_count);
         }
-        let offset = view.get_frame().pos - self.layer.frame.pos;
-        view.get_layer_mut().anchor_pt = offset;
+
+        view.set_origin(self.layer.frame.pos);
 
         let route = view.get_layer_mut().set_path(&self.layer.node_path);
         self.views.push(view);
@@ -121,8 +127,8 @@ impl Scene {
         if view.get_id() == 0 {
             view.set_id(self.get_id() + self.view_count);
         }
-        let offset = view.get_frame().pos - self.layer.frame.pos;
-        view.get_layer_mut().anchor_pt = offset;
+        view.set_origin(self.layer.frame.pos);
+
         let route = view.get_layer_mut().set_path(&self.layer.node_path);
         self.controls.push(view);
         route
@@ -153,42 +159,26 @@ impl Scene {
     /// Handle the given Event.
     /// TBD: Remove?
     /// Status: Experimental
-    pub fn handle_event(&mut self, event: &SceneEvent, _source: &Option<String>) {
-        self.last_event = event.clone();
-        match event {
-            SceneEvent::Show(target) => {
-                if target.id == self.get_id() && target.type_id == self.get_type_id() {
-                    let frame = Rectangle::new((0.0, 0.0), (self.screen_size.x, self.screen_size.y));
-                    // TODO: set from theme?
-                    let mut fill_color = Color::from_hex("#000000");
-                    fill_color.a = 0.7;
-                    let mut mesh = DrawShape::rectangle(&frame, Some(fill_color), None, 0.0, 0.0);
-                    let mut mesh_task = MeshTask::new(0);
-                    mesh_task.append(&mut mesh);
-                    self.bg_mask = Some(mesh_task);
-                }
-            }
-            SceneEvent::Hide(_) => {
-                self.bg_mask = None;
-            }
-            _ => (),
-        }
-    }
-
-    // /// Display an darkened overlay view for a lightbox modal effect
-    // pub fn show_overlay(&mut self) {
-    //     let frame = self.layer.frame.clone();
-    //     let fill_color = Color::from_hex("#CCCCCC");
-    //     let mut rectangle = DrawShape::rectangle(&frame, Some(fill_color), None, 0.0, 0.0);
-    //     let mut shape = ShapeView::new(frame, ShapeDef::Rectangle).with_mesh(&mut rectangle);
-    //     shape.layer.apply_props(&[alpha(0.3)]);
-    //     self.overlay = Some(shape);
-    //     // self.add_view(Box::new(shape));
-    // }
-
-    // /// Hide the overlay by removing it.
-    // pub fn hide_overlay(&mut self) {
-    //     self.overlay = None;
+    // pub fn handle_event(&mut self, event: &SceneEvent, _source: &Option<String>) {
+    //     self.last_event = event.clone();
+    //     match event {
+    //         SceneEvent::Show(target) => {
+    //             if target.id == self.get_id() && target.type_id == self.get_type_id() {
+    //                 let frame = Rectangle::new((0.0, 0.0), (self.screen_size.x, self.screen_size.y));
+    //                 // TODO: set from theme?
+    //                 let mut fill_color = Color::from_hex("#000000");
+    //                 fill_color.a = 0.7;
+    //                 let mut mesh = DrawShape::rectangle(&frame, Some(fill_color), None, 0.0, 0.0);
+    //                 let mut mesh_task = MeshTask::new(0);
+    //                 mesh_task.append(&mut mesh);
+    //                 self.bg_mask = Some(mesh_task);
+    //             }
+    //         }
+    //         SceneEvent::Hide(_) => {
+    //             self.bg_mask = None;
+    //         }
+    //         _ => (),
+    //     }
     // }
 
     /// Useful function to print out the scene hierarchy. Each Displayable object provides the
@@ -201,9 +191,9 @@ impl Scene {
             let mut rows: Vec<String> = Vec::new();
             let text_width = 60 as usize;
             let remainder = text_width - self.name.len(); // Calculate the approximate # of chars to print
-            let header = format!("\n=== {} {}", self.name, "=".repeat(remainder));
+            let header = format!("=== {} {}\n", self.name, "=".repeat(remainder));
             rows.push(header);
-            let out = format!("\n{}", self.debug_out());
+            let out = format!("{}", self.debug_out());
             rows.push(out);
             const SEP: &str = "\n| ";
             for view in &self.views {
@@ -223,29 +213,11 @@ impl Scene {
     fn validate_scene(&mut self) {
         if log_enabled!(Level::Debug) {
             // Don't bother building the text output if log level is not enabled
-            for view in &mut self.views {
-                let offset = view.get_frame().pos - self.layer.frame.pos;
-                let anchor = view.get_layer_mut().anchor_pt;
-                if anchor != offset {
-                    log::error!(
-                        "Wrong position: Expected={:?} actual={:?}",
-                        self.layer.frame.pos + anchor,
-                        self.layer.frame.pos + offset
-                    );
-                    log::error!("Node={:?}", view.debug_out());
-                }
+            for view in &self.views {
+                view.validate_position(self.layer.frame.pos);
             }
-            for view in &mut self.controls {
-                let offset = view.get_frame().pos - self.layer.frame.pos;
-                let anchor = view.get_layer_mut().anchor_pt;
-                if anchor != offset {
-                    log::error!(
-                        "Wrong position: Expected={:?} actual={:?}",
-                        self.layer.frame.pos + anchor,
-                        self.layer.frame.pos + offset
-                    );
-                    log::error!("Node={:?}", view.debug_out());
-                }
+            for view in &self.controls {
+                view.validate_position(self.layer.frame.pos);
             }
         }
     }
@@ -277,9 +249,26 @@ impl Displayable for Scene {
         return self.layer.frame;
     }
 
+    fn align_view(&mut self, origin: Vector) {
+        log::debug!("New origin={:?}", origin);
+        let anchor_pt = self.get_layer().anchor_pt;
+        self.get_layer_mut().frame.pos = anchor_pt + origin;
+
+        for view in &mut self.controls {
+            view.align_view(origin);
+        }
+        for view in &mut self.views {
+            view.align_view(origin);
+        }
+        if let Some(timeline) = &mut self.timeline {
+            timeline.align_view(origin);
+        }
+    }
+
     fn move_to(&mut self, pos: (f32, f32)) {
         self.layer.frame.pos.x = pos.0;
         self.layer.frame.pos.y = pos.1;
+        // TODO: Move child objects
     }
 
     fn set_theme(&mut self, theme: &mut Theme) {
@@ -287,12 +276,6 @@ impl Displayable for Scene {
         if !ok {
             return;
         }
-        // match self.layer.bg_style {
-        //     BackgroundStyle::Solid(_, corner) => {
-        //         self.layer.bg_style = BackgroundStyle::Solid(theme.bg_color, corner)
-        //     }
-        //     _ => ()
-        // }
         for view in &mut self.controls {
             view.set_theme(theme);
         }
@@ -304,17 +287,56 @@ impl Displayable for Scene {
         }
     }
 
-    fn notify(&mut self, event: &DisplayEvent) {
+    fn handle_event(&mut self, event: &EventBox) {
+        if let Some(timeline) = &mut self.timeline {
+            timeline.handle_event(event);
+        }
         for view in &mut self.controls {
-            view.notify(event);
+            view.handle_event(event);
         }
         for view in &mut self.views {
-            view.notify(event);
-        }
-        if let Some(timeline) = &mut self.timeline {
-            timeline.notify(event);
+            view.handle_event(event);
         }
 
+        if let Ok(evt) = event.downcast_ref::<SceneEvent>() {
+            log::debug!("{} SceneEvent={:?}", self.layer.debug_id(), evt);
+            log::debug!("Source={:?}", event.event_info());
+
+            self.last_event = evt.clone();
+            match evt {
+                SceneEvent::Show(target) => {
+                    if target.id == self.get_id() && target.type_id == self.get_type_id() {
+                        let frame = Rectangle::new((0.0, 0.0), (self.screen_size.x, self.screen_size.y));
+                        // TODO: set from theme?
+                        let mut fill_color = Color::from_hex("#000000");
+                        fill_color.a = 0.7;
+                        let mut mesh = DrawShape::rectangle(&frame, Some(fill_color), None, 0.0, 0.0);
+                        let mut mesh_task = MeshTask::new(0);
+                        mesh_task.append(&mut mesh);
+                        self.bg_mask = Some(mesh_task);
+                    }
+                }
+                SceneEvent::Hide(_) => {
+                    self.bg_mask = None;
+                }
+                _ => (),
+            }
+        }
+        if let Ok(evt) = event.downcast_ref::<PlayerEvent>() {
+            log::debug!("{} PlayerEvent={:?}", self.debug_id(), evt);
+            match evt {
+                PlayerEvent::Reset => {
+                    self.reset();
+                    self.print_scene();
+                    self.validate_scene();
+                }
+                _ => (),
+            }
+        }
+    }
+
+    fn notify(&mut self, event: &DisplayEvent) {
+        log::debug!("{} notify event={:?}", self.debug_id(), event);
         match event {
             DisplayEvent::Ready => {
                 self.layer.on_ready();
@@ -327,15 +349,21 @@ impl Displayable for Scene {
             }
             _ => {}
         }
+
+        for view in &mut self.controls {
+            view.notify(event);
+        }
+        for view in &mut self.views {
+            view.notify(event);
+        }
+        if let Some(timeline) = &mut self.timeline {
+            timeline.notify(event);
+        }
     }
 
     fn update(&mut self, window: &mut Window, state: &mut AppState) {
         self.screen_size = Vector::new(state.window_size.0, state.window_size.1); // Add this to DisplayEvent instead
-        self.layer.tween_update();
-
-        // The DisplayEvent::Moved notification is too early. It forces child objects to accept an overshot of target
-        let offset = self.layer.get_movement_offset();
-        state.offset = (offset.x, offset.y);
+        self.layer.tween_update(state);
 
         // Awkwardly, check if another control will become active and first try to
         // deactivate the previous control. Then activate the next one
@@ -352,6 +380,17 @@ impl Displayable for Scene {
             self.active_control_idx = Some(next_idx);
             self.next_control_idx = None;
         }
+
+        if self.layer.is_animating() {
+            state.offset = self.layer.get_movement_offset();
+            if state.offset != Vector::ZERO {
+                self.layer.layer_state = LayerState::Moving;
+            }
+        // log::trace!("{} scene offset={:?}", self.layer.debug_id(), state.offset);
+        } else {
+            state.offset = Vector::ZERO;
+        }
+
         for view in &mut self.controls {
             view.update(window, state);
         }
@@ -365,8 +404,19 @@ impl Displayable for Scene {
         let events = self.layer.notifications.borrow_mut().events.filter::<LayerEvent>();
         for evt in events {
             match evt {
-                LayerEvent::Move(_id, _type_id, state) => match state {
+                LayerEvent::Move(_id, _type_id, evt_state) => match evt_state {
                     PlayState::Completed => {
+                        state.offset = Vector::ZERO;
+                        // This was added for ads-sandbox carousel view. However, this will broadcast the event to all
+                        // Scenes in a Stage or Controller hierarchy.
+                        // TODO: Decide how to target this event at a specific Scene in a view hierarchy
+                        state.event_bus.register_event(DisplayEvent::Moved);
+                        log::debug!(
+                            "self.layer.frame.pos={:?} anchor_pt={:?}",
+                            self.layer.frame.pos,
+                            self.layer.anchor_pt
+                        );
+                        self.align_view(self.layer.frame.pos);
                         self.notify(&DisplayEvent::Moved);
                     }
                     _ => (),
@@ -379,35 +429,29 @@ impl Displayable for Scene {
     /// The top-level objects in the scene should all use the scene's coordinate system and
     /// therefore, this render() method should only call render() for child Displayable objects.
     fn render(&mut self, theme: &mut Theme, window: &mut Window) {
+        // match self.layer.layer_state {
+        //     LayerState::Completed => {
+        //         self.print_scene();
+        //         self.validate_scene();
+        //     }
+        //     _ => ()
+        // }
         if let Some(mask) = &self.bg_mask {
-            // println!(">>> self.bg_mask");
-
             window.add_task(mask.clone());
         }
 
         self.layer.draw_background(window);
         self.layer.draw_border(window);
 
-        let mut mask_areas: Vec<Rectangle> = Vec::new();
-
         for view in &mut self.views {
             view.render(theme, window);
         }
         for view in &mut self.controls {
-            if let Some(perimeter) = view.get_perimeter_frame() {
-                let mut blocks = UITools::get_perimeter_blocks(&view.get_frame(), &perimeter);
-                mask_areas.append(&mut blocks);
-            }
             view.render(theme, window);
         }
         if let Some(timeline) = &mut self.timeline {
             timeline.render(theme, window);
         }
-
-        // if mask_areas.len() > 0 {
-        //     let mesh_task = UITools::draw_rectangles(mask_areas, self.layer.transition.color);
-        //     window.add_task(mesh_task);
-        // }
     }
 
     fn handle_mouse_at(&mut self, pt: &Vector, window: &mut Window) -> bool {
@@ -556,5 +600,18 @@ impl Responder for Scene {
             // TODO: Check other listeners
         }
         false
+    }
+}
+
+impl Playable for Scene {
+    fn play(&mut self) {}
+
+    fn reset(&mut self) {
+        for view in &mut self.views {
+            view.get_layer_mut().reset();
+        }
+        for view in &mut self.controls {
+            view.get_layer_mut().reset();
+        }
     }
 }

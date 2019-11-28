@@ -7,12 +7,11 @@ use std::any::{Any, TypeId};
 
 use super::{gui_print_type, layer::Layer, theme::Theme};
 
-#[allow(unused_imports)]
 use quicksilver::{
-    geom::{Rectangle, Transform, Vector},
-    graphics::{Background::Col, Color, Font},
-    input::{ButtonState, Key, MouseButton, MouseCursor},
-    lifecycle::{Event, Window},
+    geom::{Rectangle, Vector},
+    graphics::Color,
+    input::Key,
+    lifecycle::Window,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -80,8 +79,39 @@ pub trait Displayable: Any {
     }
 
     /// Calculate the content size within the object to help with layout and other UI tasks.
+    /// Override if the content size might be different than the frame size
     fn get_content_size(&self) -> Vector {
-        Vector::new(0.0, 0.0)
+        self.get_frame().size
+    }
+
+    /// Use this to make sure that the anchor_pt is set when adding objects to a Scene.
+    /// Override if child views need to be updated as well.
+    fn set_origin(&mut self, origin: Vector) {
+        let offset = self.get_frame().pos - origin;
+        self.get_layer_mut().anchor_pt = offset;
+        log::debug!("set_origin for {} – anchor_pt={:?}", self.debug_id(), offset);
+    }
+
+    /// A helper method that moves a Displayable component layer by the specified offset. For Scene objects, all child
+    /// objects are moved as well. This is a convenience that lets you build a Scene with a 0,0 origin and then
+    /// reposition when the Scene has been fully populated
+    fn align_view(&mut self, origin: Vector) {
+        let anchor_pt = self.get_layer().anchor_pt;
+        self.get_layer_mut().frame.pos = anchor_pt + origin;
+        log::debug!("align_view {} pos={:?} anchor_pt={:?}", self.debug_id(), self.get_layer().frame.pos, anchor_pt);
+    }
+
+    fn validate_position(&self, origin: Vector) {
+        let offset = self.get_layer().frame.pos - origin;
+        let anchor = self.get_layer().anchor_pt;
+        if anchor != offset {
+            log::error!(
+                "Wrong position: Expected={:?} actual={:?}",
+                self.get_layer().frame.pos + anchor,
+                self.get_layer().frame.pos + offset
+            );
+            log::error!("Node={:?}", self.debug_out());
+        }
     }
 
     /// Reposition the object by setting its origin point
@@ -99,6 +129,9 @@ pub trait Displayable: Any {
 
     /// Top-down notification of events to child objects
     fn notify(&mut self, _event: &DisplayEvent);
+
+    /// Top-down event handling to child objects
+    fn handle_event(&mut self, _event: &EventBox) {}
 
     /// Method to update the UI state of an object in every pass of the run loop.
     /// This is used in motion animation and internal Tween animation so that each

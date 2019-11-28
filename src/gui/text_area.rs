@@ -225,9 +225,7 @@ impl Displayable for TextArea {
     }
 
     fn update(&mut self, window: &mut Window, state: &mut AppState) {
-        let offset = Vector::new(state.offset.0, state.offset.1);
-        self.layer.frame.pos = self.layer.initial.pos + offset;
-        self.layer.tween_update();
+        self.layer.tween_update(state);
         if let Some(cursor) = &mut self.cursor {
             cursor.update(window, state);
         }

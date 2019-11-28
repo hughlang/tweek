@@ -3,14 +3,15 @@ mod helper;
 use helper::*;
 use tweek::prelude::*;
 
-use image::GenericImageView;
-
 use quicksilver::{
     geom::{Rectangle, Shape, Vector},
-    graphics::{Color, FontStyle, Image, PixelFormat},
-    lifecycle::{run_with, Event, Settings, State, Window},
-    Error, Result,
+    graphics::Color,
+    lifecycle::{run_with, Asset, Event, Settings, State, Window},
+    load_file, Error, Result,
 };
+
+#[cfg(target_arch = "wasm32")]
+use stdweb::console;
 
 // use std::char;
 // use unicode_normalization::char::compose;
@@ -20,7 +21,8 @@ use quicksilver::{
 fn main() {
     // You can configure the amount of debug output for each module here. In this example, the default
     // log level for the tweek crate is debug
-    std::env::set_var("RUST_LOG", "main=debug,tweek=debug,quicksilver=info");
+    #[cfg(not(target_arch = "wasm32"))]
+    std::env::set_var("RUST_LOG", "main=debug,tweek=debug,quicksilver=debug");
 
     #[cfg(not(target_arch = "wasm32"))]
     env_logger::builder().default_format_timestamp(false).default_format_module_path(true).init();
@@ -141,136 +143,140 @@ impl StageBuilder {
     /// * Transparent
     /// * Animated text
     /// * Grouped toggle buttons
-    fn buttons_demo(screen: Vector) -> Stage {
-        let frame = Rectangle::new_sized(screen);
-        let mut stage = Stage::new(frame.clone());
-        stage.title = "Buttons Demo".to_string();
+    // fn buttons_demo(screen: Vector) -> Stage {
+    //     let frame = Rectangle::new_sized(screen);
+    //     let mut stage = Stage::new(frame.clone());
+    //     stage.title = "Buttons Demo".to_string();
 
-        const GRID_COLUMN_INTERVAL: f32 = 120.0;
-        const GRID_ROW_INTERVAL: f32 = 80.0;
-        const BUTTON_W: f32 = 100.0;
-        const BUTTON_H: f32 = 40.0;
-        const TITLE_H: f32 = 30.0;
-        const ROW_GAP: f32 = 20.0;
-        let mut scene = Scene::new(frame);
+    //     const GRID_COLUMN_INTERVAL: f32 = 120.0;
+    //     const GRID_ROW_INTERVAL: f32 = 80.0;
+    //     const BUTTON_W: f32 = 100.0;
+    //     const BUTTON_H: f32 = 40.0;
+    //     const TITLE_H: f32 = 30.0;
+    //     const ROW_GAP: f32 = 20.0;
+    //     let mut scene = Scene::new(frame);
 
-        let mut xpos = 100.0;
-        let mut ypos = 100.0;
+    //     let mut xpos = 100.0;
+    //     let mut ypos = 100.0;
 
-        // Button 1 ---------------------
-        let frame = scene.sub_frame((xpos, ypos), (BUTTON_W, TITLE_H));
-        let mut text = Text::new(frame, "Text button");
-        text.layer.font_style = FontStyle::new(12.0, Color::WHITE);
-        text.text_align(TextAlign::Left);
-        scene.add_control(Box::new(text));
+    //     // Button 1 ---------------------
+    //     let frame = scene.sub_frame((xpos, ypos), (BUTTON_W, TITLE_H));
+    //     let mut text = Text::new(frame, "Text button");
+    //     text.layer.font_style = FontStyle::new(12.0, Color::WHITE);
+    //     text.text_align(TextAlign::Left);
+    //     scene.add_control(Box::new(text));
 
-        ypos += TITLE_H;
-        let frame = scene.sub_frame((xpos, ypos), (BUTTON_W, BUTTON_H));
-        let mut button = Button::new(frame).with_text("Continue");
-        // button.layer.corner_radius = 3.0;
-        scene.add_control(Box::new(button));
+    //     ypos += TITLE_H;
+    //     let frame = scene.sub_frame((xpos, ypos), (BUTTON_W, BUTTON_H));
+    //     let mut button = Button::new(frame).with_text("Continue");
+    //     // button.layer.corner_radius = 3.0;
+    //     scene.add_control(Box::new(button));
 
-        ypos += frame.height() + ROW_GAP;
-        // Button 2 ---------------------
-        let frame = scene.sub_frame((xpos, ypos), (BUTTON_W, TITLE_H));
-        let mut text = Text::new(frame, "Image buttons");
-        text.layer.font_style = FontStyle::new(12.0, Color::WHITE);
-        text.text_align(TextAlign::Left);
-        scene.add_control(Box::new(text));
+    //     ypos += frame.height() + ROW_GAP;
+    //     // Button 2 ---------------------
+    //     let frame = scene.sub_frame((xpos, ypos), (BUTTON_W, TITLE_H));
+    //     let mut text = Text::new(frame, "Image buttons");
+    //     text.layer.font_style = FontStyle::new(12.0, Color::WHITE);
+    //     text.text_align(TextAlign::Left);
+    //     scene.add_control(Box::new(text));
 
-        ypos += TITLE_H;
+    //     ypos += TITLE_H;
 
-        // Image only
-        let img = DrawImage::load_image_file("icons/png/ios-heart.png").unwrap();
-        println!(">>> load_image_file {}", img.raw_pixels().len());
+    //     // Image only
+    //     let bytes = DrawImage::load_file_bytes("icons/png/ios-heart.png");
 
-        let frame = scene.sub_frame((xpos, ypos), (100.0, 100.0));
-        let mut label = Label::new(frame.clone());
-        label.set_image(img);
-        label.display = LabelDisplay::Image;
-        label.layer.font_style = FontStyle::new(16.0, Color::WHITE);
+    //     let frame = scene.sub_frame((xpos, ypos), (100.0, 100.0));
+    //     let mut label = Label::new(frame.clone());
+    //     if let Ok(img) = image::load_from_memory(bytes.as_slice()) {
+    //         label.set_image(img);
+    //     }
+    //     label.display = LabelDisplay::Image;
+    //     label.layer.font_style = FontStyle::new(16.0, Color::WHITE);
 
-        let mut button = Button::new(frame);
-        button.set_label(label);
-        button.layer.corner_radius = 3.0;
-        scene.add_control(Box::new(button));
+    //     let mut button = Button::new(frame);
+    //     button.set_label(label);
+    //     button.layer.corner_radius = 3.0;
+    //     scene.add_control(Box::new(button));
 
-        // Image Top
-        xpos += frame.width() + 5.0;
-        let img = DrawImage::load_image_file("icons/png/ios-heart.png").unwrap();
-        println!(">>> load_image_file {}", img.raw_pixels().len());
+    //     // Image Top
+    //     xpos += frame.width() + 5.0;
 
-        let frame = scene.sub_frame((xpos, ypos), (100.0, 100.0));
-        let mut label = Label::new(frame.clone());
-        label.set_image(img);
-        label.set_text("Image Top");
-        label.display = LabelDisplay::ImageAndText;
-        label.layout = LabelLayout::ImageTop;
-        label.layer.font_style = FontStyle::new(16.0, Color::RED);
+    //     let frame = scene.sub_frame((xpos, ypos), (100.0, 100.0));
+    //     let mut label = Label::new(frame.clone());
+    //     if let Ok(img) = image::load_from_memory(bytes.as_slice()) {
+    //         label.set_image(img);
+    //     }
+    //     label.set_text("Image Top");
+    //     label.display = LabelDisplay::ImageAndText;
+    //     label.layout = LabelLayout::ImageTop;
+    //     label.layer.font_style = FontStyle::new(16.0, Color::RED);
 
-        let mut button = Button::new(frame);
-        button.set_label(label);
-        button.layer.corner_radius = 3.0;
-        scene.add_control(Box::new(button));
+    //     let mut button = Button::new(frame);
+    //     button.set_label(label);
+    //     button.layer.corner_radius = 3.0;
+    //     scene.add_control(Box::new(button));
 
-        // Image Bottom
-        xpos += frame.width() + 5.0;
-        let img = DrawImage::load_image_file("icons/png/ios-heart.png").unwrap();
-        println!(">>> load_image_file {}", img.raw_pixels().len());
+    //     // Image Bottom
+    //     xpos += frame.width() + 5.0;
 
-        let frame = scene.sub_frame((xpos, ypos), (100.0, 100.0));
-        let mut label = Label::new(frame.clone());
-        label.set_image(img);
-        label.set_text("Image Bottom");
-        label.display = LabelDisplay::ImageAndText;
-        label.layout = LabelLayout::ImageBottom;
-        label.layer.font_style = FontStyle::new(16.0, Color::WHITE);
+    //     let frame = scene.sub_frame((xpos, ypos), (100.0, 100.0));
+    //     let mut label = Label::new(frame.clone());
+    //     if let Ok(img) = image::load_from_memory(bytes.as_slice()) {
+    //         label.set_image(img);
+    //     }
+    //     label.set_text("Image Bottom");
+    //     label.display = LabelDisplay::ImageAndText;
+    //     label.layout = LabelLayout::ImageBottom;
+    //     label.layer.font_style = FontStyle::new(16.0, Color::WHITE);
 
-        let mut button = Button::new(frame);
-        button.set_label(label);
-        button.layer.corner_radius = 3.0;
-        scene.add_control(Box::new(button));
+    //     let mut button = Button::new(frame);
+    //     button.set_label(label);
+    //     button.layer.corner_radius = 3.0;
+    //     scene.add_control(Box::new(button));
 
-        // Previous button
-        xpos = 100.0;
-        ypos += frame.height() + 10.0;
-        let img = DrawImage::load_image_file("icons/png/chevron-left.png").unwrap();
-        println!(">>> load_image_file {}", img.raw_pixels().len());
+    //     // Previous button
+    //     xpos = 100.0;
+    //     ypos += frame.height() + 10.0;
 
-        let frame = scene.sub_frame((xpos, ypos), (150.0, 50.0));
-        let mut label = Label::new(frame.clone());
-        label.set_image(img);
-        label.set_text("Image Left");
-        label.display = LabelDisplay::ImageAndText;
-        label.layout = LabelLayout::ImageLeft;
-        label.layer.font_style = FontStyle::new(16.0, Color::WHITE);
+    //     let bytes = DrawImage::load_file_bytes("icons/png/chevron-left.png");
 
-        let mut button = Button::new(frame);
-        button.set_label(label);
-        button.layer.corner_radius = 3.0;
-        scene.add_control(Box::new(button));
+    //     let frame = scene.sub_frame((xpos, ypos), (150.0, 50.0));
+    //     let mut label = Label::new(frame.clone());
+    //     if let Ok(img) = image::load_from_memory(bytes.as_slice()) {
+    //         label.set_image(img);
+    //     }
+    //     label.set_text("Image Left");
+    //     label.display = LabelDisplay::ImageAndText;
+    //     label.layout = LabelLayout::ImageLeft;
+    //     label.layer.font_style = FontStyle::new(16.0, Color::WHITE);
 
-        // Image Right button
-        xpos += frame.width() + 10.0;
-        let img = DrawImage::load_image_file("icons/png/chevron-right.png").unwrap();
-        println!(">>> load_image_file {}", img.raw_pixels().len());
+    //     let mut button = Button::new(frame);
+    //     button.set_label(label);
+    //     button.layer.corner_radius = 3.0;
+    //     scene.add_control(Box::new(button));
 
-        let frame = scene.sub_frame((xpos, ypos), (150.0, 50.0));
-        let mut label = Label::new(frame.clone());
-        label.set_image(img);
-        label.set_text("Image Right");
-        label.display = LabelDisplay::ImageAndText;
-        label.layout = LabelLayout::ImageRight;
-        label.layer.font_style = FontStyle::new(16.0, Color::WHITE);
+    //     // Image Right button
+    //     xpos += frame.width() + 10.0;
+    //     let bytes = DrawImage::load_file_bytes("icons/png/chevron-right.png");
 
-        let mut button = Button::new(frame);
-        button.set_label(label);
-        button.layer.corner_radius = 3.0;
-        scene.add_control(Box::new(button));
+    //     let frame = scene.sub_frame((xpos, ypos), (150.0, 50.0));
+    //     let mut label = Label::new(frame.clone());
+    //     if let Ok(img) = image::load_from_memory(bytes.as_slice()) {
+    //         label.set_image(img);
+    //     }
+    //     label.set_text("Image Right");
+    //     label.display = LabelDisplay::ImageAndText;
+    //     label.layout = LabelLayout::ImageRight;
+    //     label.layer.font_style = FontStyle::new(16.0, Color::WHITE);
 
-        stage.add_scene(scene);
-        stage
-    }
+    //     let mut button = Button::new(frame);
+    //     button.set_label(label);
+    //     button.layer.corner_radius = 3.0;
+    //     scene.add_control(Box::new(button));
+
+    //     stage.add_scene(scene);
+    //     stage
+    // }
 
     fn text_editor_demo(screen: Vector) -> Stage {
         let frame = Rectangle::new_sized(screen);
@@ -455,14 +461,21 @@ impl StageBuilder {
         scene.add_view(Box::new(shape));
 
         // FIXME: why are coords off?
-        // xpos = 600.0;
-        // ypos = 650.0;
         // let frame = Rectangle::new((xpos, ypos), (100.0, 100.0));
-        // let img = DrawImage::load_image_file("icons/png/ios-heart.png").unwrap();
-        // println!(">>> load_image_file {:?} color {:?}", img.dimensions(), img.color());
-        // let image = Image::from_raw(&img.to_rgba(), 512, 512, PixelFormat::RGBA).unwrap();
+
+        // let image = Image::from_bytes(include_bytes!("../../static/icons/png/ios-heart.png")).unwrap();
+        // let frame = Rectangle::new((xpos, ypos), (100.0, 100.0));
         // let mut image_view = ImageView::new(frame, image);
         // scene.add_view(Box::new(image_view));
+
+        xpos = 600.0;
+        ypos = 100.0;
+        let path = "tile.png";
+
+        let asset = Asset::new(load_file(path));
+        let frame = Rectangle::new((xpos, ypos), (100.0, 100.0));
+        let mut image_view = ImageView::new(frame, asset);
+        scene.add_view(Box::new(image_view));
 
         stage.add_scene(scene);
         stage

@@ -6,10 +6,10 @@ use tweek::prelude::*;
 #[allow(unused_imports)]
 use quicksilver::{
     geom::{Rectangle, Shape, Transform, Vector},
-    graphics::{Background::Col, Background::Img, Color, FontStyle, Image, PixelFormat},
+    graphics::{Background::Col, Background::Img, Color, Image, PixelFormat},
     input::{ButtonState, Key, MouseButton, MouseCursor},
-    lifecycle::{run_with, Event, Settings, State, Window},
-    Error, Result,
+    lifecycle::{run_with, Asset, Event, Settings, State, Window},
+    load_file, Error, Result,
 };
 
 #[allow(unused_imports)]
@@ -17,6 +17,7 @@ use image::{imageops, DynamicImage, GenericImageView, ImageBuffer, Rgba};
 
 /// The main function serves as an entrypoint into the event loop
 fn main() {
+    #[cfg(not(target_arch = "wasm32"))]
     std::env::set_var("RUST_LOG", "main=debug,tweek=trace,tweek::gui=trace");
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -120,7 +121,6 @@ impl StageBuilder {
             .repeat(-1, 0.2)
             .yoyo();
 
-        // square.layer.animate_with_props(propset.clone());
         square.layer.start_animation(tween1);
         // square.layer.tween_type = TweenType::Move;
         scene.add_view(Box::new(square));
@@ -181,12 +181,13 @@ impl StageBuilder {
         let draw_area = DemoHelper::get_draw_area(screen);
 
         let item_id = 3;
-        let image = Image::from_bytes(include_bytes!("../../static/tile.png")).unwrap();
+        let path = "tile.png";
+        let asset = Asset::new(load_file(path));
         let rect = Rectangle::new((draw_area.pos.x, 400.0), (100.0, 100.0));
-        let mut image_view = ImageView::new(rect, image);
+        let mut image_view = ImageView::new(rect, asset);
 
         let mut tween = Tween::with(item_id, &image_view.layer)
-            .to(&[shift_x(draw_area.width()), rotate(360.0)])
+            .to(&[shift_x(draw_area.width() - 50.0), rotate(360.0)])
             .duration(3.0)
             .ease(Ease::BounceOut)
             .repeat(5, 0.5);

@@ -2,6 +2,8 @@
 ///
 use crate::events::*;
 
+use quicksilver::geom::Vector;
+
 //-- Base -----------------------------------------------------------------------
 
 /// The Playable trait provides support for basic animation updating and control
@@ -16,6 +18,8 @@ pub trait Playable {
     fn pause(&mut self) {}
     /// Reset the playback to initial state
     fn reset(&mut self) {}
+    /// A means of forcibly setting the PlayerState
+    fn set_state(&mut self, _state: PlayState) {}
 }
 
 /// Mutable state object passed through Responder methods for capturing and handling
@@ -30,7 +34,7 @@ pub struct AppState {
     /// Total time
     pub total_time: f64,
     /// Offset x-y when Scene is animating/moving
-    pub offset: (f32, f32),
+    pub offset: Vector,
     /// The event queue
     pub event_bus: EventBus,
     /// Stores the index value of the row that was clicked on.
@@ -45,7 +49,7 @@ impl AppState {
             time_scale: 1.0,
             elapsed_time: 0.0,
             total_time: 0.0,
-            offset: (0.0, 0.0),
+            offset: Vector::ZERO,
             event_bus: EventBus::default(),
             row_target: None,
         }
@@ -53,6 +57,6 @@ impl AppState {
 
     /// Hacky way of forcing top-level controller to zero
     pub fn zero_offset(&mut self) {
-        self.offset = (0.0, 0.0);
+        self.offset = Vector::ZERO;
     }
 }

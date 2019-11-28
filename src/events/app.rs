@@ -35,6 +35,8 @@ pub enum SceneEvent {
     Show(Node),
     /// Hide something
     Hide(Node),
+    /// Useful for carousel and other slide animation
+    Transition,
     /// Theme changed to the number that identifies it
     ChangeTheme(u32),
 }

@@ -1,12 +1,13 @@
 # GUI Lifecycle
 
-> This document is not finished. Please ignore for now.
+The Tweek architecture
 
 
 ## Overview
 
-* Displayables
-* Responders
+Traits
+* Displayable
+* Responder
 
 
 ### Goals
@@ -75,5 +76,5 @@ pub trait Tweenable {
 }
 ```
 
-And this is the [Layer wrapper for Quicksilver that implements Tweenable](https://github.com/wasm-network/tweek-rust/blob/master/src/ui/layer.rs). It reads and writes the values you specify.
+And this is the [Layer wrapper for Quicksilver that implements Tweenable](https://github.com/rayet-inc/tweek/blob/master/src/ui/layer.rs). It reads and writes the values you specify.
 

@@ -7,7 +7,7 @@ use crate::tools::*;
 #[allow(unused_imports)]
 use quicksilver::{
     geom::{Rectangle, Shape, Transform, Vector},
-    graphics::{Background::Col, Background::Img, Color, FontStyle, Image, MeshTask},
+    graphics::{Background::Col, Background::Img, Color, Image, MeshTask},
     input::MouseCursor,
     lifecycle::Window,
 };
@@ -235,21 +235,23 @@ impl Displayable for ListBox {
     /// The mouse state of a row should determine whether to reset or not.
     /// Otherwise, leave it alone?
     fn update(&mut self, _window: &mut Window, state: &mut AppState) {
-        let offset = Vector::new(state.offset.0, state.offset.1);
-        self.layer.frame.pos = self.layer.initial.pos + offset;
-        self.layer.tween_update();
+        self.layer.tween_update(state);
 
         self.datasource.iter_mut().for_each(|x| {
             if let Some(ref mut layer) = x.layer {
-                layer.tween_update();
+                layer.tween_update(state);
             }
         });
     }
 
     fn render(&mut self, _theme: &mut Theme, window: &mut Window) {
+        if self.rows.len() == 0 {
+            log::warn!("No rows found. Rows are created when set_theme is called.");
+            return;
+        }
         self.layer.draw_background(window);
         let frame = self.layer.frame;
-
+        // log::debug!("frame={:?}", frame);
         // Create a mesh to hold row borders
         let mut graphics = MeshTask::new(0);
         let border: (Color, f32) = {
@@ -401,7 +403,7 @@ impl Responder for ListBox {
                         data.row_state = MouseState::Select;
                         if let Some(transition) = &self.on_row_select {
                             if transition.duration > 0.0 {
-                                layer.animate_with_props(transition.clone());
+                                layer.animate_with_props(transition.clone(), true);
                             } else {
                                 layer.apply_props(&transition.props.clone());
                             }
@@ -524,7 +526,7 @@ impl Displayable for ListBoxRow {
         }
     }
 
-    fn update(&mut self, _window: &mut Window, _state: &mut AppState) {
-        self.layer.tween_update();
+    fn update(&mut self, _window: &mut Window, state: &mut AppState) {
+        self.layer.tween_update(state);
     }
 }

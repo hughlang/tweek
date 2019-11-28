@@ -5,12 +5,12 @@ use crate::core::*;
 use crate::events::*;
 use crate::tools::*;
 
-use std::{any::TypeId, cell::RefCell, fmt, rc::Rc};
+use std::{any::Any, any::TypeId, cell::RefCell, fmt, rc::Rc};
 
 #[allow(unused_imports)]
 use quicksilver::{
     geom::{Line, Rectangle, Shape, Transform, Vector},
-    graphics::{Background::Col, Color, FontStyle, Mesh, MeshTask},
+    graphics::{Background::Col, Color, Mesh, MeshTask},
     lifecycle::{run, Settings, State, Window},
 };
 
@@ -23,6 +23,9 @@ pub struct Layer {
     id: u32,
     /// The rectangular position and size bounds of the object
     pub frame: Rectangle,
+    /// Optional identifier that can be used to reference or locate an object in an external framework
+    /// (e.g. Stretch Node)
+    pub external_id: Option<Box<dyn Any>>,
     /// Identifies the object type this layer belongs to.
     pub(super) type_id: TypeId,
     /// The path hierarchy as an array
@@ -54,9 +57,9 @@ pub struct Layer {
     /// Current MouseState of the layer
     pub(super) mouse_state: MouseState,
     /// The animation Props for the hover event
-    pub(super) hover_effect: Option<PropSet>,
+    pub hover_effect: Option<PropSet>,
     /// The animation Props for the hover event
-    pub(super) click_effect: Option<PropSet>,
+    pub click_effect: Option<PropSet>,
     /// Callback method for handling click action
     pub(super) on_click: Option<Box<dyn FnMut(&mut AppState) + 'static>>,
     /// Callback method for handling click action
@@ -65,6 +68,8 @@ pub struct Layer {
     pub(super) notifications: Rc<RefCell<Notifications>>,
     /// The currently executing animations
     pub(super) tween_type: TweenType,
+    /// Identifies the current animation state of the layer. Only used for moving Scene objects atm
+    pub(super) layer_state: LayerState,
     /// Should the layer move/resize with the parent scene?
     pub lock_frame: bool,
     /// Should the layer move/resize with the parent scene?
@@ -79,6 +84,7 @@ impl Clone for Layer {
         Layer {
             id: 0,
             frame: self.frame,
+            external_id: None,
             type_id: self.type_id, // the default
             node_path: Vec::new(),
             initial: self.frame,
@@ -99,6 +105,7 @@ impl Clone for Layer {
             click_action: None,
             notifications: Notifications::new(),
             tween_type: TweenType::None,
+            layer_state: LayerState::Normal,
             lock_frame: false,
             lock_style: false,
             debug: false,
@@ -112,6 +119,7 @@ impl Layer {
         Layer {
             id: 0,
             frame,
+            external_id: None,
             type_id: TypeId::of::<Layer>(), // the default
             node_path: Vec::new(),
             initial: frame,
@@ -132,6 +140,7 @@ impl Layer {
             click_action: None,
             notifications: Notifications::new(),
             tween_type: TweenType::None,
+            layer_state: LayerState::Normal,
             lock_frame: false,
             lock_style: false,
             debug: false,
@@ -145,6 +154,13 @@ impl Layer {
     /// Getter for id
     pub fn get_id(&self) -> u32 {
         self.id
+    }
+
+    pub fn enable_debug(&mut self) {
+        self.debug = true;
+        if let Some(tween) = &mut self.animation {
+            tween.debug = true;
+        }
     }
 
     /// A setter to set the parent path and append this layer to the path
@@ -161,6 +177,7 @@ impl Layer {
     }
 
     /// Setter for Tween animation. Only needed outside of the Tweek crate
+    /// Use start_animation() for immediate animation.
     pub fn set_animation(&mut self, tween: Tween) {
         self.animation = Some(tween)
     }
@@ -173,16 +190,17 @@ impl Layer {
     }
 
     /// Called by Displayable after notify(DisplayEvent::Move)
+    /// Note: do not save any animation props or reset to original state.
+    /// That should be explicitly called through reset()
     pub(super) fn on_move_complete(&mut self) {
         log::debug!(
             "on_move_complete: <{}> [{}] >> {}",
             gui_print_type(&self.type_id),
             self.get_id(),
-            self.debug_style()
+            self.debug_out()
         );
-        self.save_props();
-        self.initial = self.frame;
-        self.defaults = Tween::load_props(self);
+        self.meshes.clear();
+        self.layer_state = LayerState::Completed;
     }
 
     /// Set the default animations
@@ -218,7 +236,12 @@ impl Layer {
     }
 
     /// If animation is running, run updates
-    pub(crate) fn tween_update(&mut self) {
+    pub(crate) fn tween_update(&mut self, state: &mut AppState) {
+        if state.offset != Vector::ZERO {
+            self.frame.pos = self.initial.pos + state.offset;
+            self.layer_state = LayerState::Moving;
+        }
+
         self.notifications.borrow_mut().clear();
         if let Some(tween) = &mut self.animation {
             let mut notifier = Notifier::new();
@@ -238,13 +261,14 @@ impl Layer {
                     TweenEvent::Status(id, state) => {
                         match state {
                             PlayState::Starting => {
-                                log::debug!("{} {:?} {:?}", self.debug_id(), state, self.tween_type);
+                                log::trace!("Event: {} {:?} {:?}", self.debug_id(), state, self.tween_type);
                             }
                             PlayState::Completed => {
-                                log::debug!("{} {:?} {:?}", self.debug_id(), state, self.tween_type);
-                                // self.save_props();
-                                // self.defaults = Tween::load_props(self);
-                                // self.initial = self.frame;
+                                log::trace!("Event: {} {:?} {:?}", self.debug_id(), state, self.tween_type);
+                                log::trace!("Layer: {:?}", self);
+                                self.meshes.clear();
+                                // self.save_props(); // Doesn't work right
+
                                 match self.tween_type {
                                     TweenType::Move => notifier.notify(LayerEvent::Move(id, self.type_id, state)),
                                     TweenType::Hover => notifier.notify(LayerEvent::Hover(id, self.type_id, state)),
@@ -254,17 +278,69 @@ impl Layer {
                             }
                             _ => (),
                         }
-                    } // TweenEvent::EndState(id, props) => {
-                      //     log::debug!("<{}> [{}] Target={:?}", gui_print_type(&self.type_id), id, props);
-                      // }
+                    }
                 }
             }
         }
     }
 
+    /// A unified method for trying to re-use cached meshes to redraw the object.
+    /// If the object is_animating(), translate the position if it is moving.
+    /// If the object is being moved by its parent Scene, then try to translate the
+    /// position based on that.
+    pub(crate) fn prepare_render(&mut self, window: &mut Window) -> Vec<MeshTask> {
+        if self.debug {
+            self.draw_border(window);
+        }
+        let mut results: Vec<MeshTask> = Vec::new();
+        if self.meshes.is_empty() {
+            return results;
+        }
+
+        if self.is_animating() {
+            let offset = self.get_movement_offset();
+
+            for task in &self.meshes {
+                let mut task = task.clone();
+                for (_, vertex) in task.vertices.iter_mut().enumerate() {
+                    vertex.pos = Transform::translate(offset) * vertex.pos;
+                }
+                results.push(task);
+            }
+        } else {
+            match self.layer_state {
+                LayerState::Normal | LayerState::Completed => {
+                    // Layer is not moving and cached meshes are expected to be accurate.
+                    for task in &self.meshes {
+                        results.push(task.clone());
+                    }
+                }
+                LayerState::Moving => {
+                    // Layer is moving, so translate the cached meshes to current position
+                    let offset = self.get_movement_offset();
+                    if self.debug {
+                        log::debug!("{:?} @{:?} offset={:?}", self.debug_id(), self.debug_out(), offset);
+                    }
+
+                    for task in &self.meshes {
+                        let mut task = task.clone();
+                        for (_, vertex) in task.vertices.iter_mut().enumerate() {
+                            vertex.pos = Transform::translate(offset) * vertex.pos;
+                        }
+                        results.push(task);
+                    }
+                }
+            }
+        }
+        results
+    }
+
     /// Standard method called by components when mouseover occurs
     pub(super) fn handle_mouse_over(&mut self, pt: &Vector) -> bool {
         if pt.overlaps_rectangle(&self.frame) {
+            // if self.debug {
+            //     log::trace!("Hover over {}", self.debug_out());
+            // }
             match self.mouse_state {
                 MouseState::None => {
                     // change state to hover and start animations
@@ -272,7 +348,7 @@ impl Layer {
                     if let Some(transition) = &self.hover_effect {
                         let trans = transition.clone();
                         if trans.duration > 0.0 {
-                            self.animate_with_props(trans);
+                            self.animate_with_props(trans, true);
                             self.tween_type = TweenType::Click;
                         } else {
                             self.apply_props(&trans.props);
@@ -304,7 +380,7 @@ impl Layer {
         if let Some(transition) = &self.click_effect {
             let trans = transition.clone();
             if trans.duration > 0.0 {
-                self.animate_with_props(trans);
+                self.animate_with_props(trans, true);
                 self.tween_type = TweenType::Click;
             } else {
                 self.apply_props(&trans.props);
@@ -313,10 +389,12 @@ impl Layer {
     }
 
     /// Start animating with the given PropSet
-    pub fn animate_with_props(&mut self, propset: PropSet) {
+    pub fn animate_with_props(&mut self, propset: PropSet, autoplay: bool) {
         self.init_props();
         let mut tween = Tween::with(self.id, self).using_props(propset.clone());
-        &tween.play();
+        if autoplay {
+            &tween.play();
+        }
         self.animation = Some(tween);
         self.tween_type = propset.event;
     }
@@ -327,11 +405,6 @@ impl Layer {
         self.init_props();
         &mut tween.play();
         self.animation = Some(tween);
-    }
-
-    /// Reset the layer by clearing mesh_tasks and other state
-    pub fn reset(&mut self) {
-        // self.mesh_tasks.clear();
     }
 
     /// Method to evaluate BackgroundStyle and BorderStyle and draw the Mesh for the
@@ -452,6 +525,17 @@ impl Layer {
     /// TODO: Use from Displayable base.rs or discard
     pub fn debug_id(&self) -> String {
         format!("<{}> [{}]", gui_print_type(&self.type_id), self.id)
+    }
+
+    /// Standard format for printing out view information. In general, traits implementors do not need to override it. However, if an object contains
+    /// nested views, it may be useful to print out those details. OptionGroup is one example.
+    pub fn debug_out(&self) -> String {
+        format!("{} {}", self.debug_id(), self.debug_frame())
+    }
+
+    pub fn debug_frame(&self) -> String {
+        let frame = self.frame;
+        format!("Pos({:.1},{:.1}) Size({:.1},{:.1})", frame.pos.x, frame.pos.y, frame.size.x, frame.size.y)
     }
 
     /**
@@ -591,6 +675,7 @@ impl Tweenable for Layer {
 
     /// Method to copy initialise the Transition with the official values
     fn init_props(&mut self) {
+        log::debug!("init_props {} origin={:?} anchor_pt={:?}", self.debug_id(), self.frame.pos, self.anchor_pt);
         self.transition.color = self.bg_style.get_color();
         let border = self.border_style.get_border();
         self.transition.border_color = border.0;
@@ -656,8 +741,24 @@ impl Tweenable for Layer {
 
 impl Playable for Layer {
     fn play(&mut self) {
+        let desc = self.debug_id();
         if let Some(tween) = &mut self.animation {
-            tween.play();
+            match tween.state {
+                PlayState::Waiting => {
+                    log::debug!("Play animation for: {:?}", desc);
+                    tween.play();
+                }
+                _ => (),
+            }
+        }
+    }
+    fn reset(&mut self) {
+        self.frame = self.initial.clone();
+        self.meshes.clear();
+        log::debug!("RESET {:?} frame={:?}", self.debug_id(), self.frame);
+        if let Some(tween) = &mut self.animation {
+            self.meshes.clear();
+            tween.reset();
         }
     }
     fn tick(&mut self) {
@@ -665,9 +766,26 @@ impl Playable for Layer {
             tween.tick();
         }
     }
+    fn set_state(&mut self, state: PlayState) {
+        if let Some(tween) = &mut self.animation {
+            tween.state = state;
+        }
+    }
 }
 
 //-- Support -----------------------------------------------------------------------
+
+/// This enum describes 3 simple states, mainly for handling moving objects
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum LayerState {
+    /// The idle state when the object is not being animated or moved
+    Normal,
+    /// Actively moving. This is defined by the AppState.offset value
+    Moving,
+    /// Movement has completed but still needs to be verified. When verified, it will go back
+    /// to the Normal state
+    Completed,
+}
 
 /// Enum to define the mouse state for each object. Primarily used for Hover states
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -733,7 +851,7 @@ impl BorderStyle {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Transition {
     /// The position and size Rectangle
-    // pub frame: Rectangle,
+    pub frame: Rectangle,
     /// The current color
     pub color: Color,
     /// The foreground color. Only relevant to some nested GUI objects like Text
@@ -748,9 +866,9 @@ pub struct Transition {
 
 impl Transition {
     /// Constructor
-    pub fn new(_frame: Rectangle, color: Color, rotation: f32) -> Self {
+    pub fn new(frame: Rectangle, color: Color, rotation: f32) -> Self {
         let border_width = 0.0;
         let border_color = Color::BLACK;
-        Transition { color, tint: color, border_width, border_color, rotation }
+        Transition { frame, color, tint: color, border_width, border_color, rotation }
     }
 }
