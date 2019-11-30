@@ -1,5 +1,5 @@
-use super::tweek::*;
-use super::{current_time, elapsed_time};
+use super::state::*;
+// use super::{current_time, elapsed_time};
 use crate::events::*;
 /// A Timeline represents a group of Tween animations that each have a start and stop time in seconds
 /// in the overall timeline.
@@ -218,14 +218,14 @@ impl Displayable for Timeline {
     fn update(&mut self, window: &mut Window, state: &mut AppState) {
         match self.state {
             PlayState::Pending => {
-                let elapsed = elapsed_time(self.timer_start);
+                let elapsed = state.clock.elapsed_time(self.timer_start);
                 if elapsed > self.start_delay {
                     self.state = PlayState::Starting;
                 }
             }
             PlayState::Starting => {
-                self.timer_start = current_time();
-                let elapsed = elapsed_time(self.timer_start);
+                self.timer_start = state.clock.current_time();
+                let elapsed = state.clock.elapsed_time(self.timer_start);
                 for sprite in &mut self.sprites {
                     // sprite.view.get_layer_mut().reset();
                     if sprite.start <= elapsed && sprite.end > elapsed {
@@ -235,7 +235,7 @@ impl Displayable for Timeline {
                 self.state = PlayState::Running;
             }
             PlayState::Running => {
-                let elapsed = elapsed_time(self.timer_start);
+                let elapsed = state.clock.elapsed_time(self.timer_start);
                 for sprite in &mut self.sprites {
                     if sprite.start <= elapsed && sprite.end > elapsed {
                         // If not playing, start. Tween.play method checks play state first

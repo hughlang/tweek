@@ -118,6 +118,7 @@ impl State for AppDelegate {
     }
 
     fn update(&mut self, window: &mut Window) -> Result<()> {
+        self.app_state.clock.refresh_time();
         for event in self.app_state.event_bus.into_iter() {
             if let Ok(evt) = event.downcast_ref::<NavEvent>() {
                 log::debug!("NavEvent={:?}", evt);
@@ -162,7 +163,8 @@ impl State for AppDelegate {
 
         self.frames += 1;
         if (self.frames % FPS_INTERVAL) == 0 {
-            let out = format!("FPS: {:.2}", window.current_fps());
+            let fps = window.current_fps();
+            let out = format!("FPS: {:.2}", fps);
             self.nav_scene.set_field_value(&FieldValue::Text(out), TypeId::of::<Text>(), FPS_TAG);
         }
 

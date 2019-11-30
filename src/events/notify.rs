@@ -112,12 +112,12 @@ pub trait NotifyDispatcher {
     type Params;
     /// In the runloop update() call, the status method tells the object to evaluate its internal state before
     /// calling the request_update method. Both methods can emit useful notifications that can be evaluated at runtime.
-    fn status(&mut self, _notifier: &mut Notifier) {}
+    fn status(&mut self, notifier: &mut Notifier, params: Box<Self::Params>);
     /// This is a generic method to get an expected Update object, along with notifications dispatched during the
     /// request_update() call.
     fn request_update(
         &mut self,
         notifier: &mut Notifier,
-        params: Option<Box<Self::Params>>,
+        params: Box<Self::Params>,
     ) -> Option<Box<Self::Update>>;
 }

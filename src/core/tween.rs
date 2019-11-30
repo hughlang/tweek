@@ -2,8 +2,8 @@
 use super::animator::*;
 use super::ease::*;
 use super::property::*;
-use super::tweek::*;
-use super::{current_time, elapsed_time, rgb_from_hex};
+use super::state::*;
+use super::{rgb_from_hex};
 use crate::events::*;
 
 use cgmath::*;
@@ -509,7 +509,6 @@ impl Playable for Tween {
             }
         }
         self.state = PlayState::Waiting;
-        self.started_at = current_time();
     }
 }
 
@@ -519,9 +518,10 @@ impl NotifyDispatcher for Tween {
 
     /// This replaces the tick() method which was used to tell Tween to check if it's state is changing based on the
     /// time elapsed. The Layer expects to receive notifications when state changes to PlayState::Starting
-    fn status(&mut self, notifier: &mut Notifier) {
+    fn status(&mut self, notifier: &mut Notifier, params: Box<Self::Params>) {
         let duration = self.get_runtime();
-        let elapsed = elapsed_time(self.started_at);
+        let current = *params;
+        let elapsed = current - self.started_at;
 
         match self.state {
             PlayState::Pending => {
@@ -532,7 +532,7 @@ impl NotifyDispatcher for Tween {
             PlayState::Starting => {
                 notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Starting));
                 self.sync_animators();
-                self.started_at = current_time();
+                self.started_at = current;
                 self.state = PlayState::Running;
             }
             PlayState::Running => {
@@ -571,11 +571,12 @@ impl NotifyDispatcher for Tween {
     fn request_update(
         &mut self,
         notifier: &mut Notifier,
-        _params: Option<Box<Self::Params>>,
+        params: Box<Self::Params>,
     ) -> Option<Box<Self::Update>> {
+        let current = *params;
         match self.state {
             PlayState::Running => {
-                let elapsed = elapsed_time(self.started_at);
+                let elapsed = current - self.started_at;
                 let total_seconds = self.total_time();
                 for animator in &mut self.animators {
                     if self.time_scale > 0.0 {
