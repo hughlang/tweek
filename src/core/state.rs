@@ -1,5 +1,6 @@
 /// Tweek acts as the coordinator when there are multiple tweens being animated with one or more timelines.
 ///
+use super::clock::*;
 use crate::events::*;
 
 use quicksilver::geom::Vector;
@@ -27,6 +28,8 @@ pub trait Playable {
 pub struct AppState {
     /// The size of the window
     pub window_size: (f32, f32),
+    /// An instance of the Clock service
+    pub clock: Clock,
     /// Ratio value to alter speed of playback, where 1.0 is natural time
     pub time_scale: f32,
     /// Elapsed time
@@ -39,19 +42,24 @@ pub struct AppState {
     pub event_bus: EventBus,
     /// Stores the index value of the row that was clicked on.
     pub row_target: Option<usize>,
+    /// Flag for testing old timestamp mechanism
+    pub use_legacy: bool,
 }
 
 impl AppState {
     /// Constructor
     pub fn new() -> Self {
+        let clock = Clock::new();
         AppState {
             window_size: (0.0, 0.0),
+            clock,
             time_scale: 1.0,
             elapsed_time: 0.0,
             total_time: 0.0,
             offset: Vector::ZERO,
             event_bus: EventBus::default(),
             row_target: None,
+            use_legacy: false,
         }
     }
 

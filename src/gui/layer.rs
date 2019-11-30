@@ -246,10 +246,10 @@ impl Layer {
         if let Some(tween) = &mut self.animation {
             let mut notifier = Notifier::new();
             self.notifications.borrow_mut().attach(&mut notifier);
-
+            let current = state.clock.current_time();
             // Tell tween to update its state
-            tween.status(&mut notifier);
-            if let Some(propset) = tween.request_update(&mut notifier, None) {
+            tween.status(&mut notifier, Box::new(current));
+            if let Some(propset) = tween.request_update(&mut notifier, Box::new(current)) {
                 self.update_props(&*propset.props);
             }
             // Filter for TweenEvents
