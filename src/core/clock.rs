@@ -14,9 +14,7 @@ pub struct Clock {
 
 impl Clock {
     pub fn new() -> Self {
-        Clock {
-            real_ts: 0.0,
-        }
+        Clock { real_ts: 0.0 }
     }
     /// Non-wasm: Update the internal timestamp using SystemTime
     #[cfg(not(target_arch = "wasm32"))]

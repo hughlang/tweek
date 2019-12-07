@@ -18,7 +18,7 @@ use image::{imageops, DynamicImage, GenericImageView, ImageBuffer, Rgba};
 /// The main function serves as an entrypoint into the event loop
 fn main() {
     #[cfg(not(target_arch = "wasm32"))]
-    std::env::set_var("RUST_LOG", "main=debug,tweek=trace,tweek::gui=trace");
+    std::env::set_var("RUST_LOG", "main=debug,tweek=trace,quicksilver=debug");
 
     #[cfg(not(target_arch = "wasm32"))]
     env_logger::builder().default_format_timestamp(false).default_format_module_path(true).init();
@@ -185,7 +185,6 @@ impl StageBuilder {
         let asset = Asset::new(load_file(path));
         let rect = Rectangle::new((draw_area.pos.x, 400.0), (100.0, 100.0));
         let mut image_view = ImageView::new(rect, asset);
-
         let mut tween = Tween::with(item_id, &image_view.layer)
             .to(&[shift_x(draw_area.width() - 50.0), rotate(360.0)])
             .duration(3.0)
