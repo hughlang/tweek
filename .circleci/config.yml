@@ -1,0 +1,35 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: rust:1-buster
+    steps:
+      - checkout
+      - run:
+          name: Update rustc
+          command: |
+            rustup component add rustfmt
+            rustup update
+            cargo --version
+            rustc --version
+      - run:
+          name: Install cargo-web
+          command: |
+            apt-get -y update
+            apt-get -y install libssl-dev # Needed to compile cargo-web
+            cargo install cargo-web
+            cargo web --version
+      - run:
+          name: Check formatting
+          command: |
+            rustfmt --version
+            cargo fmt --all -- --check
+      - run:
+          name: Build
+          command: |
+             cargo web build --release
+#      - run:
+#          name: Test
+#          command: |
+#             cargo test
