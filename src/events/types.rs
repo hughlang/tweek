@@ -37,4 +37,6 @@ pub enum TweenType {
     Hover,
     /// A click animation
     Click,
+    /// A rotation animation
+    Rotation,
 }

@@ -50,5 +50,7 @@ pub enum LayerEvent {
     Click(u32, TypeId, PlayState),
     /// Move event with id, type, and state
     Move(u32, TypeId, PlayState),
+    /// Rotate event with id, type, and state
+    Rotate(u32, TypeId, PlayState),
 }
 impl AnyEvent for LayerEvent {}

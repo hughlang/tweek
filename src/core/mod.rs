@@ -12,8 +12,8 @@ pub use self::clock::*;
 pub use self::colors::*;
 pub use self::ease::*;
 pub use self::property::*;
-pub use self::timeline::*;
 pub use self::state::*;
+pub use self::timeline::*;
 pub use self::tween::*;
 
 mod animator;
@@ -21,8 +21,8 @@ mod clock;
 mod colors;
 mod ease;
 mod property;
-mod timeline;
 mod state;
+mod timeline;
 mod tween;
 
 /// Helper function to convert hex color string to rgb tuple, each in range 0.0 to 255.0
@@ -59,15 +59,20 @@ pub fn hex_to_rgb(c: u32) -> (u8, u8, u8) {
 
 /// This is a placeholder since normal console logging is handled by the env_logger.
 /// Below, the matching wasm debug_log. TBD: can we remove this?
+#[allow(dead_code)]
+#[allow(unused_variables)]
 #[cfg(not(target_arch = "wasm32"))]
 pub fn debug_log(_text: &str) {
     // debug::log!(text);
 }
 
+#[allow(unused_imports)]
 #[cfg(target_arch = "wasm32")]
 use stdweb::console;
 
 /// Provides console.log for logging in web browser in wasm target
+#[allow(dead_code)]
+#[allow(unused_variables)]
 #[cfg(target_arch = "wasm32")]
 pub fn debug_log(text: &str) {
     // console!(log, text);

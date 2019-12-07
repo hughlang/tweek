@@ -36,7 +36,6 @@ extern crate log;
 extern crate env_logger;
 
 #[cfg(target_arch = "wasm32")]
-#[macro_use]
 extern crate stdweb;
 
 extern crate image as image_rs;

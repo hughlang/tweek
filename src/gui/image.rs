@@ -38,27 +38,15 @@ impl ImageView {
         ImageView { layer, loader: asset, image_size: Vector::ZERO, custom_size: None }
     }
 
-    fn draw_content(&mut self, trans: Transform) -> Option<MeshTask> {
-        let mut mesh = Mesh::new();
-        let frame = self.layer.frame;
-        let use_ratio = self.custom_size.is_some();
-        let _ = self.loader.execute(|bytes| {
-            // let out = format!(">>>>>>>> bytes={:?}", bytes.len());
-            // debug_log(&out);
+    fn draw_content(&mut self) -> Option<MeshTask> {
+        let mut mesh = MeshTask::new(0);
+        let trans = self.layer.build_transform();
 
+        let _ = self.loader.execute(|bytes| {
             if let Ok(image) = Image::from_bytes(bytes.as_slice()) {
-                let mut scale = frame.size;
-                if use_ratio {
-                    let ratio = image.area().width() / image.area().height();
-                    scale = Vector::new(frame.width() * ratio, frame.height());
-                    log::debug!("frame={:?} scale={:?}", frame, scale);
-                }
+                // FIXME: Need way for defining and preserving aspect ratio
 
                 let bkg = Img(&image);
-                let trans = Transform::translate(frame.top_left() + frame.size() / 2)
-                    * trans
-                    * Transform::translate(-scale / 2)
-                    * Transform::scale(scale);
                 let tex_trans = bkg.image().map(|img| img.projection(Rectangle::new_sized((1, 1))));
                 let offset = mesh.add_positioned_vertices(
                     [Vector::ZERO, Vector::X, Vector::ONE, Vector::Y].iter().cloned(),
@@ -72,9 +60,7 @@ impl ImageView {
             Ok(())
         });
         if mesh.vertices.len() > 0 {
-            let mut task = MeshTask::new(0);
-            task.append(&mut mesh);
-            return Some(task);
+            return Some(mesh);
         }
 
         None
@@ -208,8 +194,7 @@ impl Displayable for ImageView {
                 window.add_task(task);
             }
         } else {
-            let trans = Transform::rotate(self.layer.transition.rotation);
-            if let Some(task) = self.draw_content(trans) {
+            if let Some(task) = self.draw_content() {
                 self.layer.meshes.clear();
                 window.add_task(task.clone());
                 self.layer.meshes.push(task);
