@@ -1,7 +1,6 @@
 version: 2
-
 jobs:
-  build:
+  rustfmt:
     docker:
       - image: rust:1-buster
     steps:
@@ -14,6 +13,23 @@ jobs:
             cargo --version
             rustc --version
       - run:
+          name: Check formatting
+          command: |
+            rustfmt --version
+            cargo fmt --all -- --check
+
+  build-wasm-release:
+    docker:
+      - image: rust:1-buster
+    steps:
+      - checkout
+      - run:
+          name: Update rustc
+          command: |
+            rustup update
+            cargo --version
+            rustc --version
+      - run:
           name: Install cargo-web
           command: |
             apt-get -y update
@@ -21,15 +37,13 @@ jobs:
             cargo install cargo-web
             cargo web --version
       - run:
-          name: Check formatting
-          command: |
-            rustfmt --version
-            cargo fmt --all -- --check
-      - run:
           name: Build
           command: |
-             cargo web build --release
-#      - run:
-#          name: Test
-#          command: |
-#             cargo test
+            cargo web build --release
+
+workflows:
+  version: 2
+  ads-sandbox:
+    jobs:
+      - rustfmt
+      - build-wasm-release
