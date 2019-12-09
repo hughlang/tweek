@@ -42,8 +42,9 @@ pub struct AppState {
     pub event_bus: EventBus,
     /// Stores the index value of the row that was clicked on.
     pub row_target: Option<usize>,
-    /// Flag for testing old timestamp mechanism
-    pub use_legacy: bool,
+    /// Custom flag for miscellaneous params
+    /// TODO: Replace this with a HashMap or Box<dyn Any> that can be loaded at runtime
+    pub run_mode: Option<String>,
 }
 
 impl AppState {
@@ -59,7 +60,7 @@ impl AppState {
             offset: Vector::ZERO,
             event_bus: EventBus::default(),
             row_target: None,
-            use_legacy: false,
+            run_mode: None,
         }
     }
 

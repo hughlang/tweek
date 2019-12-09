@@ -62,8 +62,8 @@ pub fn hex_to_rgb(c: u32) -> (u8, u8, u8) {
 #[allow(dead_code)]
 #[allow(unused_variables)]
 #[cfg(not(target_arch = "wasm32"))]
-pub fn debug_log(_text: &str) {
-    // debug::log!(text);
+pub fn debug_log(text: &str) {
+    log::debug!("{}", text);
 }
 
 #[allow(unused_imports)]
@@ -75,5 +75,5 @@ use stdweb::console;
 #[allow(unused_variables)]
 #[cfg(target_arch = "wasm32")]
 pub fn debug_log(text: &str) {
-    // console!(log, text);
+    console!(log, text);
 }
