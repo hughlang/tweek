@@ -8,7 +8,7 @@ use crate::tools::TextParams;
 // use image_rs::{imageops, DynamicImage, GenericImageView};
 use quicksilver::{
     geom::{Rectangle, Transform, Vector},
-    graphics::{Background::Img, GpuTriangle, Mesh, MeshTask},
+    graphics::{Background::Img, GpuTriangle, MeshTask},
     lifecycle::Window,
 };
 
@@ -53,12 +53,10 @@ impl Label {
                 frame.size = image.area().size;
                 self.size = frame.size;
 
-                let mut mesh = Mesh::new();
+                let mut mesh = MeshTask::new(0);
                 let bkg = Img(&image);
-                let trans = Transform::IDENTITY;
 
                 let trans = Transform::translate(frame.top_left() + frame.size() / 2)
-                    * trans
                     * Transform::translate(-frame.size() / 2)
                     * Transform::scale(frame.size());
                 let tex_trans = bkg.image().map(|img| img.projection(Rectangle::new_sized((1, 1))));
@@ -69,17 +67,10 @@ impl Label {
                     bkg,
                 );
 
-                // if self.layer.debug {
-                //     for v in &mesh.vertices {
-                //         log::trace!("{} {:?}", self.debug_id(), v);
-                //     }
-                // }
                 mesh.triangles.push(GpuTriangle::new(offset, [0, 1, 2], 9, bkg));
                 mesh.triangles.push(GpuTriangle::new(offset, [2, 3, 0], 9, bkg));
 
-                let mut task = MeshTask::new(0);
-                task.append(&mut mesh);
-                return Some(task);
+                return Some(mesh);
             }
         }
         None

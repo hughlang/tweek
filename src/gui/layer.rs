@@ -67,9 +67,9 @@ pub struct Layer {
     /// Notifications
     pub(super) notifications: Rc<RefCell<Notifications>>,
     /// The currently executing animations
-    pub(super) tween_type: TweenType,
+    pub tween_type: TweenType,
     /// Identifies the current animation state of the layer. Only used for moving Scene objects atm
-    pub(super) layer_state: LayerState,
+    pub layer_state: LayerState,
     /// Should the layer move/resize with the parent scene?
     pub lock_frame: bool,
     /// Should the layer move/resize with the parent scene?
@@ -104,7 +104,7 @@ impl Clone for Layer {
             on_click: None,
             click_action: None,
             notifications: Notifications::new(),
-            tween_type: TweenType::None,
+            tween_type: TweenType::Animation,
             layer_state: LayerState::Normal,
             lock_frame: false,
             lock_style: false,
@@ -139,7 +139,7 @@ impl Layer {
             on_click: None,
             click_action: None,
             notifications: Notifications::new(),
-            tween_type: TweenType::None,
+            tween_type: TweenType::Animation,
             layer_state: LayerState::Normal,
             lock_frame: false,
             lock_style: false,
@@ -236,9 +236,9 @@ impl Layer {
     }
 
     /// If animation is running, run updates
-    pub(crate) fn tween_update(&mut self, state: &mut AppState) {
-        if state.offset != Vector::ZERO {
-            self.frame.pos = self.initial.pos + state.offset;
+    pub(crate) fn tween_update(&mut self, app_state: &mut AppState) {
+        if app_state.offset != Vector::ZERO {
+            self.frame.pos = self.initial.pos + app_state.offset;
             self.layer_state = LayerState::Moving;
         }
 
@@ -246,10 +246,10 @@ impl Layer {
         if let Some(tween) = &mut self.animation {
             let mut notifier = Notifier::new();
             self.notifications.borrow_mut().attach(&mut notifier);
-
+            let current = app_state.clock.current_time();
             // Tell tween to update its state
-            tween.status(&mut notifier);
-            if let Some(propset) = tween.request_update(&mut notifier, None) {
+            tween.status(&mut notifier, Box::new(current));
+            if let Some(propset) = tween.request_update(&mut notifier, Box::new(current)) {
                 self.update_props(&*propset.props);
             }
             // Filter for TweenEvents
@@ -260,19 +260,20 @@ impl Layer {
                 match evt {
                     TweenEvent::Status(id, state) => {
                         match state {
-                            PlayState::Starting => {
+                            PlayState::Starting | PlayState::Finishing => {
                                 log::trace!("Event: {} {:?} {:?}", self.debug_id(), state, self.tween_type);
                             }
                             PlayState::Completed => {
                                 log::trace!("Event: {} {:?} {:?}", self.debug_id(), state, self.tween_type);
                                 log::trace!("Layer: {:?}", self);
                                 self.meshes.clear();
-                                // self.save_props(); // Doesn't work right
-
+                                // Broadcast the TweenEvent on the event_bus
+                                app_state.event_bus.register_event(evt);
+                                self.rotation = self.transition.rotation % 360.0;
                                 match self.tween_type {
                                     TweenType::Move => notifier.notify(LayerEvent::Move(id, self.type_id, state)),
                                     TweenType::Hover => notifier.notify(LayerEvent::Hover(id, self.type_id, state)),
-                                    TweenType::Click => notifier.notify(LayerEvent::Click(id, self.type_id, state)),
+                                    TweenType::Rotation => notifier.notify(LayerEvent::Rotate(id, self.type_id, state)),
                                     _ => (),
                                 }
                             }
@@ -298,13 +299,10 @@ impl Layer {
         }
 
         if self.is_animating() {
-            let offset = self.get_movement_offset();
-
+            let transform = self.build_transform();
             for task in &self.meshes {
                 let mut task = task.clone();
-                for (_, vertex) in task.vertices.iter_mut().enumerate() {
-                    vertex.pos = Transform::translate(offset) * vertex.pos;
-                }
+                task.apply_transform(transform);
                 results.push(task);
             }
         } else {
@@ -319,7 +317,7 @@ impl Layer {
                     // Layer is moving, so translate the cached meshes to current position
                     let offset = self.get_movement_offset();
                     if self.debug {
-                        log::debug!("{:?} @{:?} offset={:?}", self.debug_id(), self.debug_out(), offset);
+                        log::trace!("{:?} @{:?} offset={:?}", self.debug_id(), self.debug_out(), offset);
                     }
 
                     for task in &self.meshes {
@@ -333,6 +331,22 @@ impl Layer {
             }
         }
         results
+    }
+
+    /// Create a transform for an object that is currently animating its position and/or rotation
+    pub(super) fn build_transform(&self) -> Transform {
+        let rotation = {
+            if self.is_animating() {
+                self.transition.rotation
+            } else {
+                self.rotation
+            }
+        };
+        let trans = Transform::translate(self.frame.top_left() + self.frame.size() / 2)
+            * Transform::rotate(rotation)
+            * Transform::translate(-self.frame.size / 2)
+            * Transform::scale(self.frame.size);
+        trans
     }
 
     /// Standard method called by components when mouseover occurs
@@ -401,7 +415,6 @@ impl Layer {
 
     /// Method to call when starting an animation. This will copy the current properties into Transition
     pub fn start_animation(&mut self, mut tween: Tween) {
-        self.tween_type = TweenType::Animation; // Identify this as a pure animation
         self.init_props();
         &mut tween.play();
         self.animation = Some(tween);

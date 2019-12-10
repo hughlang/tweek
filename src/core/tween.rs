@@ -2,8 +2,8 @@
 use super::animator::*;
 use super::ease::*;
 use super::property::*;
-use super::tweek::*;
-use super::{current_time, elapsed_time, rgb_from_hex};
+use super::rgb_from_hex;
+use super::state::*;
 use crate::events::*;
 
 use cgmath::*;
@@ -509,7 +509,6 @@ impl Playable for Tween {
             }
         }
         self.state = PlayState::Waiting;
-        self.started_at = current_time();
     }
 }
 
@@ -519,9 +518,10 @@ impl NotifyDispatcher for Tween {
 
     /// This replaces the tick() method which was used to tell Tween to check if it's state is changing based on the
     /// time elapsed. The Layer expects to receive notifications when state changes to PlayState::Starting
-    fn status(&mut self, notifier: &mut Notifier) {
+    fn status(&mut self, notifier: &mut Notifier, params: Box<Self::Params>) {
         let duration = self.get_runtime();
-        let elapsed = elapsed_time(self.started_at);
+        let current = *params;
+        let elapsed = current - self.started_at;
 
         match self.state {
             PlayState::Pending => {
@@ -532,7 +532,7 @@ impl NotifyDispatcher for Tween {
             PlayState::Starting => {
                 notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Starting));
                 self.sync_animators();
-                self.started_at = current_time();
+                self.started_at = current;
                 self.state = PlayState::Running;
             }
             PlayState::Running => {
@@ -550,13 +550,15 @@ impl NotifyDispatcher for Tween {
             PlayState::Idle => {
                 // If repeat_delay > 0, tween should wait until time elapsed passes it
                 if elapsed > (duration + self.repeat_delay) as f64 {
-                    // log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
+                    if self.debug {
+                        log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
+                    }
                     if self.repeat_count < 0 {
                         notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Restarting));
-                        self.reset();
+                        self.state = PlayState::Pending;
                     } else if self.play_count <= self.repeat_count as u32 {
                         notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Restarting));
-                        self.reset();
+                        self.state = PlayState::Pending;
                     } else {
                         self.state = PlayState::Completed;
                     }
@@ -568,14 +570,11 @@ impl NotifyDispatcher for Tween {
 
     /// This call requests a PropSet response about the current Props that are animating so that the parent Layer can
     /// update the display. The Layer expects to receive notifications when state changes to PlayState::Completed
-    fn request_update(
-        &mut self,
-        notifier: &mut Notifier,
-        _params: Option<Box<Self::Params>>,
-    ) -> Option<Box<Self::Update>> {
+    fn request_update(&mut self, notifier: &mut Notifier, params: Box<Self::Params>) -> Option<Box<Self::Update>> {
+        let current = *params;
         match self.state {
             PlayState::Running => {
-                let elapsed = elapsed_time(self.started_at);
+                let elapsed = current - self.started_at;
                 let total_seconds = self.total_time();
                 for animator in &mut self.animators {
                     if self.time_scale > 0.0 {
@@ -605,8 +604,10 @@ impl NotifyDispatcher for Tween {
             PlayState::Finishing => {
                 // FIXME: Getting the last animator does not mean it is always the last one to finish
                 if let Some(animator) = self.animators.last_mut() {
-                    // TODO: log event
                     self.state = PlayState::Completed;
+                    if self.debug {
+                        log::trace!("request_update {:?}", self.state);
+                    }
                     // ======== Notify Completed =======
                     notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Completed));
 

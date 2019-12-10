@@ -37,7 +37,11 @@ use std::any::{Any, TypeId};
 // *****************************************************************************************************
 
 /// Used to define an event trait.
-pub trait AnyEvent: Any + Copy {}
+pub trait AnyEvent: Any + Copy {
+    fn debug_type(&self) -> &str {
+        "Undefined"
+    }
+}
 
 /// Enum for error events
 #[derive(Debug)]
