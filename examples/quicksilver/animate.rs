@@ -184,7 +184,7 @@ impl StageBuilder {
         let path = "tile.png";
         let asset = Asset::new(load_file(path));
         let rect = Rectangle::new((draw_area.pos.x, 400.0), (100.0, 100.0));
-        let mut image_view = ImageView::new(rect, asset);
+        let mut image_view = ImageView::new(rect, Some(asset));
         let mut tween = Tween::with(item_id, &image_view.layer)
             .to(&[shift_x(draw_area.width() - 50.0), rotate(360.0)])
             .duration(3.0)
