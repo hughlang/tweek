@@ -24,7 +24,7 @@ pub struct ImageView {
     /// The base layer
     pub layer: Layer,
     /// Optional bytes container as alternative
-    loader: Asset<Vec<u8>>,
+    loader: Option<Asset<Vec<u8>>>,
     /// Store the calculated original image size
     image_size: Vector,
     /// flag to determine how image is scaled
@@ -33,34 +33,40 @@ pub struct ImageView {
 
 impl ImageView {
     /// Constructor
-    pub fn new(frame: Rectangle, asset: Asset<Vec<u8>>) -> Self {
+    pub fn new(frame: Rectangle, asset: Option<Asset<Vec<u8>>>) -> Self {
         let layer = Layer::new(frame);
         ImageView { layer, loader: asset, image_size: Vector::ZERO, custom_size: None }
+    }
+
+    pub fn set_asset(&mut self, asset: Option<Asset<Vec<u8>>>) {
+        self.loader = asset;
     }
 
     fn draw_content(&mut self) -> Option<MeshTask> {
         let mut mesh = MeshTask::new(0);
         let trans = self.layer.build_transform();
+        if let Some(loader) = &mut self.loader {
 
-        let _ = self.loader.execute(|bytes| {
-            if let Ok(image) = Image::from_bytes(bytes.as_slice()) {
-                // FIXME: Need way for defining and preserving aspect ratio
+            let _ = loader.execute(|bytes| {
+                if let Ok(image) = Image::from_bytes(bytes.as_slice()) {
+                    // FIXME: Need way for defining and preserving aspect ratio
 
-                let bkg = Img(&image);
-                let tex_trans = bkg.image().map(|img| img.projection(Rectangle::new_sized((1, 1))));
-                let offset = mesh.add_positioned_vertices(
-                    [Vector::ZERO, Vector::X, Vector::ONE, Vector::Y].iter().cloned(),
-                    trans,
-                    tex_trans,
-                    bkg,
-                );
-                mesh.triangles.push(GpuTriangle::new(offset, [0, 1, 2], 9, bkg));
-                mesh.triangles.push(GpuTriangle::new(offset, [2, 3, 0], 9, bkg));
+                    let bkg = Img(&image);
+                    let tex_trans = bkg.image().map(|img| img.projection(Rectangle::new_sized((1, 1))));
+                    let offset = mesh.add_positioned_vertices(
+                        [Vector::ZERO, Vector::X, Vector::ONE, Vector::Y].iter().cloned(),
+                        trans,
+                        tex_trans,
+                        bkg,
+                    );
+                    mesh.triangles.push(GpuTriangle::new(offset, [0, 1, 2], 9, bkg));
+                    mesh.triangles.push(GpuTriangle::new(offset, [2, 3, 0], 9, bkg));
+                }
+                Ok(())
+            });
+            if mesh.vertices.len() > 0 {
+                return Some(mesh);
             }
-            Ok(())
-        });
-        if mesh.vertices.len() > 0 {
-            return Some(mesh);
         }
 
         None
@@ -72,7 +78,9 @@ impl ImageView {
         let mut mesh = Mesh::new();
         let frame = self.layer.frame;
         let debug_id = self.debug_id();
-        let _ = self.loader.execute(|bytes| {
+        if let Some(loader) = &mut self.loader {
+
+            let _ = loader.execute(|bytes| {
             let out = format!("resize_content >>>>>>>> bytes={:?}", bytes.len());
             log::debug!("{:?}", out);
             // debug_log(&out);
@@ -115,6 +123,7 @@ impl ImageView {
             task.append(&mut mesh);
             return Some(task);
         }
+    }
         None
     }
 }

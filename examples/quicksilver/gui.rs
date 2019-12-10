@@ -474,7 +474,7 @@ impl StageBuilder {
 
         let asset = Asset::new(load_file(path));
         let frame = Rectangle::new((xpos, ypos), (100.0, 100.0));
-        let mut image_view = ImageView::new(frame, asset);
+        let mut image_view = ImageView::new(frame, Some(asset));
         scene.add_view(Box::new(image_view));
 
         stage.add_scene(scene);
