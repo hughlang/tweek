@@ -46,23 +46,25 @@ impl ImageView {
         let mut mesh = MeshTask::new(0);
         let trans = self.layer.build_transform();
         if let Some(loader) = &mut self.loader {
-            loader.execute(|bytes| {
-                if let Ok(image) = Image::from_bytes(bytes.as_slice()) {
-                    // FIXME: Need way for defining and preserving aspect ratio
+            loader
+                .execute(|bytes| {
+                    if let Ok(image) = Image::from_bytes(bytes.as_slice()) {
+                        // FIXME: Need way for defining and preserving aspect ratio
 
-                    let bkg = Img(&image);
-                    let tex_trans = bkg.image().map(|img| img.projection(Rectangle::new_sized((1, 1))));
-                    let offset = mesh.add_positioned_vertices(
-                        [Vector::ZERO, Vector::X, Vector::ONE, Vector::Y].iter().cloned(),
-                        trans,
-                        tex_trans,
-                        bkg,
-                    );
-                    mesh.triangles.push(GpuTriangle::new(offset, [0, 1, 2], 9, bkg));
-                    mesh.triangles.push(GpuTriangle::new(offset, [2, 3, 0], 9, bkg));
-                }
-                Ok(())
-            }).expect("Asset loading failed");
+                        let bkg = Img(&image);
+                        let tex_trans = bkg.image().map(|img| img.projection(Rectangle::new_sized((1, 1))));
+                        let offset = mesh.add_positioned_vertices(
+                            [Vector::ZERO, Vector::X, Vector::ONE, Vector::Y].iter().cloned(),
+                            trans,
+                            tex_trans,
+                            bkg,
+                        );
+                        mesh.triangles.push(GpuTriangle::new(offset, [0, 1, 2], 9, bkg));
+                        mesh.triangles.push(GpuTriangle::new(offset, [2, 3, 0], 9, bkg));
+                    }
+                    Ok(())
+                })
+                .expect("Asset loading failed");
         }
         if mesh.vertices.len() > 0 {
             return Some(mesh);
@@ -78,44 +80,46 @@ impl ImageView {
         let frame = self.layer.frame;
         let debug_id = self.debug_id();
         if let Some(loader) = &mut self.loader {
-            loader.execute(|bytes| {
-                let out = format!("resize_content >>>>>>>> bytes={:?}", bytes.len());
-                log::debug!("{:?}", out);
-                // debug_log(&out);
-                let buf = image_rs::load_from_memory(bytes).unwrap().to_rgba();
-                let img = DynamicImage::ImageRgba8(buf);
-                let resize = img.thumbnail(frame.width() as u32, frame.height() as u32);
-                let dims = resize.dimensions();
+            loader
+                .execute(|bytes| {
+                    let out = format!("resize_content >>>>>>>> bytes={:?}", bytes.len());
+                    log::debug!("{:?}", out);
+                    // debug_log(&out);
+                    let buf = image_rs::load_from_memory(bytes).unwrap().to_rgba();
+                    let img = DynamicImage::ImageRgba8(buf);
+                    let resize = img.thumbnail(frame.width() as u32, frame.height() as u32);
+                    let dims = resize.dimensions();
 
-                let raw = resize.to_rgba().into_raw();
+                    let raw = resize.to_rgba().into_raw();
 
-                log::debug!("dimensions={:?} raw={:?}", resize.dimensions(), raw.len());
-                if let Ok(image) = Image::from_raw(raw.as_slice(), dims.0, dims.1, PixelFormat::RGBA) {
-                    log::debug!("image={:?} raw={:?}", image.area().size, raw.len());
-                    let bkg = Img(&image);
-                    let trans = Transform::translate(frame.top_left() + frame.size() / 2)
-                        * trans
-                        * Transform::translate(-frame.size() / 2);
-                    // * Transform::scale(frame.size());
-                    let tex_trans = bkg.image().map(|img| img.projection(Rectangle::new_sized((1, 1))));
-                    let offset = mesh.add_positioned_vertices(
-                        [Vector::ZERO, Vector::X, Vector::ONE, Vector::Y].iter().cloned(),
-                        trans,
-                        tex_trans,
-                        bkg,
-                    );
-                    mesh.triangles.push(GpuTriangle::new(offset, [0, 1, 2], 9, bkg));
-                    mesh.triangles.push(GpuTriangle::new(offset, [2, 3, 0], 9, bkg));
-                } else {
-                    let test = Image::from_bytes(raw.as_slice());
-                    log::error!("Failed to create image from bytes len={:?}", test);
-                }
-                for v in &mesh.vertices {
-                    log::trace!("{} {:?}", debug_id, v);
-                }
+                    log::debug!("dimensions={:?} raw={:?}", resize.dimensions(), raw.len());
+                    if let Ok(image) = Image::from_raw(raw.as_slice(), dims.0, dims.1, PixelFormat::RGBA) {
+                        log::debug!("image={:?} raw={:?}", image.area().size, raw.len());
+                        let bkg = Img(&image);
+                        let trans = Transform::translate(frame.top_left() + frame.size() / 2)
+                            * trans
+                            * Transform::translate(-frame.size() / 2);
+                        // * Transform::scale(frame.size());
+                        let tex_trans = bkg.image().map(|img| img.projection(Rectangle::new_sized((1, 1))));
+                        let offset = mesh.add_positioned_vertices(
+                            [Vector::ZERO, Vector::X, Vector::ONE, Vector::Y].iter().cloned(),
+                            trans,
+                            tex_trans,
+                            bkg,
+                        );
+                        mesh.triangles.push(GpuTriangle::new(offset, [0, 1, 2], 9, bkg));
+                        mesh.triangles.push(GpuTriangle::new(offset, [2, 3, 0], 9, bkg));
+                    } else {
+                        let test = Image::from_bytes(raw.as_slice());
+                        log::error!("Failed to create image from bytes len={:?}", test);
+                    }
+                    for v in &mesh.vertices {
+                        log::trace!("{} {:?}", debug_id, v);
+                    }
 
-                Ok(())
-            }).expect("Asset loading failed");
+                    Ok(())
+                })
+                .expect("Asset loading failed");
             if mesh.vertices.len() > 0 {
                 let mut task = MeshTask::new(0);
                 task.append(&mut mesh);

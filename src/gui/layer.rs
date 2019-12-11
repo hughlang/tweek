@@ -599,7 +599,6 @@ impl Layer {
             false
         }
     }
-
 }
 
 impl fmt::Debug for Layer {
