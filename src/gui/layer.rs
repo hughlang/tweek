@@ -688,7 +688,7 @@ impl Tweenable for Layer {
 
     /// Method to copy initialise the Transition with the official values
     fn init_props(&mut self) {
-        log::debug!("init_props {} origin={:?} anchor_pt={:?}", self.debug_id(), self.frame.pos, self.anchor_pt);
+        // log::trace!("init_props {} origin={:?} anchor_pt={:?}", self.debug_id(), self.frame.pos, self.anchor_pt);
         self.transition.color = self.bg_style.get_color();
         let border = self.border_style.get_border();
         self.transition.border_color = border.0;

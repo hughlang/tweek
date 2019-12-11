@@ -278,6 +278,7 @@ impl DrawFont {
     pub fn render_pixels(&mut self, params: TextParams) -> (RgbaImage, u32, u32) {
         let h_align = params.text_align.to_glyph_align();
         let _v_align = params.vert_align.to_glyph_align();
+
         let layout = {
             if params.multiline {
                 Layout::default_wrap().h_align(h_align)
@@ -288,7 +289,7 @@ impl DrawFont {
         let color = params.style.get_color();
         let section = Section {
             layout,
-            bounds: (params.frame.width(), params.frame.height()),
+            bounds: (params.frame.width(), f32::INFINITY),
             scale: Scale::uniform(params.style.get_size()),
             text: &params.text,
             color: [color.r, color.g, color.b, color.a],
