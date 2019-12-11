@@ -50,7 +50,7 @@ impl TextArea {
         // FIXME: The default() does not load a font and therefore requires a font to be set in set_theme()
         let layer = Layer::new(frame);
 
-        let input_frame = layer.inset_by(10.0, 10.0, 10.0, 10.0);
+        let input_frame = layer.inset_by(5.0, 0.0, 5.0, 0.0);
         // log::debug!("outer frame={:?} input frame={:?}", frame, input_frame);
 
         let mut editor = TextAreaEditor::default()
@@ -130,12 +130,12 @@ impl TextArea {
         let params =
             TextParams::new(self.layer.font_style.clone()).frame(frame.clone()).text(self.get_text()).multiline(true);
 
-        let (imgbuf, _text_w, text_h) = self.editor.ctx.draw_font.render_pixels(params);
+        let (imgbuf, text_w, text_h) = self.editor.ctx.draw_font.render_pixels(params);
+        log::trace!("update_rendered_text w={:?} h={:?}", text_w, text_h);
         self.editor.full_render = Some(imgbuf.clone());
 
         // Create a new image to overlay the rendered text onto. Otherwise, problems with rendering can happen.
         // It seems that the output from render_pixels is not right.
-        let text_w = 300;
         let mut canvas = DynamicImage::new_rgba8(text_w, text_h);
         imageops::overlay(&mut canvas, &imgbuf, 0, 0);
         let raw = canvas.to_rgba().into_raw();
@@ -282,7 +282,7 @@ impl Displayable for TextArea {
                 if let Some(tex) = &mut self.editor.tex_info {
                     let full_size = Vector::new(self.input_frame.width(), tex.height as f32);
                     let region = Rectangle::new((0.0, self.scroll_offset.y), self.input_frame.size);
-                    // log::debug!("Render texture idx={} full_size={:?} region={:?}", tex.0, full_size, region);
+                    // log::trace!("Render full_size={:?} region={:?}", full_size, region);
 
                     let tex_quad = DrawImage::normalize_tex_quad(full_size, region);
                     let color = self.layer.font_style.get_color();
@@ -302,6 +302,7 @@ impl Displayable for TextArea {
         // Render scrollbar
         let content_height = self.editor.ctx.text_size.1 as f32;
         if let Some(rect) = UITools::get_scrollbar_frame(content_height, &self.layer.frame, self.scroll_offset.y) {
+            // log::debug!("scrollbar={:?}", rect);
             // FIXME: use theme for scrollbar color
             window.draw(&rect, Col(Color::from_hex(UITools::SCROLLBAR_COLOR)));
         }
@@ -369,13 +370,16 @@ impl Responder for TextArea {
         false
     }
 
-    fn handle_mouse_down(&mut self, pt: &Vector, _state: &mut AppState) -> bool {
+    fn handle_mouse_down(&mut self, pt: &Vector, state: &mut AppState) -> bool {
         if pt.overlaps_rectangle(&self.input_frame) {
-            let local_pt = *pt - self.input_frame.pos;
-            eprintln!("local_pt={:?}", local_pt);
-            let pos = self.editor.find_cursor_position(local_pt.x, local_pt.y, self.scroll_offset.y);
-            self.start_editing(pos);
-            return true;
+            state.event_bus.register_event(MouseEvent::Click(self.get_type_id(), self.get_id()));
+            if self.can_edit {
+                let local_pt = *pt - self.input_frame.pos;
+                eprintln!("local_pt={:?}", local_pt);
+                let pos = self.editor.find_cursor_position(local_pt.x, local_pt.y, self.scroll_offset.y);
+                self.start_editing(pos);
+                return true;
+            }
         }
         false
     }

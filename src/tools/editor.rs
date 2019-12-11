@@ -200,7 +200,7 @@ impl EditorContext {
                     *w
                 } else {
                     let (w, _) = self.draw_font.char_size(c, self.font_size);
-                    log::trace!("Insert in char_db [{:?}] width={:?}", c, w);
+                    // log::trace!("Insert in char_db [{:?}] width={:?}", c, w);
                     self.char_db.insert(c, w);
                     w
                 }
