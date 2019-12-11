@@ -302,6 +302,7 @@ impl Displayable for TextArea {
         // Render scrollbar
         let content_height = self.editor.ctx.text_size.1 as f32;
         if let Some(rect) = UITools::get_scrollbar_frame(content_height, &self.layer.frame, self.scroll_offset.y) {
+            // log::debug!("scrollbar={:?}", rect);
             // FIXME: use theme for scrollbar color
             window.draw(&rect, Col(Color::from_hex(UITools::SCROLLBAR_COLOR)));
         }
@@ -369,8 +370,9 @@ impl Responder for TextArea {
         false
     }
 
-    fn handle_mouse_down(&mut self, pt: &Vector, _state: &mut AppState) -> bool {
+    fn handle_mouse_down(&mut self, pt: &Vector, state: &mut AppState) -> bool {
         if pt.overlaps_rectangle(&self.input_frame) {
+            state.event_bus.register_event(MouseEvent::Click(self.get_type_id(), self.get_id()));
             if self.can_edit {
                 let local_pt = *pt - self.input_frame.pos;
                 eprintln!("local_pt={:?}", local_pt);

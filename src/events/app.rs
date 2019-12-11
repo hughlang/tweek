@@ -3,6 +3,8 @@
 use super::AnyEvent;
 use crate::gui::Node;
 
+use std::any::TypeId;
+
 /// An enum for specifying the common navigation events a GUI might need
 /// More types to consider:
 /// * Tab selected
@@ -25,6 +27,19 @@ pub enum NavEvent {
     Selected(usize),
 }
 impl AnyEvent for NavEvent {}
+
+/// A generic event enum for mouse events
+#[derive(Debug, Clone, Copy)]
+pub enum MouseEvent {
+    /// Either mousedown or mouseup
+    Click(TypeId, u32),
+    /// Mouse over
+    Hover(TypeId, u32),
+    /// Mouse move while mousedown
+    Drag(TypeId, u32),
+}
+
+impl AnyEvent for MouseEvent {}
 
 /// An enum for specifying arbitrary actions
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

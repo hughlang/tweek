@@ -590,6 +590,16 @@ impl Layer {
         let result = lines.join(" // ");
         result
     }
+
+    /// Convenience method to identify if the type and id match this Layer
+    pub fn is_me(&self, type_id: TypeId, id: u32) -> bool {
+        if self.type_id == type_id && self.id == id {
+            true
+        } else {
+            false
+        }
+    }
+
 }
 
 impl fmt::Debug for Layer {
