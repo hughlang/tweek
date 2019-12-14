@@ -5,7 +5,13 @@ use crate::core::*;
 use crate::events::*;
 use crate::tools::*;
 
-use std::{any::Any, any::TypeId, cell::RefCell, fmt, rc::Rc};
+use std::{
+    any::{Any,TypeId},
+    collections::HashMap,
+    cell::RefCell,
+    rc::Rc,
+    fmt,
+};
 
 #[allow(unused_imports)]
 use quicksilver::{
@@ -64,6 +70,8 @@ pub struct Layer {
     pub(super) on_click: Option<Box<dyn FnMut(&mut AppState) + 'static>>,
     /// Callback method for handling click action
     pub(super) click_action: Option<Box<dyn FnMut(&mut AppState, String) + 'static>>,
+    /// A place for handling arbitrary mouse events to trigger animations
+    pub mouse_event_handlers: HashMap<MouseEvent, PropSet>,
     /// Notifications
     pub(super) notifications: Rc<RefCell<Notifications>>,
     /// The currently executing animations
@@ -103,6 +111,7 @@ impl Clone for Layer {
             click_effect: self.click_effect.clone(),
             on_click: None,
             click_action: None,
+            mouse_event_handlers: HashMap::new(),
             notifications: Notifications::new(),
             tween_type: TweenType::Animation,
             layer_state: LayerState::Normal,
@@ -138,6 +147,7 @@ impl Layer {
             click_effect: None,
             on_click: None,
             click_action: None,
+            mouse_event_handlers: HashMap::new(),
             notifications: Notifications::new(),
             tween_type: TweenType::Animation,
             layer_state: LayerState::Normal,

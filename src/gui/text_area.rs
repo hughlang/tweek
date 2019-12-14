@@ -200,6 +200,16 @@ impl Displayable for TextArea {
         let perimeter = self.layer.offset_by(10.0, 0.0, 10.0, 0.0);
         Some(perimeter)
     }
+    // Event::MouseButton(MouseButton::Left, ButtonState::Pressed) => {
+
+    fn handle_event(&mut self, event: &EventBox) {
+        if let Ok(evt) = event.downcast_ref::<MouseEvent>() {
+            if let Some(propset) = self.layer.mouse_event_handlers.get(evt) {
+                log::debug!("Found event={:?}", evt);
+                self.layer.animate_with_props(propset.clone(), true);
+            }
+        }
+    }
 
     fn notify(&mut self, event: &DisplayEvent) {
         match event {

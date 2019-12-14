@@ -29,10 +29,12 @@ pub enum NavEvent {
 impl AnyEvent for NavEvent {}
 
 /// A generic event enum for mouse events
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MouseEvent {
     /// Either mousedown or mouseup
     Click(TypeId, u32),
+    /// Mouse action to unselect an item
+    Unclick(TypeId, u32),
     /// Mouse over
     Hover(TypeId, u32),
     /// Mouse move while mousedown
