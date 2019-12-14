@@ -32,9 +32,9 @@ impl AnyEvent for NavEvent {}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MouseEvent {
     /// Either mousedown or mouseup
-    Click(TypeId, u32),
+    Select(TypeId, u32),
     /// Mouse action to unselect an item
-    Unclick(TypeId, u32),
+    Deselect(TypeId, u32),
     /// Mouse over
     Hover(TypeId, u32),
     /// Mouse move while mousedown

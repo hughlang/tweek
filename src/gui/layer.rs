@@ -601,6 +601,31 @@ impl Layer {
         result
     }
 
+    /// A helper method to read the Vec<Prop> from a Tween animation and determine what the final size will be
+    /// after the animation has completed
+    pub fn evaluate_end_rect(&self) -> Rectangle {
+        if let Some(tween) = &self.animation {
+            let props = tween.get_end_props();
+            let mut rect = self.frame.clone();
+            for prop in props {
+                match prop {
+                    Prop::Position(pos) => {
+                        rect.pos.x = pos.x;
+                        rect.pos.y = pos.y;
+                    }
+                    Prop::Size(size) => {
+                        rect.size.x = size.x;
+                        rect.size.y = size.y;
+                    }
+                    _ => ()
+                }
+            }
+            rect
+        } else {
+            self.frame
+        }
+    }
+
     /// Convenience method to identify if the type and id match this Layer
     pub fn is_me(&self, type_id: TypeId, id: u32) -> bool {
         if self.type_id == type_id && self.id == id {

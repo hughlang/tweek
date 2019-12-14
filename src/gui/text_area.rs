@@ -200,13 +200,17 @@ impl Displayable for TextArea {
         let perimeter = self.layer.offset_by(10.0, 0.0, 10.0, 0.0);
         Some(perimeter)
     }
-    // Event::MouseButton(MouseButton::Left, ButtonState::Pressed) => {
 
     fn handle_event(&mut self, event: &EventBox) {
         if let Ok(evt) = event.downcast_ref::<MouseEvent>() {
             if let Some(propset) = self.layer.mouse_event_handlers.get(evt) {
                 log::debug!("Found event={:?}", evt);
                 self.layer.animate_with_props(propset.clone(), true);
+                // assuming visual change, redraw screen
+                self.layer.meshes.clear();
+                let end_frame = self.layer.evaluate_end_rect();
+                self.input_frame = UITools::inset_rect(&end_frame, 5.0, 0.0, 5.0, 0.0);
+                self.update_rendered_text();
             }
         }
     }
@@ -382,7 +386,7 @@ impl Responder for TextArea {
 
     fn handle_mouse_down(&mut self, pt: &Vector, state: &mut AppState) -> bool {
         if pt.overlaps_rectangle(&self.input_frame) {
-            state.event_bus.register_event(MouseEvent::Click(self.get_type_id(), self.get_id()));
+            state.event_bus.register_event(MouseEvent::Select(self.get_type_id(), self.get_id()));
             if self.can_edit {
                 let local_pt = *pt - self.input_frame.pos;
                 eprintln!("local_pt={:?}", local_pt);
