@@ -6,11 +6,11 @@ use crate::events::*;
 use crate::tools::*;
 
 use std::{
-    any::{Any,TypeId},
-    collections::HashMap,
+    any::{Any, TypeId},
     cell::RefCell,
-    rc::Rc,
+    collections::HashMap,
     fmt,
+    rc::Rc,
 };
 
 #[allow(unused_imports)]
@@ -617,7 +617,7 @@ impl Layer {
                         rect.size.x = size.x;
                         rect.size.y = size.y;
                     }
-                    _ => ()
+                    _ => (),
                 }
             }
             rect
