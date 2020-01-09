@@ -43,14 +43,15 @@ pub struct Timeline {
     layer: Layer,
     sprites: Vec<Sprite>,
     timer_start: f64,
-    /// The running state for this Tween
-    pub state: PlayState,
+    total_time: f64,
+    play_count: u32,
+    state: PlayState,
     /// Number of seconds to delay before starting
     pub start_delay: f64,
     /// Number of times to repeat this Timeline animation
-    pub repeat_count: u32,
+    pub repeat_count: i32,
     /// Delay before repeating next execution
-    pub repeat_delay: f32,
+    pub repeat_delay: f64,
     /// Boolean to define whether this timeline repeats forever
     pub loop_forever: bool,
 }
@@ -63,6 +64,8 @@ impl Timeline {
             layer,
             sprites: Vec::new(),
             timer_start: 0.0,
+            total_time: 0.0,
+            play_count: 0,
             state: PlayState::Waiting,
             start_delay: 1.0,
             repeat_count: 0,
@@ -83,6 +86,13 @@ impl Timeline {
         }
         let sprite = Sprite::new(view, start, end);
         self.sprites.push(sprite);
+    }
+
+    /// Builder method to define the repeat_count and delay
+    pub fn repeat(mut self, count: i32, delay: f64) -> Self {
+        self.repeat_count = count;
+        self.repeat_delay = delay;
+        self
     }
 
     /// Builder method to set the start time of the Tweens as either:
@@ -123,20 +133,16 @@ impl Timeline {
         }
     }
 
-    /// Builder method to define the repeat count and delay time between plays
-    // pub fn repeat(&mut self, count: u32, delay: f32) -> Self {
-    //     self.repeat_count = count;
-    //     self.repeat_delay = delay;
-    //     self
-    // }
-
     /// Calculate the total time for all animations in the Timeline
-    pub fn total_time(&self) -> f64 {
-        // let floats: Vec<f64> = self.sprites.map(|x| x.end).collect();
-        // if let Some(max) = floats.iter().cloned().max_by(|a, b| a.partial_cmp(b).expect("Tried to compare a NaN")) {
-        //     return max;
-        // }
-        0.0
+    pub fn calc_total_time(&self) -> f64 {
+        if let Some(max) =
+            self.sprites.iter().map(|x| x.end).max_by(|a, b| a.partial_cmp(b).expect("Tried to compare a NaN"))
+        {
+            log::debug!("calc_total_time={:?}", max);
+            max
+        } else {
+            0.0
+        }
     }
 }
 
@@ -216,16 +222,15 @@ impl Displayable for Timeline {
     }
 
     fn update(&mut self, window: &mut Window, state: &mut AppState) {
+        let elapsed = state.clock.elapsed_time(self.timer_start);
         match self.state {
             PlayState::Pending => {
-                let elapsed = state.clock.elapsed_time(self.timer_start);
                 if elapsed > self.start_delay {
                     self.state = PlayState::Starting;
                 }
             }
             PlayState::Starting => {
                 self.timer_start = state.clock.current_time();
-                let elapsed = state.clock.elapsed_time(self.timer_start);
                 for sprite in &mut self.sprites {
                     // sprite.view.get_layer_mut().reset();
                     if sprite.start <= elapsed && sprite.end > elapsed {
@@ -235,13 +240,39 @@ impl Displayable for Timeline {
                 self.state = PlayState::Running;
             }
             PlayState::Running => {
-                let elapsed = state.clock.elapsed_time(self.timer_start);
-                for sprite in &mut self.sprites {
-                    if sprite.start <= elapsed && sprite.end > elapsed {
-                        // If not playing, start. Tween.play method checks play state first
-                        sprite.view.get_layer_mut().play();
+                if elapsed <= self.total_time {
+                    for sprite in &mut self.sprites {
+                        if sprite.start <= elapsed && sprite.end > elapsed {
+                            // If not playing, start. Tween.play method checks play state first
+                            sprite.view.get_layer_mut().play();
+                        }
+                        sprite.view.update(window, state);
                     }
-                    sprite.view.update(window, state);
+                } else {
+                    log::debug!("elapsed={:?} total_time={:?}", elapsed, self.total_time);
+                    self.play_count += 1;
+                    if self.play_count > self.repeat_count as u32 {
+                        // If repeat_count is zero, tween is Completed.
+                        self.state = PlayState::Finishing;
+                    } else {
+                        // set state=Idle means wait for repeat_delay to finish
+                        self.state = PlayState::Idle;
+                    }
+                }
+            }
+            PlayState::Idle => {
+                // If repeat_delay > 0, tween should wait until time elapsed passes it
+                if elapsed > (self.total_time + self.repeat_delay) as f64 {
+                    log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
+                    if self.repeat_count < 0 {
+                        self.state = PlayState::Starting;
+                        self.reset();
+                    } else if self.play_count <= self.repeat_count as u32 {
+                        self.state = PlayState::Starting;
+                        self.reset();
+                    } else {
+                        self.state = PlayState::Completed;
+                    }
                 }
             }
             _ => (),
@@ -288,6 +319,7 @@ impl Playable for Timeline {
     /// The Timeline play method should only play the tweens where the start time
     /// is not greater than the current elapsed time.
     fn play(&mut self) {
+        self.total_time = self.calc_total_time();
         match self.state {
             PlayState::Waiting => {
                 self.state = PlayState::Pending;
@@ -297,7 +329,7 @@ impl Playable for Timeline {
     }
 
     fn reset(&mut self) {
-        self.state = PlayState::Waiting;
+        // self.state = PlayState::Waiting;
         for sprite in &mut self.sprites {
             sprite.view.get_layer_mut().reset();
             // A Scene in a timeline needs to inform its subviews about a Reset event to force them
