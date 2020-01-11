@@ -46,12 +46,12 @@ This animation shows a purple circle that expands like a balloon and becomes mor
             .to(&[position(draw_area.right() as f64, 200.0), size(50.0, 50.0), alpha(0.7)]).duration(0.2)
             .to(&[position(650.0, draw_area.bottom() as f64), size(20.0, 20.0), alpha(0.6)]).duration(0.2)
             .to(&[position(400.0, 300.0), size(5.0, 5.0), alpha(0.2)]).duration(0.2)
-            .repeat(-1, 2.0);
+            .repeat(u32::max_value(), 2.0);
 
         &tween2.play();
 ```
 
-Note that the `repeat(-1, 2.0)` function call at the end specifies that it should repeat forever with a 2 second delay before starting the animation again.
+Note that the `repeat(u32::max_value(), 2.0)` function call at the end specifies that it should repeat forever with a 2 second delay before starting the animation again.
 
 ![Balloon bounce](demos/balloon-bounce-hd.gif)
 
@@ -105,7 +105,7 @@ And this is a sequence of chained animations that takes a square block and draws
                 .ease(Ease::SineIn)
             .to(&[size(20.0, 20.0)]).duration(1.0)
                 .ease(Ease::SineOut)
-            .repeat(-1, 0.2)
+            .repeat(u32::max_value(), 0.2)
             ;
 
         &tween1.play();

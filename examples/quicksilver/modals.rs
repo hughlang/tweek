@@ -310,7 +310,7 @@ impl StageBuilder {
                 .to(&[rotate(360.0)])
                 .duration(1.8)
                 .ease(Ease::SineInOut)
-                .repeat(-1, 0.8);
+                .repeat(u32::max_value(), 0.8);
             tween.state = PlayState::Pending;
             dot.layer.set_animation(tween);
             timeline.add_sprite(Box::new(dot), 0.0);

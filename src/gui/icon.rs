@@ -1,4 +1,4 @@
-/// The Label view displays text content rendered as image text
+/// The Icon view displays text content rendered as image text
 ///
 use super::*;
 use crate::core::*;
@@ -16,16 +16,16 @@ use std::any::TypeId;
 
 /// Defines if the label consists of image, text, or both
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum LabelDisplay {
+pub enum IconDisplay {
     Text,
     Image,
     ImageAndText,
 }
 
-/// Defines position of image relative to text where LabelType is ImageAndText
+/// Defines position of image relative to text where IconType is ImageAndText
 /// The image will be sized to fit the frame of the overall label +/- any inset parameter
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum LabelLayout {
+pub enum IconLayout {
     ImageLeft,
     ImageRight,
     ImageTop,
@@ -34,38 +34,38 @@ pub enum LabelLayout {
 
 const PAD: f32 = 0.0;
 
-//-- Label -----------------------------------------------------------------------
+//-- Icon -----------------------------------------------------------------------
 
 /// Tweenable text label
-pub struct Label {
+pub struct Icon {
     /// The base layer
     pub layer: Layer,
     /// Is it Text, Image, or both?
-    pub display: LabelDisplay,
+    pub display: IconDisplay,
     /// How is it laid out?
-    pub layout: LabelLayout,
+    pub layout: IconLayout,
     /// The string value
     text: Option<String>,
     /// The optional image
     raw_image: Option<DynamicImage>,
     /// Horizontal and vertical margins for icon
     pub icon_margins: (f32, f32),
-    /// Horizontal and vertical margins for icon
+    /// Horizontal and vertical margins for text
     pub text_margins: (f32, f32),
     outer_padding: f32,
     inner_padding: f32,
 }
 
-impl Label {
+impl Icon {
     /// Constructor with the text string
     pub fn new(frame: Rectangle) -> Self {
         let layer = Layer::new(frame);
-        Label {
+        Icon {
             layer,
             text: None,
             raw_image: None,
-            display: LabelDisplay::Text,
-            layout: LabelLayout::ImageLeft,
+            display: IconDisplay::Text,
+            layout: IconLayout::ImageLeft,
             icon_margins: (5.0, 5.0),
             text_margins: (5.0, 10.0),
             outer_padding: 10.0,
@@ -84,8 +84,8 @@ impl Label {
         self.layer.meshes.clear();
     }
 
-    /// Returns two Rectangles with the space allocation for the text and image within the Label's frame
-    /// The origin is zero-based relative to the Label's frame so needs to be translated for rendering
+    /// Returns two Rectangles with the space allocation for the text and image within the Icon's frame
+    /// The origin is zero-based relative to the Icon's frame so needs to be translated for rendering
     fn layout_content(&self) -> (Rectangle, Rectangle) {
         let mut txt_frame = Rectangle::new_sized(Vector::ZERO);
         let mut img_frame = Rectangle::new_sized(Vector::ZERO);
@@ -94,10 +94,10 @@ impl Label {
             log::trace!("{} layout_content={:?}", self.debug_id(), frame);
         }
         match self.display {
-            LabelDisplay::Text => {
+            IconDisplay::Text => {
                 txt_frame = Rectangle::new_sized(frame.size);
             }
-            LabelDisplay::Image => {
+            IconDisplay::Image => {
                 if let Some(raw_image) = self.raw_image.as_ref() {
                     let (source_w, source_h) = raw_image.dimensions();
                     let scale = frame.height() / source_h as f32;
@@ -109,14 +109,14 @@ impl Label {
                 }
                 log::debug!("img_frame={:?}", img_frame);
             }
-            LabelDisplay::ImageAndText => {
+            IconDisplay::ImageAndText => {
                 /* Calculate how to best use the space between the text and image based on the
-                LabelLayout value */
+                IconLayout value */
                 if let (Some(_text), Some(raw_image)) = (self.text.as_ref(), self.raw_image.as_ref()) {
                     let (source_w, source_h) = raw_image.dimensions();
                     let _aspect = source_w as f32 / source_h as f32;
                     match self.layout {
-                        LabelLayout::ImageLeft => {
+                        IconLayout::ImageLeft => {
                             // Layout H:|-img-|-text-| with img aligned left edge and text aligned left to img
                             let scale = frame.height() / source_h as f32;
                             let img_h = frame.height();
@@ -125,7 +125,7 @@ impl Label {
                             let txt_x = img_w + PAD;
                             txt_frame = Rectangle::new((txt_x, 0.0), (frame.width() - txt_x, frame.height()));
                         }
-                        LabelLayout::ImageRight => {
+                        IconLayout::ImageRight => {
                             // Layout H:|-text-|-img-| with img aligned right edge and text aligned right to img
                             let scale = frame.height() / source_h as f32;
                             let img_h = frame.height();
@@ -135,7 +135,7 @@ impl Label {
                             let txt_w = img_x - PAD;
                             txt_frame = Rectangle::new((0.0, 0.0), (txt_w, frame.height()));
                         }
-                        LabelLayout::ImageTop => {
+                        IconLayout::ImageTop => {
                             // Layout V:|-img-|-text-| with img aligned top with size to fit with space for text
                             // Assume that text fits in the provided width and does not wrap (yet)
                             let txt_h = self.layer.font_style.get_size() + self.outer_padding;
@@ -148,7 +148,7 @@ impl Label {
                             img_frame = Rectangle::new((img_x, img_y), (img_w, img_h));
                             txt_frame = Rectangle::new((0.0, txt_y), (frame.width(), txt_h));
                         }
-                        LabelLayout::ImageBottom => {
+                        IconLayout::ImageBottom => {
                             // Layout V:|-text-|-img-| with img aligned top with size to fit with space for text
                             // Assume that text fits in the provided width and does not wrap (yet)
                             let txt_h = self.layer.font_style.get_size() + self.outer_padding;
@@ -170,7 +170,7 @@ impl Label {
         (img_frame, txt_frame)
     }
 
-    /// Method to render contents of this Label as an Image
+    /// Method to render contents of this Icon as an Image
     fn draw_content(&mut self, theme: &mut Theme) -> Option<MeshTask> {
         // Calculate the relative frames for the image and text content
         // FIXME: cache this layout info
@@ -231,7 +231,7 @@ impl Label {
     }
 }
 
-impl Displayable for Label {
+impl Displayable for Icon {
     fn get_id(&self) -> u32 {
         self.layer.get_id()
     }
@@ -242,7 +242,7 @@ impl Displayable for Label {
     }
 
     fn get_type_id(&self) -> TypeId {
-        TypeId::of::<Label>()
+        TypeId::of::<Icon>()
     }
 
     fn get_layer(&self) -> &Layer {

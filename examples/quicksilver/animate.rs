@@ -118,7 +118,7 @@ impl StageBuilder {
             .to(&[position(target_x, 400.0), size(120.0, 120.0), color(HexColors::Gold)])
             .duration(1.0)
             .ease(Ease::SineInOut)
-            .repeat(-1, 0.2)
+            .repeat(u32::max_value(), 0.2)
             .yoyo();
 
         square.layer.start_animation(tween1);
@@ -241,7 +241,7 @@ impl StageBuilder {
             .to(&[size(20.0, 20.0)])
             .duration(1.0)
             .ease(Ease::SineOut)
-            .repeat(-1, 0.2);
+            .repeat(u32::max_value(), 0.2);
 
         shape.layer.start_animation(tween);
         scene.add_view(Box::new(shape));

@@ -49,7 +49,7 @@ pub struct Timeline {
     /// Number of seconds to delay before starting
     pub start_delay: f64,
     /// Number of times to repeat this Timeline animation
-    pub repeat_count: i32,
+    pub repeat_count: u32,
     /// Delay before repeating next execution
     pub repeat_delay: f64,
     /// Boolean to define whether this timeline repeats forever
@@ -89,7 +89,7 @@ impl Timeline {
     }
 
     /// Builder method to define the repeat_count and delay
-    pub fn repeat(mut self, count: i32, delay: f64) -> Self {
+    pub fn repeat(mut self, count: u32, delay: f64) -> Self {
         self.repeat_count = count;
         self.repeat_delay = delay;
         self
@@ -105,9 +105,9 @@ impl Timeline {
             }
             SpriteAlign::Sequence => {
                 let mut next_start = 0.0 as f64;
-                for (i, sprite) in &mut self.sprites.iter_mut().enumerate() {
+                for (_, sprite) in &mut self.sprites.iter_mut().enumerate() {
                     let duration = sprite.view.get_tween_duration();
-                    sprite.start = i as f64 + next_start;
+                    sprite.start = next_start;
                     sprite.end = sprite.start + duration;
                     log::debug!(
                         "Sequence {}/ duration={} start={} end={}",
@@ -249,25 +249,34 @@ impl Displayable for Timeline {
                         sprite.view.update(window, state);
                     }
                 } else {
-                    log::debug!("elapsed={:?} total_time={:?}", elapsed, self.total_time);
-                    self.play_count += 1;
-                    if self.play_count > self.repeat_count as u32 {
-                        // If repeat_count is zero, tween is Completed.
-                        self.state = PlayState::Finishing;
-                    } else {
-                        // set state=Idle means wait for repeat_delay to finish
-                        self.state = PlayState::Idle;
+                    log::trace!("elapsed={:?} total_time={:?}", elapsed, self.total_time);
+                    for sprite in &mut self.sprites {
+                        sprite.view.update(window, state);
                     }
+                    self.state = PlayState::Finishing;
+                }
+            }
+            PlayState::Finishing => {
+                for sprite in &mut self.sprites {
+                    sprite.view.update(window, state);
+                }
+                self.play_count += 1;
+                if self.play_count >= self.repeat_count {
+                    // If repeat_count is zero, tween is Completed.
+                    self.state = PlayState::Completed;
+                } else {
+                    // set state=Idle means wait for repeat_delay to finish
+                    self.state = PlayState::Idle;
                 }
             }
             PlayState::Idle => {
+                for sprite in &mut self.sprites {
+                    sprite.view.update(window, state);
+                }
                 // If repeat_delay > 0, tween should wait until time elapsed passes it
                 if elapsed > (self.total_time + self.repeat_delay) as f64 {
                     log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
-                    if self.repeat_count < 0 {
-                        self.state = PlayState::Starting;
-                        self.reset();
-                    } else if self.play_count <= self.repeat_count as u32 {
+                    if self.play_count < self.repeat_count {
                         self.state = PlayState::Starting;
                         self.reset();
                     } else {

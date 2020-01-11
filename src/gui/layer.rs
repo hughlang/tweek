@@ -102,7 +102,7 @@ impl Clone for Layer {
             transition: self.transition.clone(),
             rotation: self.rotation,
             corner_radius: self.corner_radius,
-            anchor_pt: Vector::ZERO,
+            anchor_pt: self.anchor_pt,
             bg_style: self.bg_style,
             border_style: self.border_style,
             font_style: self.font_style,
@@ -138,7 +138,7 @@ impl Layer {
             transition: Transition::new(frame, Color::WHITE, 0.0),
             rotation: 0.0,
             corner_radius: 0.0,
-            anchor_pt: Vector::ZERO,
+            anchor_pt: frame.center(),
             bg_style: BackgroundStyle::None,
             border_style: BorderStyle::None,
             font_style: FontStyle::new(14.0, Color::BLACK),
@@ -279,6 +279,7 @@ impl Layer {
                                 self.meshes.clear();
                                 // Broadcast the TweenEvent on the event_bus
                                 app_state.event_bus.register_event(evt);
+                                // Normalize rotation to 0-360
                                 self.rotation = self.transition.rotation % 360.0;
                                 match self.tween_type {
                                     TweenType::Move => notifier.notify(LayerEvent::Move(id, self.type_id, state)),
@@ -373,7 +374,7 @@ impl Layer {
                         let trans = transition.clone();
                         if trans.duration > 0.0 {
                             self.animate_with_props(trans, true);
-                            self.tween_type = TweenType::Click;
+                            self.tween_type = TweenType::Hover;
                         } else {
                             self.apply_props(&trans.props);
                         }
@@ -441,9 +442,9 @@ impl Layer {
         };
         let mut mesh = match self.bg_style {
             BackgroundStyle::Solid(color) => {
-                if self.is_animating() {
+                if self.is_transitioning() {
                     DrawShape::rectangle(
-                        &self.frame,
+                        &self.transition.frame,
                         Some(self.transition.color),
                         border.0,
                         border.1,
@@ -475,7 +476,11 @@ impl Layer {
         let mut mesh = match self.border_style {
             BorderStyle::SolidLine(color, width) => {
                 // TODO: allow rounded corners?
-                DrawShape::rectangle(&self.frame, None, Some(color), width, self.corner_radius)
+                if self.is_transitioning() {
+                    DrawShape::rectangle(&self.transition.frame, None, Some(color), width, self.corner_radius)
+                } else {
+                    DrawShape::rectangle(&self.frame, None, Some(color), width, self.corner_radius)
+                }
             }
             _ => Mesh::new(),
         };
@@ -538,6 +543,17 @@ impl Layer {
             }
         }
         false
+    }
+
+    pub fn is_transitioning(&self) -> bool {
+        if self.is_animating() {
+            true
+        } else {
+            match self.mouse_state {
+                MouseState::Hover => true,
+                _ => false,
+            }
+        }
     }
 
     /// TODO: Use from Displayable base.rs or discard
@@ -714,8 +730,16 @@ impl Tweenable for Layer {
                 self.frame.pos.y = pos[1] as f32;
             }
             Prop::Size(size) => {
-                self.frame.size.x = size[0] as f32;
-                self.frame.size.y = size[1] as f32
+                // Temporarily handle buttons differently until we get apply the same frame animation rules to all objects
+                if self.type_id == TypeId::of::<Button>() {
+                    let origin = self.frame.center() - Vector::new(size[0] / 2.0, size[1] / 2.0);
+                    self.transition.frame.pos = origin;
+                    self.transition.frame.size.x = size[0];
+                    self.transition.frame.size.y = size[1];
+                } else {
+                    self.frame.size.x = size[0] as f32;
+                    self.frame.size.y = size[1] as f32;
+                }
             }
             Prop::Border(rgba, width) => {
                 if let Some(rgba) = rgba {
@@ -733,6 +757,8 @@ impl Tweenable for Layer {
     /// Method to copy initialise the Transition with the official values
     fn init_props(&mut self) {
         // log::trace!("init_props {} origin={:?} anchor_pt={:?}", self.debug_id(), self.frame.pos, self.anchor_pt);
+        // FIXME: With ShapeView, this is wrong because the initial mesh has a fill color. However, with animation,
+        // that color is not set properly
         self.transition.color = self.bg_style.get_color();
         let border = self.border_style.get_border();
         self.transition.border_color = border.0;
@@ -919,6 +945,8 @@ pub struct Transition {
     pub border_color: Color,
     /// The current rotation
     pub rotation: f32,
+    /// The x-y scale factor if size is changing
+    pub scale: Vector,
 }
 
 impl Transition {
@@ -926,6 +954,7 @@ impl Transition {
     pub fn new(frame: Rectangle, color: Color, rotation: f32) -> Self {
         let border_width = 0.0;
         let border_color = Color::BLACK;
-        Transition { frame, color, tint: color, border_width, border_color, rotation }
+        let scale = Vector::ONE;
+        Transition { frame, color, tint: color, border_width, border_color, rotation, scale }
     }
 }

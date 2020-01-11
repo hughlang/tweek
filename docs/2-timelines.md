@@ -65,7 +65,7 @@ This is a similar demo where a collection of dots rotate around in a circle in a
             .to(&[rotate(360.0)])
             .duration(1.8)
             .ease(Ease::SineInOut)
-            .repeat(-1, 0.8)
+            .repeat(u32::max_value(), 0.8)
             ;
         items.push(item1);
         tweens.push(tween1)
