@@ -41,7 +41,8 @@ impl Cursor {
     /// Start the animation with the specified Props and flashing duration
     /// TODO: allow repeat delay to be customized
     pub fn start_animation(&mut self, props: &[Prop], seconds: f64) {
-        let mut tween = Tween::with(0, &self.layer).to(&props.to_vec()).duration(seconds).repeat(-1, 0.1).yoyo();
+        let mut tween =
+            Tween::with(0, &self.layer).to(&props.to_vec()).duration(seconds).repeat(u32::max_value(), 0.1).yoyo();
         &tween.play();
         self.layer.animation = Some(tween);
         self.layer.tween_type = TweenType::Animation;

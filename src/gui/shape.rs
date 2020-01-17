@@ -18,7 +18,7 @@ use std::any::TypeId;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ShapeDef {
     /// Line connecting two points
-    Line,
+    Line(Vector, Vector),
     /// Circle
     Circle,
     /// Ellipse
@@ -97,8 +97,7 @@ impl ShapeView {
         let mut task = MeshTask::new(0);
         task.vertices.append(&mut mesh.vertices);
         task.triangles.append(&mut mesh.triangles);
-        self.mesh_task = task;
-        // self.init_mesh = self.mesh_task.clone();
+        self.layer.meshes.push(task);
         self
     }
 
@@ -110,6 +109,12 @@ impl ShapeView {
                     BorderStyle::SolidLine(color, width) => (Some(color), width),
                 }
             };
+            // let border: (Color, f32) = {
+            //     match self.layer.border_style {
+            //         BorderStyle::None => (Color::WHITE, 0.0),
+            //         BorderStyle::SolidLine(color, width) => (color, width),
+            //     }
+            // };
             let color = Some(self.layer.bg_style.get_color());
             match self.shape_def {
                 ShapeDef::Rectangle => DrawShape::rectangle(&self.layer.frame, color, border.0, border.1, 0.0),
@@ -127,8 +132,8 @@ impl ShapeView {
     }
 
     /// Generate the Mesh from the animating props
-    fn tween_mesh(&mut self) -> Mesh {
-        let mesh = {
+    fn draw_content(&mut self) -> Option<MeshTask> {
+        let mut mesh = {
             let border: (Option<Color>, f32) = {
                 match self.layer.border_style {
                     BorderStyle::None => (None, 0.0),
@@ -140,6 +145,25 @@ impl ShapeView {
                 ShapeDef::Rectangle => {
                     DrawShape::rectangle(&self.layer.frame, color, border.0, border.1, self.layer.corner_radius)
                 }
+                ShapeDef::Line(start, end) => {
+                    let end_pt: Vector = {
+                        let mut pt = self.layer.frame.pos;
+                        if end.x > start.x {
+                            pt.x += self.layer.frame.width();
+                        } else {
+                            pt.x -= self.layer.frame.width();
+                        }
+                        if end.y > start.y {
+                            pt.y += self.layer.frame.height();
+                        } else {
+                            pt.y -= self.layer.frame.height();
+                        }
+                        pt
+                    };
+                    let pts: [&Vector; 2] = [&start, &end_pt];
+                    // log::debug!("start={:?} end={:?}", start, end_pt);
+                    DrawShape::line(&pts, self.layer.transition.color, border.1)
+                }
                 ShapeDef::Circle => DrawShape::circle(
                     &self.layer.frame.center(),
                     &self.layer.frame.width() / 2.0,
@@ -150,7 +174,14 @@ impl ShapeView {
                 _ => Mesh::new(),
             }
         };
-        mesh
+
+        if mesh.vertices.len() > 0 {
+            let mut task = MeshTask::new(0);
+            task.append(&mut mesh);
+            Some(task)
+        } else {
+            None
+        }
     }
 }
 
@@ -185,12 +216,8 @@ impl Displayable for ShapeView {
         self.layer.frame.pos.y = pos.1;
     }
 
-    fn set_theme(&mut self, theme: &mut Theme) {
-        let ok = self.layer.apply_theme(theme);
-        if !ok {
-            return;
-        }
-        // TODO: decide if shapes should get themed
+    fn set_theme(&mut self, _theme: &mut Theme) {
+        // Shapes are not themed
     }
 
     fn notify(&mut self, event: &DisplayEvent) {
@@ -227,24 +254,22 @@ impl Displayable for ShapeView {
 
     fn render(&mut self, _theme: &mut Theme, window: &mut Window) {
         if self.layer.is_animating() {
-            let mut mesh = self.tween_mesh();
-            let mut task = MeshTask::new(0);
-            task.vertices.append(&mut mesh.vertices);
-            task.triangles.append(&mut mesh.triangles);
-            // for (_, vertex) in task.vertices.iter_mut().enumerate() {
-            //     vertex.pos = Transform::rotate(self.layer.transition.rotation)
-            //         * Transform::translate(self.layer.anchor_pt)
-            //         * vertex.pos;
-            // }
-            window.add_task(task);
+            if let Some(task) = self.draw_content() {
+                // log::debug!("ShapeDef::Rectangle={:#?}", task.vertices);
+                window.add_task(task.clone());
+            }
         } else {
-            let mut task = self.mesh_task.clone();
-            if self.offset != Vector::ZERO {
-                for (_, vertex) in task.vertices.iter_mut().enumerate() {
-                    vertex.pos = Transform::translate(self.offset) * vertex.pos;
+            if self.layer.meshes.len() > 0 {
+                for task in &mut self.layer.meshes {
+                    window.add_task(task.clone());
+                }
+            } else {
+                if let Some(task) = self.draw_content() {
+                    self.layer.meshes.clear();
+                    window.add_task(task.clone());
+                    self.layer.meshes.push(task);
                 }
             }
-            window.add_task(task);
         }
     }
 

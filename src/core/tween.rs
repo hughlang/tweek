@@ -143,7 +143,7 @@ pub struct Tween {
     /// Number of plays completed. Used by repeat_count to determine when finished
     pub play_count: u32,
     /// Number of times to repeat the animation, where -1 = forever
-    pub repeat_count: i32,
+    pub repeat_count: u32,
     /// Time delay in seconds before starting next repeat play
     pub repeat_delay: f64,
     /// FIXME: Unused
@@ -262,7 +262,7 @@ impl Tween {
     }
 
     /// Builder method to define the repeat_count and delay
-    pub fn repeat(mut self, count: i32, delay: f64) -> Self {
+    pub fn repeat(mut self, count: u32, delay: f64) -> Self {
         self.repeat_count = count;
         self.repeat_delay = delay;
         self
@@ -291,8 +291,8 @@ impl Tween {
     /// Each playback in either direction counts as one play_count.
     pub fn yoyo(mut self) -> Self {
         self.anim_type = AnimType::Yoyo;
-        // TODO: if repeat_count is forever, this will force it to 1.
-        // FIXME: Let's remove the -1 option and add a loop_forever bool to prevent confusion.
+        // If repeat_count is zero, need to increase it to 1. TBD
+        // FIXME: yoyo is currently broken and will be addressed later
         if self.repeat_count == 0 {
             self.repeat_count = 1
         }
@@ -308,8 +308,8 @@ impl Tween {
             time += animator.seconds;
         }
 
-        // If no limit, then only calculate one loop
-        if self.repeat_count < 1 {
+        // If infinite repeat_count, then only calculate one loop
+        if self.repeat_count == u32::max_value() {
             return time + self.delay_s;
         }
         let total = time + self.delay_s + (self.repeat_count as f64) * (time + self.repeat_delay);
@@ -538,7 +538,7 @@ impl NotifyDispatcher for Tween {
             PlayState::Running => {
                 if elapsed > duration {
                     self.play_count += 1;
-                    if self.play_count > self.repeat_count as u32 {
+                    if self.play_count > self.repeat_count {
                         // If repeat_count is zero, tween is Completed.
                         self.state = PlayState::Finishing;
                     } else {
@@ -550,13 +550,10 @@ impl NotifyDispatcher for Tween {
             PlayState::Idle => {
                 // If repeat_delay > 0, tween should wait until time elapsed passes it
                 if elapsed > (duration + self.repeat_delay) as f64 {
-                    if self.debug {
-                        log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
-                    }
-                    if self.repeat_count < 0 {
-                        notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Restarting));
-                        self.state = PlayState::Pending;
-                    } else if self.play_count <= self.repeat_count as u32 {
+                    // if self.debug {
+                    log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
+                    // }
+                    if self.play_count < self.repeat_count {
                         notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Restarting));
                         self.state = PlayState::Pending;
                     } else {
@@ -583,7 +580,12 @@ impl NotifyDispatcher for Tween {
                             let ui_state = animator.update(playhead, self.time_scale as f64);
                             // TODO: log event
                             if self.debug {
-                                log::trace!("request_update [{}.{}]  >>  {:?}", animator.id.0, animator.id.1, ui_state);
+                                log::trace!(
+                                    "request_update [{}.{}]  >>  {:?}",
+                                    animator.id.0,
+                                    animator.id.1,
+                                    ui_state.props
+                                );
                             }
                             notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Running));
                             return Some(Box::new(ui_state));
@@ -603,11 +605,11 @@ impl NotifyDispatcher for Tween {
             }
             PlayState::Finishing => {
                 // FIXME: Getting the last animator does not mean it is always the last one to finish
+                log::trace!("request_update {:?}", self.state);
                 if let Some(animator) = self.animators.last_mut() {
                     self.state = PlayState::Completed;
-                    if self.debug {
-                        log::trace!("request_update {:?}", self.state);
-                    }
+                    // if self.debug {
+                    // }
                     // ======== Notify Completed =======
                     notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Completed));
 

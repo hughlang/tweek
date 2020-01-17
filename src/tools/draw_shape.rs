@@ -23,7 +23,7 @@ impl DrawShape {
         let pt2 = point(points[1].x, points[1].y);
 
         let mut renderer = ShapeRenderer::new(&mut mesh, color);
-        let options = StrokeOptions::tolerance(0.1).with_line_width(line_width);
+        let options = StrokeOptions::tolerance(0.01).with_line_width(line_width);
         stroke_polyline([pt1, pt2].iter().cloned(), false, &options, &mut renderer).unwrap();
 
         mesh
