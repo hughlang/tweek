@@ -42,9 +42,8 @@ pub struct AppState {
     pub event_bus: EventBus,
     /// Stores the index value of the row that was clicked on.
     pub row_target: Option<usize>,
-    /// Custom flag for miscellaneous params
-    /// TODO: Replace this with a HashMap or Box<dyn Any> that can be loaded at runtime
-    pub run_mode: Option<String>,
+    /// A number that stores the next id value to assign through the new_id() function
+    next_id: u32,
 }
 
 impl AppState {
@@ -60,8 +59,15 @@ impl AppState {
             offset: Vector::ZERO,
             event_bus: EventBus::default(),
             row_target: None,
-            run_mode: None,
+            next_id: 0,
         }
+    }
+
+    /// A method for assigning a globally unique id number for a gui object
+    pub fn new_id(&mut self) -> u32 {
+        let id = self.next_id;
+        self.next_id += 1;
+        id
     }
 
     /// Hacky way of forcing top-level controller to zero
