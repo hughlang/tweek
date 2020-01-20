@@ -7,6 +7,8 @@ use quicksilver::geom::Vector;
 
 //-- Base -----------------------------------------------------------------------
 
+pub const ID_BAND_SIZE: u32 = 1000;
+
 /// The Playable trait provides support for basic animation updating and control
 pub trait Playable {
     /// Must implement play method to start the Playable
@@ -68,6 +70,10 @@ impl AppState {
         let id = self.next_id;
         self.next_id += 1;
         id
+    }
+
+    pub(crate) fn set_next_id(&mut self, next_id: u32) {
+        self.next_id = next_id;
     }
 
     /// Hacky way of forcing top-level controller to zero

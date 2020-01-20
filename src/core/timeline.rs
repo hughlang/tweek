@@ -3,7 +3,7 @@ use super::state::*;
 use crate::events::*;
 /// A Timeline represents a group of Tween animations that each have a start and stop time in seconds
 /// in the overall timeline.
-use crate::gui::{Displayable, Layer, Scene, Theme};
+use crate::gui::{Displayable, Layer, Scene, Theme, ViewLifecycle};
 
 use quicksilver::{
     geom::{Rectangle, Vector},
@@ -317,6 +317,15 @@ impl Displayable for Timeline {
             }
         }
         routes
+    }
+}
+
+impl ViewLifecycle for Timeline {
+    fn view_will_load(&mut self, _theme: &mut Theme, app_state: &mut AppState) {
+        self.set_id(app_state.new_id());
+        for sprite in &mut self.sprites {
+            sprite.view.set_id(app_state.new_id());
+        }
     }
 }
 

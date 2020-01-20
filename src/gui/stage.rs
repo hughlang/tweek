@@ -20,7 +20,7 @@ pub struct Stage {
     /// Title for display
     pub title: String,
     /// All of the Scenes
-    pub scenes: Vec<Scene>,
+    pub(crate) scenes: Vec<Scene>,
     /// Storage of added Commands as a mapping of the source to target
     event_actions: HashMap<(SceneEvent, Option<String>), SceneAction>,
     /// Rudimentary storage of an node_id and the Route it probably matches. FIXME later
@@ -46,9 +46,9 @@ impl Stage {
 
     pub fn load_routes(&mut self) {
         for scene in &mut self.scenes {
-            log::trace!("=== Routes in Scene: {} =====================", scene.name);
+            log::trace!("=== Node Paths in Scene: {} =====================", scene.name);
             for route in scene.get_routes() {
-                log::trace!("Route: {}", route);
+                log::trace!("Path: {}", route);
                 let parts = route.split("/");
                 if let Some(part) = parts.last() {
                     // TODO: Warn if key already exists
@@ -148,7 +148,6 @@ impl Displayable for Stage {
     fn notify(&mut self, event: &DisplayEvent) {
         match event {
             DisplayEvent::Ready => {
-                self.load_routes();
                 for scene in &mut self.scenes {
                     scene.notify(event);
                     // For Ready event, capture all commands from scenes
@@ -235,5 +234,15 @@ impl Responder for Stage {
             scene.handle_key_command(key, window);
         }
         false
+    }
+}
+
+impl ViewLifecycle for Stage {
+    fn view_will_load(&mut self, theme: &mut Theme, app_state: &mut AppState) {
+        for (i, scene) in &mut self.scenes.iter_mut().enumerate() {
+            app_state.set_next_id((i + 1) as u32 * ID_BAND_SIZE);
+            scene.view_will_load(theme, app_state);
+        }
+        self.load_routes();
     }
 }

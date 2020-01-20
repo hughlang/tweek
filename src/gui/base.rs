@@ -31,7 +31,8 @@ impl Node {
     }
 }
 
-pub type NodeID = (u32, TypeId);
+/// Unused
+pub type NodeID = (TypeId, u32);
 
 /// Enum used as return type for Responder get_field_value() method to wrap the value
 /// of the field
@@ -251,4 +252,8 @@ pub trait Responder: Displayable {
     fn handle_key_command(&mut self, _key: &Key, _window: &mut Window) -> bool {
         false
     }
+}
+
+pub trait ViewLifecycle {
+    fn view_will_load(&mut self, theme: &mut Theme, app_state: &mut AppState);
 }

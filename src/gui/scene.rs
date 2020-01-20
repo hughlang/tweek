@@ -50,8 +50,6 @@ pub struct Scene {
     pub bg_mask: Option<MeshTask>,
     /// A timeline to coordinate scene animations
     timeline: Option<Timeline>,
-    /// Running count of views added to this scene. Used in assigning new id values
-    pub view_count: u32,
     /// Cac
     screen_size: Vector,
 }
@@ -72,7 +70,6 @@ impl Scene {
             last_event: SceneEvent::None,
             bg_mask: None,
             timeline: None,
-            view_count: 0,
             screen_size: Vector::ZERO,
         }
     }
@@ -98,40 +95,23 @@ impl Scene {
 
     /// Add a Displayable and set the position based on Scene origin
     /// If the object is actually a Responder, warn and do not add.
-    pub fn add_view(&mut self, mut view: Box<dyn Displayable>) -> Vec<Node> {
+    pub fn add_view(&mut self, mut view: Box<dyn Displayable>) {
         let type_id = view.get_type_id();
         if GUI_RESPONDERS.contains(&type_id) {
             // TODO: Use unwrap_or to customize name
             if let Some(name) = GUI_TYPES_MAP.get(&type_id) {
                 log::warn!("Wrong type for this method call: {:?}", name);
             }
-            return Vec::new();
         }
-
-        self.view_count += 1;
-        if view.get_id() == 0 {
-            view.set_id(self.get_id() + self.view_count);
-        }
-
         view.set_origin(self.layer.frame.pos);
-
-        let route = view.get_layer_mut().set_path(&self.layer.node_path);
         self.views.push(view);
-        route
     }
 
     /// Add a Responder and set the position based on Scene origin
     /// Returns the id value of the view, which is assigned if the previous value was 0.
-    pub fn add_control(&mut self, mut view: Box<dyn Responder>) -> Vec<Node> {
-        self.view_count += 1;
-        if view.get_id() == 0 {
-            view.set_id(self.get_id() + self.view_count);
-        }
+    pub fn add_control(&mut self, mut view: Box<dyn Responder>) {
         view.set_origin(self.layer.frame.pos);
-
-        let route = view.get_layer_mut().set_path(&self.layer.node_path);
         self.controls.push(view);
-        route
     }
 
     /// This is a helper method for adding a control with a command that executes when activated as an alternative to
@@ -142,13 +122,13 @@ impl Scene {
         if let Ok(mut button) = cmd.source.downcast::<Button>() {
             if let Ok(event) = cmd.event.downcast::<SceneEvent>() {
                 button.set_click_event(event);
-                let node = self.add_control(button);
+                self.add_control(button);
 
                 // Get the route path for the new object and use that as part of the event_actions key
-                let path = print_full_path(node);
-                log::debug!("add_control path={:?}", path);
+                // let path = print_full_path(node);
+                // log::debug!("add_control path={:?}", path);
                 let target = Node::new(cmd.target_id, cmd.target_type);
-                self.event_actions.insert((event, Some(path)), SceneAction::Animate(cmd.transition, target));
+                // self.event_actions.insert((event, Some(path)), SceneAction::Animate(cmd.transition, target));
             }
         } else {
             log::error!("SKIP >>>>>>>>>>>>>>>> control");
@@ -477,7 +457,8 @@ impl Displayable for Scene {
     fn get_routes(&mut self) -> Vec<String> {
         let mut routes: Vec<String> = Vec::new();
         let base = format!("{}-{}", gui_print_type(&self.get_type_id()), self.get_id());
-        routes.push(base.clone());
+        let route = format!("/{}", &base);
+        routes.push(route);
         for view in &mut self.views {
             for path in view.get_routes() {
                 let route = format!("/{}/{}", &base, path);
@@ -600,6 +581,21 @@ impl Responder for Scene {
             // TODO: Check other listeners
         }
         false
+    }
+}
+
+impl ViewLifecycle for Scene {
+    fn view_will_load(&mut self, theme: &mut Theme, app_state: &mut AppState) {
+        self.set_id(app_state.new_id());
+        for view in &mut self.views {
+            view.set_id(app_state.new_id());
+        }
+        for view in &mut self.controls {
+            view.set_id(app_state.new_id());
+        }
+        if let Some(timeline) = &mut self.timeline {
+            timeline.view_will_load(theme, app_state);
+        }
     }
 }
 

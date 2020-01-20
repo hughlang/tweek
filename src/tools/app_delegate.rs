@@ -92,7 +92,10 @@ impl AppDelegate {
 
     /// Application lifecycle event called before runloop starts
     pub fn application_ready(&mut self) {
+        println!(">>> application_ready");
         self.load_scene();
+        self.stage.view_will_load(&mut self.theme, &mut self.app_state);
+        self.stage.notify(&DisplayEvent::Ready);
     }
 
     pub fn load_scene(&mut self) {
@@ -102,7 +105,6 @@ impl AppDelegate {
             self.stage.scenes.clear();
             self.stage.scenes.append(&mut group.scenes);
             self.stage.set_theme(&mut self.theme);
-            self.stage.notify(&DisplayEvent::Ready);
         }
     }
 }
