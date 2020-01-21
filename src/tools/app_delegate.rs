@@ -92,18 +92,17 @@ impl AppDelegate {
 
     /// Application lifecycle event called before runloop starts
     pub fn application_ready(&mut self) {
-        println!(">>> application_ready");
         self.load_scene();
-        self.stage.view_will_load(&mut self.theme, &mut self.app_state);
+        self.nav_scene.view_will_load(&mut self.theme, &mut self.app_state);
+        self.nav_scene.set_field_value(&FieldValue::Text(self.stage.title.clone()), TypeId::of::<Text>(), TITLE_TAG);
         self.stage.notify(&DisplayEvent::Ready);
     }
 
     pub fn load_scene(&mut self) {
         if let Some(cb) = self.stage_builders.get_mut(self.view_index) {
-            let mut group = cb();
-            self.nav_scene.set_field_value(&FieldValue::Text(group.title), TypeId::of::<Text>(), TITLE_TAG);
-            self.stage.scenes.clear();
-            self.stage.scenes.append(&mut group.scenes);
+            let stage = cb();
+            self.stage = stage;
+            self.stage.view_will_load(&mut self.theme, &mut self.app_state);
             self.stage.set_theme(&mut self.theme);
         }
     }

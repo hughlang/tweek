@@ -461,8 +461,10 @@ impl Tween {
                 end_props.push(prop.clone());
             }
             animator.end_state.props = end_props;
-            log::debug!("Tween: [{}] start = {:?}", self.tween_id, &animator.start_state.props);
-            log::debug!("Tween: [{}] end   = {:?}", self.tween_id, &animator.end_state.props);
+            if self.debug {
+                log::debug!("Tween: [{}] start = {:?}", self.tween_id, &animator.start_state.props);
+                log::debug!("Tween: [{}] end   = {:?}", self.tween_id, &animator.end_state.props);
+            }
         }
     }
 

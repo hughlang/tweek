@@ -4,7 +4,10 @@ use super::*;
 use crate::core::*;
 use crate::events::*;
 
-use std::{any::TypeId, collections::HashMap};
+use std::{
+    any::TypeId,
+    collections::{BTreeMap, HashMap},
+};
 
 use quicksilver::{
     geom::{Rectangle, Vector},
@@ -19,8 +22,8 @@ pub struct Stage {
     layer: Layer,
     /// Title for display
     pub title: String,
-    /// All of the Scenes
-    pub(crate) scenes: Vec<Scene>,
+    /// All of the Scenes in map where the key is the Layer id
+    scenes: BTreeMap<u32, Scene>,
     /// Storage of added Commands as a mapping of the source to target
     event_actions: HashMap<(SceneEvent, Option<String>), SceneAction>,
     /// Rudimentary storage of an node_id and the Route it probably matches. FIXME later
@@ -34,18 +37,19 @@ impl Stage {
         Stage {
             layer,
             title: String::default(),
-            scenes: Vec::new(),
+            scenes: BTreeMap::new(),
             event_actions: HashMap::new(),
             route_map: HashMap::new(),
         }
     }
 
     pub fn add_scene(&mut self, scene: Scene) {
-        self.scenes.push(scene);
+        let id = (self.scenes.len() + 1) as u32 * ID_BAND_SIZE;
+        self.scenes.insert(id, scene);
     }
 
     pub fn load_routes(&mut self) {
-        for scene in &mut self.scenes {
+        for scene in &mut self.scenes.values_mut() {
             log::trace!("=== Node Paths in Scene: {} =====================", scene.name);
             for route in scene.get_routes() {
                 log::trace!("Path: {}", route);
@@ -90,7 +94,7 @@ impl Displayable for Stage {
     // Note: A Stage never moves and is always represents the full screen/window.
     // Only reposition the child scenes
     fn align_view(&mut self, origin: Vector) {
-        for scene in &mut self.scenes {
+        for scene in &mut self.scenes.values_mut() {
             scene.align_view(origin);
         }
     }
@@ -101,21 +105,12 @@ impl Displayable for Stage {
     }
 
     fn set_theme(&mut self, theme: &mut Theme) {
-        for scene in &mut self.scenes {
+        for scene in &mut self.scenes.values_mut() {
             scene.set_theme(theme);
         }
     }
 
     fn handle_event(&mut self, event: &EventBox) {
-        // match evt {
-        //     SceneEvent::Show(_) => {
-        //         self.nav_scene.is_interactive = false;
-        //     }
-        //     SceneEvent::Hide(_) => {
-        //         self.nav_scene.is_interactive = true;
-        //     }
-        //     _ => (),
-        // }
         if let Ok(evt) = event.downcast_ref::<SceneEvent>() {
             // log::debug!("SceneEvent={:?}", evt);
             // log::debug!("Source={:?}", event.event_info());
@@ -125,7 +120,7 @@ impl Displayable for Stage {
                 match action {
                     SceneAction::Animate(propset, node) => {
                         if let Some(route) = self.route_map.get(&node.id_string()) {
-                            for scene in &mut self.scenes {
+                            for scene in &mut self.scenes.values_mut() {
                                 if let Some(layer) = scene.get_layer_for_route(&route) {
                                     log::debug!("Found layer for route={:?}", route);
                                     layer.animate_with_props(propset.clone(), true);
@@ -139,7 +134,7 @@ impl Displayable for Stage {
                 }
             }
         } else {
-            for scene in &mut self.scenes {
+            for scene in &mut self.scenes.values_mut() {
                 scene.handle_event(event);
             }
         }
@@ -148,7 +143,7 @@ impl Displayable for Stage {
     fn notify(&mut self, event: &DisplayEvent) {
         match event {
             DisplayEvent::Ready => {
-                for scene in &mut self.scenes {
+                for scene in &mut self.scenes.values_mut() {
                     scene.notify(event);
                     // For Ready event, capture all commands from scenes
                     for (k, v) in scene.event_actions.drain() {
@@ -157,7 +152,7 @@ impl Displayable for Stage {
                 }
             }
             _ => {
-                for scene in &mut self.scenes {
+                for scene in &mut self.scenes.values_mut() {
                     scene.notify(event);
                 }
             }
@@ -165,7 +160,7 @@ impl Displayable for Stage {
     }
 
     fn update(&mut self, window: &mut Window, state: &mut AppState) {
-        for scene in &mut self.scenes {
+        for scene in &mut self.scenes.values_mut() {
             scene.update(window, state);
         }
     }
@@ -174,13 +169,13 @@ impl Displayable for Stage {
     /// therefore, this render() method should only call render() for all child Displayable objects.
     /// That's the current plan. It may change.
     fn render(&mut self, theme: &mut Theme, window: &mut Window) {
-        for scene in &mut self.scenes {
+        for scene in &mut self.scenes.values_mut() {
             scene.render(theme, window);
         }
     }
 
     fn handle_mouse_at(&mut self, pt: &Vector, window: &mut Window) -> bool {
-        for scene in &mut self.scenes {
+        for scene in &mut self.scenes.values_mut() {
             let hover = scene.handle_mouse_at(pt, window);
             if hover {
                 return true;
@@ -194,7 +189,7 @@ impl Displayable for Stage {
 
 impl Responder for Stage {
     fn set_field_value(&mut self, value: &FieldValue, type_id: TypeId, layer_id: u32) -> bool {
-        for scene in &mut self.scenes {
+        for scene in &mut self.scenes.values_mut() {
             let success = scene.set_field_value(value, type_id, layer_id);
             if success {
                 return true;
@@ -204,33 +199,33 @@ impl Responder for Stage {
     }
 
     fn handle_mouse_down(&mut self, pt: &Vector, state: &mut AppState) -> bool {
-        for scene in &mut self.scenes {
+        for scene in &mut self.scenes.values_mut() {
             scene.handle_mouse_down(pt, state);
         }
         false
     }
 
     fn handle_mouse_up(&mut self, pt: &Vector, state: &mut AppState) -> bool {
-        for scene in &mut self.scenes {
+        for scene in &mut self.scenes.values_mut() {
             scene.handle_mouse_up(pt, state);
         }
         false
     }
 
     fn handle_mouse_scroll(&mut self, pt: &Vector, state: &mut AppState) {
-        for scene in &mut self.scenes {
+        for scene in &mut self.scenes.values_mut() {
             scene.handle_mouse_scroll(pt, state);
         }
     }
 
     fn handle_key_press(&mut self, c: char, window: &mut Window) {
-        for scene in &mut self.scenes {
+        for scene in &mut self.scenes.values_mut() {
             scene.handle_key_press(c, window);
         }
     }
 
     fn handle_key_command(&mut self, key: &Key, window: &mut Window) -> bool {
-        for scene in &mut self.scenes {
+        for scene in &mut self.scenes.values_mut() {
             scene.handle_key_command(key, window);
         }
         false
@@ -239,8 +234,8 @@ impl Responder for Stage {
 
 impl ViewLifecycle for Stage {
     fn view_will_load(&mut self, theme: &mut Theme, app_state: &mut AppState) {
-        for (i, scene) in &mut self.scenes.iter_mut().enumerate() {
-            app_state.set_next_id((i + 1) as u32 * ID_BAND_SIZE);
+        for (id, scene) in &mut self.scenes {
+            app_state.set_next_id(*id);
             scene.view_will_load(theme, app_state);
         }
         self.load_routes();
