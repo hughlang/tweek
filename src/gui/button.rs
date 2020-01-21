@@ -91,10 +91,7 @@ impl Button {
 // *****************************************************************************************************
 
 impl Displayable for Button {
-    fn get_id(&self) -> u32 {
-        self.layer.get_id()
-    }
-
+    // Override to set id values for child objects
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
         self.layer.type_id = self.get_type_id();

@@ -151,14 +151,6 @@ impl Timeline {
 // ************************************************************************************
 
 impl Displayable for Timeline {
-    fn get_id(&self) -> u32 {
-        self.layer.get_id()
-    }
-
-    fn set_id(&mut self, id: u32) {
-        self.layer.set_id(id);
-    }
-
     fn get_type_id(&self) -> TypeId {
         TypeId::of::<Timeline>()
     }
@@ -322,10 +314,16 @@ impl Displayable for Timeline {
 
 impl ViewLifecycle for Timeline {
     fn view_will_load(&mut self, _theme: &mut Theme, app_state: &mut AppState) {
-        self.set_id(app_state.new_id());
+        let path = self.get_layer().node_path.clone();
         for mut sprite in self.sprites_queue.drain(..) {
             let id = app_state.new_id();
             sprite.view.set_id(id);
+            sprite.view.get_layer_mut().set_path(&path);
+            // log::trace!("full_path={:?}", sprite.view.get_layer().full_path());
+            if let Some(tag) = sprite.view.get_layer().tag {
+                log::trace!("Adding tag={:?} for path={:?}", tag, sprite.view.get_layer().node_path);
+                app_state.assign_tag(tag, sprite.view.get_layer().node_path.clone());
+            }
             self.sprites.insert(id, sprite);
         }
     }

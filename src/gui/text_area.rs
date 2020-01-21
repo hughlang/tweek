@@ -149,15 +149,6 @@ impl TextArea {
 }
 
 impl Displayable for TextArea {
-    fn get_id(&self) -> u32 {
-        self.layer.get_id()
-    }
-
-    fn set_id(&mut self, id: u32) {
-        self.layer.set_id(id);
-        self.layer.type_id = self.get_type_id();
-    }
-
     fn get_type_id(&self) -> TypeId {
         TypeId::of::<TextArea>()
     }

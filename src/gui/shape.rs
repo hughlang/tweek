@@ -84,13 +84,13 @@ impl ShapeView {
 
     /// Method to update the MeshTask
     /// FIXME: This is a dumb idea
-    pub fn build(&mut self) {
-        let mut mesh = self.build_mesh();
-        let mut task = MeshTask::new(0);
-        task.vertices.append(&mut mesh.vertices);
-        task.triangles.append(&mut mesh.triangles);
-        self.mesh_task = task;
-    }
+    // pub fn build(&mut self) {
+    //     let mut mesh = self.build_mesh();
+    //     let mut task = MeshTask::new(0);
+    //     task.vertices.append(&mut mesh.vertices);
+    //     task.triangles.append(&mut mesh.triangles);
+    //     self.mesh_task = task;
+    // }
 
     /// Builder method to copy vertices and triangles from Mesh
     pub fn with_mesh(mut self, mesh: &mut Mesh) -> Self {
@@ -186,15 +186,6 @@ impl ShapeView {
 }
 
 impl Displayable for ShapeView {
-    fn get_id(&self) -> u32 {
-        self.layer.get_id()
-    }
-
-    fn set_id(&mut self, id: u32) {
-        self.layer.set_id(id);
-        self.layer.type_id = self.get_type_id();
-    }
-
     fn get_type_id(&self) -> TypeId {
         TypeId::of::<ShapeView>()
     }

@@ -25,17 +25,21 @@ use quicksilver::{
 /// This is a wrapper for the quicksilver properties that are Tweenable. A GUI object that
 /// has this field can be animated with Tween
 pub struct Layer {
-    /// Arbitrary id value. TBD
-    id: u32,
+    /// Number assigned from AppState.new_id() during view_did_load() to provide object addressing scheme
+    pub(crate) id: u32,
+    /// Identifies the object type this layer belongs to.
+    pub(crate) type_id: TypeId,
+    /// Arbitrary number a user can assign for handling event notifications
+    pub tag: Option<u32>,
+    /// enum to define whether an object exists and renders
+    pub visibility: Visibility,
     /// The rectangular position and size bounds of the object
     pub frame: Rectangle,
     /// Optional identifier that can be used to reference or locate an object in an external framework
     /// (e.g. Stretch Node)
     pub external_id: Option<Box<dyn Any>>,
-    /// Identifies the object type this layer belongs to.
-    pub(super) type_id: TypeId,
     /// The path hierarchy as an array
-    pub(super) node_path: Vec<Node>,
+    pub(crate) node_path: Vec<Node>,
     /// The initial frame for the object
     pub(crate) initial: Rectangle,
     /// The starting Props for an object
@@ -91,9 +95,11 @@ impl Clone for Layer {
     fn clone(&self) -> Self {
         Layer {
             id: 0,
+            type_id: self.type_id, // the default
+            tag: self.tag,
+            visibility: self.visibility,
             frame: self.frame,
             external_id: None,
-            type_id: self.type_id, // the default
             node_path: Vec::new(),
             initial: self.frame,
             defaults: Vec::new(),
@@ -127,9 +133,11 @@ impl Layer {
     pub fn new(frame: Rectangle) -> Self {
         Layer {
             id: 0,
+            type_id: TypeId::of::<Layer>(), // the default
+            tag: None,
+            visibility: Visibility::Visible,
             frame,
             external_id: None,
-            type_id: TypeId::of::<Layer>(), // the default
             node_path: Vec::new(),
             initial: frame,
             defaults: Vec::new(),
@@ -928,6 +936,19 @@ impl BorderStyle {
             BorderStyle::SolidLine(color, width) => (*color, *width),
         }
     }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+// #[non_exhaustive]
+pub enum Visibility {
+    /// Does not exist yet
+    None,
+    /// Exists but does not render
+    Hidden,
+    /// Semi-visible/transparent
+    Partial(f32),
+    /// Exists and visible
+    Visible,
 }
 
 /// A wrapper for Tweenable values that is modified through update_props()

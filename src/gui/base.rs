@@ -18,21 +18,17 @@ use quicksilver::{
 pub struct Node {
     pub id: u32,
     pub type_id: TypeId,
-    pub position: (i32, i32),
 }
 
 impl Node {
     pub fn new(id: u32, type_id: TypeId) -> Self {
-        Node { id, type_id, position: (0, 0) }
+        Node { id, type_id }
     }
 
     pub fn id_string(&self) -> String {
         format!("{}-{}", gui_print_type(&self.type_id), self.id)
     }
 }
-
-/// Unused
-pub type NodeID = (TypeId, u32);
 
 /// Enum used as return type for Responder get_field_value() method to wrap the value
 /// of the field
@@ -54,10 +50,15 @@ pub enum FieldValue {
 /// display, and render them.
 pub trait Displayable: Any {
     /// Get the layer id
-    fn get_id(&self) -> u32;
+    fn get_id(&self) -> u32 {
+        self.get_layer().id
+    }
 
     /// Set the layer.id to identify it
-    fn set_id(&mut self, id: u32);
+    fn set_id(&mut self, id: u32) {
+        self.get_layer_mut().id = id;
+        self.get_layer_mut().type_id = self.get_type_id();
+    }
 
     /// Method that provides unique identifier for each displayable object type. Useful for custom handling of
     /// UI behaviors

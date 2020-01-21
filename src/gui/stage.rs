@@ -67,14 +67,6 @@ impl Stage {
 // ************************************************************************************
 
 impl Displayable for Stage {
-    fn get_id(&self) -> u32 {
-        self.layer.get_id()
-    }
-
-    fn set_id(&mut self, id: u32) {
-        self.layer.set_id(id);
-    }
-
     fn get_type_id(&self) -> TypeId {
         TypeId::of::<Stage>()
     }
@@ -236,6 +228,8 @@ impl ViewLifecycle for Stage {
     fn view_will_load(&mut self, theme: &mut Theme, app_state: &mut AppState) {
         for (id, scene) in &mut self.scenes {
             app_state.set_next_id(*id);
+            scene.set_id(app_state.new_id());
+            scene.get_layer_mut().set_path(&[]);
             scene.view_will_load(theme, app_state);
         }
         self.load_routes();

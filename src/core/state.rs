@@ -2,8 +2,11 @@
 ///
 use super::clock::*;
 use crate::events::*;
+use crate::gui::Node;
 
 use quicksilver::geom::Vector;
+
+use std::collections::HashMap;
 
 //-- Base -----------------------------------------------------------------------
 
@@ -42,8 +45,10 @@ pub struct AppState {
     pub offset: Vector,
     /// The event queue
     pub event_bus: EventBus,
+    /// Storage where key=Tag and value = NodePath
+    pub(super) tagged_nodes: HashMap<u32, Vec<Node>>,
     /// Stores the index value of the row that was clicked on.
-    pub row_target: Option<usize>,
+    pub(crate) row_target: Option<usize>,
     /// A number that stores the next id value to assign through the new_id() function
     next_id: u32,
 }
@@ -60,6 +65,7 @@ impl AppState {
             total_time: 0.0,
             offset: Vector::ZERO,
             event_bus: EventBus::default(),
+            tagged_nodes: HashMap::new(),
             row_target: None,
             next_id: 0,
         }
@@ -74,6 +80,18 @@ impl AppState {
 
     pub(crate) fn set_next_id(&mut self, next_id: u32) {
         self.next_id = next_id;
+    }
+
+    pub(crate) fn assign_tag(&mut self, tag: u32, path: Vec<Node>) {
+        self.tagged_nodes.insert(tag, path);
+    }
+
+    pub(crate) fn lookup_tag(&mut self, tag: u32) -> Option<Vec<Node>> {
+        if let Some(result) = self.tagged_nodes.get(&tag) {
+            Some(result.clone())
+        } else {
+            None
+        }
     }
 
     /// Hacky way of forcing top-level controller to zero

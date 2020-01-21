@@ -183,15 +183,6 @@ impl Scene {
 }
 
 impl Displayable for Scene {
-    fn get_id(&self) -> u32 {
-        self.layer.get_id()
-    }
-
-    fn set_id(&mut self, id: u32) {
-        self.layer.set_id(id);
-        self.layer.type_id = self.get_type_id();
-    }
-
     fn get_type_id(&self) -> TypeId {
         TypeId::of::<Scene>()
     }
@@ -396,7 +387,7 @@ impl Displayable for Scene {
         self.layer.draw_background(window);
         self.layer.draw_border(window);
 
-        for view in &mut self.views.values_mut() {
+        for view in &mut self.views.values_mut().filter(|x| x.get_layer().visibility == Visibility::Visible) {
             view.render(theme, window);
         }
         for view in &mut self.controls.values_mut() {
@@ -557,19 +548,34 @@ impl Responder for Scene {
 
 impl ViewLifecycle for Scene {
     fn view_will_load(&mut self, theme: &mut Theme, app_state: &mut AppState) {
-        self.set_id(app_state.new_id());
-
+        let path = self.get_layer().node_path.clone();
         for mut view in self.views_queue.drain(..) {
             let id = app_state.new_id();
             view.set_id(id);
+            view.get_layer_mut().set_path(&path);
+            log::debug!("full_path={:?}", view.get_layer().full_path());
+
+            if let Some(tag) = view.get_layer().tag {
+                log::debug!("Adding tag={:?} for path={:?}", tag, view.get_layer().node_path);
+                app_state.assign_tag(tag, view.get_layer().node_path.clone());
+            }
             self.views.insert(id, view);
         }
         for mut view in self.controls_queue.drain(..) {
             let id = app_state.new_id();
             view.set_id(id);
+            view.get_layer_mut().set_path(&path);
+            log::debug!("full_path={:?}", view.get_layer().full_path());
+            if let Some(tag) = view.get_layer().tag {
+                log::debug!("Adding tag={:?} for path={:?}", tag, view.get_layer().node_path);
+                app_state.assign_tag(tag, view.get_layer().node_path.clone());
+            }
             self.controls.insert(id, view);
         }
         if let Some(timeline) = &mut self.timeline {
+            timeline.set_id(app_state.new_id());
+            timeline.get_layer_mut().set_path(&path);
+            log::debug!("full_path={:?}", timeline.get_layer().full_path());
             timeline.view_will_load(theme, app_state);
         }
     }
