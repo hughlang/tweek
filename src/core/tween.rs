@@ -532,7 +532,7 @@ impl NotifyDispatcher for Tween {
                 }
             }
             PlayState::Starting => {
-                notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Starting));
+                notifier.notify(TweenEvent::Started);
                 self.sync_animators();
                 self.started_at = current;
                 self.state = PlayState::Running;
@@ -556,7 +556,7 @@ impl NotifyDispatcher for Tween {
                     log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
                     // }
                     if self.play_count < self.repeat_count {
-                        notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Restarting));
+                        notifier.notify(TweenEvent::Restarting);
                         self.state = PlayState::Pending;
                     } else {
                         self.state = PlayState::Completed;
@@ -589,7 +589,6 @@ impl NotifyDispatcher for Tween {
                                     ui_state.props
                                 );
                             }
-                            notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Running));
                             return Some(Box::new(ui_state));
                         }
                     } else {
@@ -599,7 +598,6 @@ impl NotifyDispatcher for Tween {
                             // Calculate playhead in reverse by subtracting elapsed from animator end_time
                             let playhead = animator.end_time - elapsed;
                             let ui_state = animator.update(playhead, self.time_scale as f64);
-                            notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Running));
                             return Some(Box::new(ui_state));
                         }
                     }
@@ -613,7 +611,7 @@ impl NotifyDispatcher for Tween {
                     // if self.debug {
                     // }
                     // ======== Notify Completed =======
-                    notifier.notify(TweenEvent::Status(self.tween_id, PlayState::Completed));
+                    notifier.notify(TweenEvent::Completed);
 
                     if self.time_scale >= 0.0 {
                         return Some(Box::new(animator.end_state.clone()));

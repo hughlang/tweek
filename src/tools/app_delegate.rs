@@ -93,17 +93,16 @@ impl AppDelegate {
     /// Application lifecycle event called before runloop starts
     pub fn application_ready(&mut self) {
         self.load_scene();
-        self.nav_scene.view_will_load(&mut self.theme, &mut self.app_state);
+        self.nav_scene.view_will_load(&mut self.stage.context, &mut self.app_state);
         self.nav_scene.set_field_value(&FieldValue::Text(self.stage.title.clone()), TypeId::of::<Text>(), TITLE_TAG);
-        self.stage.notify(&DisplayEvent::Ready);
+        // Important: Must initalize the stage
+        self.stage.stage_ready(&mut self.app_state);
     }
 
     pub fn load_scene(&mut self) {
         if let Some(cb) = self.stage_builders.get_mut(self.view_index) {
             let stage = cb();
             self.stage = stage;
-            self.stage.view_will_load(&mut self.theme, &mut self.app_state);
-            self.stage.set_theme(&mut self.theme);
         }
     }
 }
@@ -120,7 +119,12 @@ impl State for AppDelegate {
 
     fn update(&mut self, window: &mut Window) -> Result<()> {
         self.app_state.clock.refresh_time();
+        let mut events: Vec<EventBox> = Vec::new();
         for event in self.app_state.event_bus.into_iter() {
+            events.push(event);
+        }
+
+        for event in events {
             if let Ok(evt) = event.downcast_ref::<NavEvent>() {
                 log::debug!("NavEvent={:?}", evt);
                 match evt {
@@ -153,9 +157,9 @@ impl State for AppDelegate {
                         }
                     } // _ => ()
                 }
-            } else {
-                self.stage.handle_event(&event);
             }
+            // FIXME: Borrow error
+            self.stage.handle_event(&event, &mut self.app_state);
         }
 
         self.app_state.zero_offset();

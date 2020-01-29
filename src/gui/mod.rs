@@ -95,6 +95,28 @@ lazy_static! {
 
 lazy_static! {
     #[allow(missing_docs)]
+    pub static ref GUI_NAMES_MAP: HashMap<&'static str, TypeId> = {
+        let mut map = HashMap::new();
+        map.insert("Button", TypeId::of::<Button>());
+        map.insert("Checkbox", TypeId::of::<Checkbox>());
+        map.insert("Cursor", TypeId::of::<Cursor>());
+        map.insert("Image", TypeId::of::<ImageView>());
+        map.insert("Label", TypeId::of::<Label>());
+        map.insert("ListBox", TypeId::of::<ListBox>());
+        map.insert("OptionGroup", TypeId::of::<OptionGroup>());
+        map.insert("Scene", TypeId::of::<Scene>());
+        map.insert("Stage", TypeId::of::<Stage>());
+        map.insert("Shape", TypeId::of::<ShapeView>());
+        map.insert("TextArea", TypeId::of::<TextArea>());
+        map.insert("TextField", TypeId::of::<TextField>());
+        map.insert("Text", TypeId::of::<Text>());
+        map.insert("Timeline", TypeId::of::<Timeline>());
+        map
+    };
+}
+
+lazy_static! {
+    #[allow(missing_docs)]
     pub static ref GUI_RESPONDERS: Vec<TypeId> = {
         let mut array = Vec::new();
         array.push(TypeId::of::<Button>());
@@ -118,7 +140,6 @@ lazy_static! {
         array.push(TypeId::of::<TextArea>());
         array.push(TypeId::of::<TextField>());
         array.push(TypeId::of::<OptionGroup>());
-        // array.push(TypeId::of::<Scene>());
         array
     };
 }
@@ -139,9 +160,4 @@ pub fn gui_print_type(type_id: &TypeId) -> &'static str {
     } else {
         "Unknown"
     }
-}
-
-pub fn print_full_path(nodes: Vec<Node>) -> String {
-    let paths: Vec<String> = nodes.iter().map(|x| x.id_string()).collect();
-    format!("/{}", paths.join("/"))
 }

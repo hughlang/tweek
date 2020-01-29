@@ -1,7 +1,7 @@
 /// Events related to navigation requests and actions
 ///
 use super::AnyEvent;
-use crate::gui::Node;
+use crate::core::NodeID;
 
 use std::any::TypeId;
 
@@ -49,9 +49,9 @@ pub enum SceneEvent {
     /// Nothing is happening
     None,
     /// Show something
-    Show(Node),
+    Show(NodeID),
     /// Hide something
-    Hide(Node),
+    Hide(NodeID),
     /// Useful for carousel and other slide animation
     Transition,
     /// Theme changed to the number that identifies it

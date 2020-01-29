@@ -3,7 +3,7 @@ use super::state::*;
 use crate::events::*;
 /// A Timeline represents a group of Tween animations that each have a start and stop time in seconds
 /// in the overall timeline.
-use crate::gui::{Displayable, Layer, Scene, Theme, ViewLifecycle};
+use crate::gui::{Displayable, Layer, Scene, StageContext, Theme};
 
 use quicksilver::{
     geom::{Rectangle, Vector},
@@ -20,7 +20,7 @@ use std::collections::BTreeMap;
 /// that will determine when the animation starts playing. Since a Timeline likely has multiple
 /// Sprites, the Timeline will choreograph when each Sprite starts animating.
 pub struct Sprite {
-    pub(self) view: Box<dyn Displayable>,
+    pub(crate) view: Box<dyn Displayable>,
     /// The start time in float seconds
     pub start: f64,
     /// The end time in float seconds
@@ -41,8 +41,8 @@ impl Sprite {
 /// and is responsible for passing Displayable calls to the Timeline. Hence, a Timeline is kind of a
 /// sub-Scene where the child views are animated.
 pub struct Timeline {
-    layer: Layer,
-    sprites: BTreeMap<u32, Sprite>,
+    pub layer: Layer,
+    pub(crate) sprites: BTreeMap<u32, Sprite>,
     sprites_queue: Vec<Sprite>,
     timer_start: f64,
     total_time: f64,
@@ -184,7 +184,7 @@ impl Displayable for Timeline {
         }
     }
 
-    fn handle_event(&mut self, event: &EventBox) {
+    fn handle_event(&mut self, event: &EventBox, _app_state: &mut AppState) {
         if let Ok(evt) = event.downcast_ref::<PlayerEvent>() {
             log::debug!("{} PlayerEvent={:?}", self.debug_id(), evt);
             match evt {
@@ -224,11 +224,11 @@ impl Displayable for Timeline {
             PlayState::Starting => {
                 self.timer_start = state.clock.current_time();
                 for sprite in &mut self.sprites.values_mut() {
-                    // sprite.view.get_layer_mut().reset();
                     if sprite.start <= elapsed && sprite.end > elapsed {
                         sprite.view.get_layer_mut().play();
                     }
                 }
+                state.event_bus.dispatch_event(TimelineEvent::Starting, self.layer.node_id(), None);
                 self.state = PlayState::Running;
             }
             PlayState::Running => {
@@ -255,6 +255,7 @@ impl Displayable for Timeline {
                 self.play_count += 1;
                 if self.play_count >= self.repeat_count {
                     // If repeat_count is zero, tween is Completed.
+                    state.event_bus.dispatch_event(TimelineEvent::Completed, self.layer.node_id(), None);
                     self.state = PlayState::Completed;
                 } else {
                     // set state=Idle means wait for repeat_delay to finish
@@ -269,9 +270,11 @@ impl Displayable for Timeline {
                 if elapsed > (self.total_time + self.repeat_delay) as f64 {
                     log::trace!("repeats={:?} plays={:?}", self.repeat_count, self.play_count);
                     if self.play_count < self.repeat_count {
+                        state.event_bus.dispatch_event(TimelineEvent::Restarting, self.layer.node_id(), None);
                         self.state = PlayState::Starting;
                         self.reset();
                     } else {
+                        state.event_bus.dispatch_event(TimelineEvent::Completed, self.layer.node_id(), None);
                         self.state = PlayState::Completed;
                     }
                 }
@@ -297,33 +300,30 @@ impl Displayable for Timeline {
         false
     }
 
-    fn get_routes(&mut self) -> Vec<String> {
-        let mut routes: Vec<String> = Vec::new();
-        let base = self.node_key();
-        routes.push(base.clone());
+    fn view_will_load(&mut self, ctx: &mut StageContext, app_state: &mut AppState) {
+        let parent_nodes = self.get_layer().node_path.nodes.clone();
+        let parent_path = NodePath::new(parent_nodes.clone());
+        app_state.append_node(parent_path.clone());
 
-        for sprite in &mut self.sprites.values_mut() {
-            for path in sprite.view.get_routes() {
-                let route = format!("{}/{}", &base, path);
-                routes.push(route);
-            }
-        }
-        routes
-    }
-}
-
-impl ViewLifecycle for Timeline {
-    fn view_will_load(&mut self, _theme: &mut Theme, app_state: &mut AppState) {
-        let path = self.get_layer().node_path.clone();
         for mut sprite in self.sprites_queue.drain(..) {
             let id = app_state.new_id();
             sprite.view.set_id(id);
-            sprite.view.get_layer_mut().set_path(&path);
-            // log::trace!("full_path={:?}", sprite.view.get_layer().full_path());
+            sprite.view.get_layer_mut().set_path(&parent_nodes);
+            sprite.view.view_will_load(ctx, app_state);
+
+            let node_path = sprite.view.get_layer().node_path.clone();
+
             if let Some(tag) = sprite.view.get_layer().tag {
-                log::trace!("Adding tag={:?} for path={:?}", tag, sprite.view.get_layer().node_path);
-                app_state.assign_tag(tag, sprite.view.get_layer().node_path.clone());
+                app_state.assign_tag(tag, node_path.clone());
             }
+            for key in &sprite.view.get_layer().queued_observers {
+                app_state.register_observer(key.clone(), node_path.clone())
+            }
+            // Add event listeners from node to AppState
+            for (key, cb) in sprite.view.get_layer_mut().event_listeners.drain() {
+                ctx.add_event_listener(key, cb, node_path.clone());
+            }
+
             self.sprites.insert(id, sprite);
         }
     }
@@ -353,14 +353,14 @@ impl Playable for Timeline {
             // A Scene in a timeline needs to inform its subviews about a Reset event to force them
             // back to their original positions
             if sprite.view.get_type_id() == TypeId::of::<Scene>() {
-                sprite.view.handle_event(&EventBox::new(PlayerEvent::Reset));
+                // FIXME: Disabled until solution known
+                // sprite.view.handle_event(&EventBox::new(PlayerEvent::Reset));
             }
         }
     }
 }
 
 //-- Support -----------------------------------------------------------------------
-
 /**
  * From Greensock AS3:
  * Options are: "sequence" (aligns them one-after-the-other in a sequence), "start"
