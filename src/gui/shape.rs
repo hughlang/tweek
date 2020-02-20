@@ -101,36 +101,6 @@ impl ShapeView {
         self
     }
 
-    fn build_mesh(&mut self) -> Mesh {
-        let mesh = {
-            let border: (Option<Color>, f32) = {
-                match self.layer.border_style {
-                    BorderStyle::None => (None, 0.0),
-                    BorderStyle::SolidLine(color, width) => (Some(color), width),
-                }
-            };
-            // let border: (Color, f32) = {
-            //     match self.layer.border_style {
-            //         BorderStyle::None => (Color::WHITE, 0.0),
-            //         BorderStyle::SolidLine(color, width) => (color, width),
-            //     }
-            // };
-            let color = Some(self.layer.bg_style.get_color());
-            match self.shape_def {
-                ShapeDef::Rectangle => DrawShape::rectangle(&self.layer.frame, color, border.0, border.1, 0.0),
-                ShapeDef::Circle => DrawShape::circle(
-                    &self.layer.frame.center(),
-                    &self.layer.frame.width() / 2.0,
-                    color,
-                    border.0,
-                    border.1,
-                ),
-                _ => Mesh::new(),
-            }
-        };
-        mesh
-    }
-
     /// Generate the Mesh from the animating props
     fn draw_content(&mut self) -> Option<MeshTask> {
         let mut mesh = {

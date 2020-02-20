@@ -113,7 +113,7 @@ impl StageBuilder {
         button.layer.lock_style = true;
 
         ypos = 200.0;
-        let node = Node::new(MAIN_SCENE, TypeId::of::<Scene>());
+        let node = NodeID::new(MAIN_SCENE, TypeId::of::<Scene>());
         let mut command = Command::new(Box::new(button))
             .target(MAIN_SCENE, TypeId::of::<Scene>())
             .event(SceneEvent::Show(node.clone()))

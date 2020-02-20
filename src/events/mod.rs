@@ -12,7 +12,6 @@
 //!
 //! See the documentation in /docs/events-arch.md
 
-// pub use self::app::*;
 pub use self::app::*;
 pub use self::display::*;
 pub use self::notify::*;
@@ -20,7 +19,6 @@ pub use self::player::*;
 // pub use self::system::*;
 pub use self::types::*;
 
-// mod app;
 mod app;
 mod display;
 mod notify;
@@ -28,6 +26,8 @@ mod player;
 // mod system;
 mod types;
 
+use crate::core::NodeID;
+use crate::core::NodeTag;
 use std::any::{Any, TypeId};
 
 // *****************************************************************************************************
@@ -38,8 +38,8 @@ use std::any::{Any, TypeId};
 
 /// Used to define an event trait.
 pub trait AnyEvent: Any + Copy {
-    fn debug_type(&self) -> &str {
-        "Undefined"
+    fn to_string(&self) -> String {
+        "Please implement to_string()".to_string()
     }
 }
 
@@ -55,13 +55,14 @@ pub enum EventError {
 pub struct EventBox {
     event: Box<dyn Any>,
     event_type: TypeId,
-    pub info: Option<String>,
+    sender: NodeID,
+    tag: Option<NodeTag>,
 }
 
 impl EventBox {
-    /// Constructor
+    /// Constructor where sender has a default
     pub fn new<E: AnyEvent>(event: E) -> Self {
-        EventBox { event: Box::new(event), event_type: TypeId::of::<E>(), info: None }
+        EventBox { event: Box::new(event), event_type: TypeId::of::<E>(), sender: NodeID::default(), tag: None }
     }
 
     /// Determine if the event type matches
@@ -74,9 +75,14 @@ impl EventBox {
         self.event_type
     }
 
-    /// Get the event info
-    pub fn event_info(&self) -> Option<String> {
-        self.info.clone()
+    /// Get the event tag
+    pub fn sender(&self) -> NodeID {
+        self.sender.clone()
+    }
+
+    /// Get the event tag
+    pub fn tag(&self) -> Option<NodeTag> {
+        self.tag.clone()
     }
 
     /// Attempt to convert the type into the specified type and use it
@@ -114,16 +120,16 @@ impl EventBus {
         self.event_queue.push(event);
     }
 
-    /// Simple case for registering an event without a String parameter.
-    /// See dispatch_event for that option.
+    /// Simple case for registering an event without an id parameter
     pub fn register_event<E: AnyEvent>(&mut self, event: E) {
         self.event_queue.push(EventBox::new::<E>(event));
     }
 
     /// Add an event to the queue with string info
-    pub fn dispatch_event<E: AnyEvent>(&mut self, event: E, info: String) {
+    pub fn dispatch_event<E: AnyEvent>(&mut self, event: E, sender: NodeID, tag: Option<NodeTag>) {
         let mut event = EventBox::new::<E>(event);
-        event.info = Some(info);
+        event.sender = sender;
+        event.tag = tag;
         self.event_queue.push(event);
     }
 

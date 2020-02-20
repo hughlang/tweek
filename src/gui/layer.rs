@@ -8,7 +8,6 @@ use crate::tools::*;
 use std::{
     any::{Any, TypeId},
     cell::RefCell,
-    collections::HashMap,
     fmt,
     rc::Rc,
 };
@@ -39,7 +38,7 @@ pub struct Layer {
     /// (e.g. Stretch Node)
     pub external_id: Option<Box<dyn Any>>,
     /// The path hierarchy as an array
-    pub(crate) node_path: Vec<Node>,
+    pub(crate) node_path: NodePath,
     /// The initial frame for the object
     pub(crate) initial: Rectangle,
     /// The starting Props for an object
@@ -72,10 +71,10 @@ pub struct Layer {
     pub click_effect: Option<PropSet>,
     /// Callback method for handling click action
     pub(super) on_click: Option<Box<dyn FnMut(&mut AppState) + 'static>>,
-    /// Callback method for handling click action
-    pub(super) click_action: Option<Box<dyn FnMut(&mut AppState, String) + 'static>>,
-    /// A place for handling arbitrary mouse events to trigger animations
-    pub mouse_event_handlers: HashMap<MouseEvent, PropSet>,
+    /// Temporary storage for observers to be aggregated into AppState
+    pub(crate) queued_observers: Vec<String>,
+    /// Storage for events that will be processed by AppState
+    pub(crate) event_listeners: HashMap<String, Box<dyn FnMut(&mut AppState, NodePath) + 'static>>,
     /// Notifications
     pub(super) notifications: Rc<RefCell<Notifications>>,
     /// The currently executing animations
@@ -100,7 +99,7 @@ impl Clone for Layer {
             visibility: self.visibility,
             frame: self.frame,
             external_id: None,
-            node_path: Vec::new(),
+            node_path: self.node_path.clone(),
             initial: self.frame,
             defaults: Vec::new(),
             animation: None,
@@ -116,8 +115,8 @@ impl Clone for Layer {
             hover_effect: self.hover_effect.clone(),
             click_effect: self.click_effect.clone(),
             on_click: None,
-            click_action: None,
-            mouse_event_handlers: HashMap::new(),
+            queued_observers: Vec::new(),
+            event_listeners: HashMap::new(),
             notifications: Notifications::new(),
             tween_type: TweenType::Animation,
             layer_state: LayerState::Normal,
@@ -138,7 +137,7 @@ impl Layer {
             visibility: Visibility::Visible,
             frame,
             external_id: None,
-            node_path: Vec::new(),
+            node_path: NodePath::default(),
             initial: frame,
             defaults: Vec::new(),
             animation: None,
@@ -154,8 +153,8 @@ impl Layer {
             hover_effect: None,
             click_effect: None,
             on_click: None,
-            click_action: None,
-            mouse_event_handlers: HashMap::new(),
+            queued_observers: Vec::new(),
+            event_listeners: HashMap::new(),
             notifications: Notifications::new(),
             tween_type: TweenType::Animation,
             layer_state: LayerState::Normal,
@@ -174,6 +173,9 @@ impl Layer {
         self.id
     }
 
+    /// Important: Enables additional logging for this object.
+    /// Since it enables debug on a dependent Tween, you should call this *after*
+    /// setting the Tween animation.
     pub fn enable_debug(&mut self) {
         self.debug = true;
         if let Some(tween) = &mut self.animation {
@@ -182,22 +184,30 @@ impl Layer {
     }
 
     /// A setter to set the parent path and append this layer to the path
-    pub fn set_path(&mut self, path: &[Node]) -> Vec<Node> {
+    pub fn set_path(&mut self, path: &[NodeID]) -> NodePath {
         let mut path = path.to_vec();
-        path.push(Node::new(self.id, self.type_id));
-        self.node_path = path.clone();
-        path
-    }
+        path.push(NodeID::new(self.id, self.type_id));
 
-    pub fn full_path(&self) -> String {
-        let path = print_full_path(self.node_path.clone());
-        path
+        self.node_path = NodePath::new(path);
+        self.node_path.clone()
     }
 
     /// Setter for Tween animation. Only needed outside of the Tweek crate
     /// Use start_animation() for immediate animation.
     pub fn set_animation(&mut self, tween: Tween) {
         self.animation = Some(tween)
+    }
+
+    /// Temporary storage of a notification that this object is waiting for.
+    /// These are collected into AppState.observers and used when the matching
+    /// notification is received.
+    pub fn add_observer(&mut self, name: &str) {
+        self.queued_observers.push(name.to_string());
+    }
+
+    /// Method to temporarily store an event to listen for
+    pub fn add_listener(&mut self, key: &str, cb: Box<dyn FnMut(&mut AppState, NodePath) + 'static>) {
+        self.event_listeners.insert(key.to_string(), cb);
     }
 
     /// Should be called when SceneEvent::Ready notify event is sent
@@ -276,29 +286,19 @@ impl Layer {
             // TODO: use iterator
             for evt in events {
                 match evt {
-                    TweenEvent::Status(id, state) => {
-                        match state {
-                            PlayState::Starting | PlayState::Finishing => {
-                                log::trace!("Event: {} {:?} {:?}", self.debug_id(), state, self.tween_type);
-                            }
-                            PlayState::Completed => {
-                                log::trace!("Event: {} {:?} {:?}", self.debug_id(), state, self.tween_type);
-                                log::trace!("Layer: {:?}", self);
-                                self.meshes.clear();
-                                // Broadcast the TweenEvent on the event_bus
-                                app_state.event_bus.register_event(evt);
-                                // Normalize rotation to 0-360
-                                self.rotation = self.transition.rotation % 360.0;
-                                match self.tween_type {
-                                    TweenType::Move => notifier.notify(LayerEvent::Move(id, self.type_id, state)),
-                                    TweenType::Hover => notifier.notify(LayerEvent::Hover(id, self.type_id, state)),
-                                    TweenType::Rotation => notifier.notify(LayerEvent::Rotate(id, self.type_id, state)),
-                                    _ => (),
-                                }
-                            }
-                            _ => (),
-                        }
+                    TweenEvent::Started => {
+                        log::trace!("Event: {} {:?}", self.debug_id(), self.tween_type);
                     }
+                    TweenEvent::Completed => {
+                        log::trace!("Event: {} {:?}", self.debug_id(), self.tween_type);
+                        log::trace!("Layer: {:?}", self);
+                        self.meshes.clear();
+                        // Broadcast the TweenEvent on the event_bus
+                        app_state.event_bus.dispatch_event(evt, self.node_id(), self.tag);
+                        // Normalize rotation to 0-360
+                        self.rotation = self.transition.rotation % 360.0;
+                    }
+                    _ => (),
                 }
             }
         }
@@ -564,8 +564,12 @@ impl Layer {
         }
     }
 
+    pub fn node_id(&self) -> NodeID {
+        NodeID::new(self.id, self.type_id)
+    }
+
     /// TODO: Use from Displayable base.rs or discard
-    pub fn node_id(&self) -> String {
+    pub fn print_node(&self) -> String {
         format!("{}-{}", gui_print_type(&self.type_id), self.id)
     }
 

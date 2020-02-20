@@ -31,14 +31,6 @@ pub enum ThemeEvent {
 }
 impl AnyEvent for ThemeEvent {}
 
-/// An enum for Theme-related events
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum TweenEvent {
-    /// Theme changed to the number that identifies it
-    Status(u32, PlayState),
-}
-impl AnyEvent for TweenEvent {}
-
 /// Enum for notifications relating to Layer objects
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum LayerEvent {

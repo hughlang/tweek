@@ -3,10 +3,7 @@ use crate::core::*;
 use crate::events::*;
 use crate::tools::*;
 
-use std::{
-    any::TypeId,
-    collections::{BTreeMap, HashMap},
-};
+use std::{any::TypeId, collections::BTreeMap};
 
 use quicksilver::{
     geom::{Rectangle, Vector},
@@ -23,7 +20,7 @@ pub enum SceneAction {
     /// Undefined
     None,
     /// An action that specifies a Tween that is applied to a specific GUI object
-    Animate(PropSet, Node),
+    Animate(PropSet, NodeID),
 }
 
 /// Container for holding a collection of views and controls and propagating events, movements, and other
@@ -32,24 +29,21 @@ pub struct Scene {
     /// The base layer
     pub layer: Layer,
     /// Display name
-    pub(crate) name: String,
+    pub name: String,
     /// The list of Displayable objects
     pub views: BTreeMap<u32, Box<dyn Displayable>>,
     /// The list of Responder objects
     pub controls: BTreeMap<u32, Box<dyn Responder>>,
+    /// A timeline to coordinate scene animations
+    pub(crate) timeline: Option<Timeline>,
     /// A storage queue for views being loaded or in transition
     views_queue: Vec<Box<dyn Displayable>>,
     /// A storage queue for controls being loaded or in transition
     controls_queue: Vec<Box<dyn Responder>>,
-    /// A timeline to coordinate scene animations
-    timeline: Option<Timeline>,
     /// Index in controls vec of currently selected control (ie, textfield)
     active_field_id: Option<u32>,
     /// Index in controls vec of the next selected control
     next_field_id: Option<u32>,
-    /// Initial storage of added Commands as a mapping of the source to target
-    /// TODO: Replace with new events system
-    pub event_actions: HashMap<(SceneEvent, Option<String>), SceneAction>,
     /// Should this scene respond to mouse/touch events?
     /// TODO: Replace with new Scene layering hierarchy
     pub is_interactive: bool,
@@ -69,12 +63,11 @@ impl Scene {
             name: "untitled".to_string(),
             views: BTreeMap::new(),
             controls: BTreeMap::new(),
+            timeline: None,
             views_queue: Vec::new(),
             controls_queue: Vec::new(),
-            timeline: None,
             active_field_id: None,
             next_field_id: None,
-            event_actions: HashMap::new(),
             is_interactive: true,
             bg_mask: None,
             screen_size: Vector::ZERO,
@@ -124,15 +117,12 @@ impl Scene {
     /// This is a helper method for adding a control with a command that executes when activated as an alternative to
     /// the add_control() method
     /// Status: Experimental
-    ///
+    /// FIXME: The Command model was yet another attempt at events handling. Probably remove
     pub fn add_command(&mut self, cmd: Command) {
-        if let Ok(mut button) = cmd.source.downcast::<Button>() {
-            if let Ok(event) = cmd.event.downcast::<SceneEvent>() {
-                button.set_click_event(event);
+        if let Ok(button) = cmd.source.downcast::<Button>() {
+            if let Ok(_event) = cmd.event.downcast::<SceneEvent>() {
+                // FIXME: button.set_click_event deprecated and removed
                 self.add_control(button);
-
-                // Get the node path for the new object and use that as part of the event_actions key
-                // let target = Node::new(cmd.target_id, cmd.target_type);
             }
         } else {
             log::error!("SKIP >>>>>>>>>>>>>>>> control");
@@ -237,20 +227,20 @@ impl Displayable for Scene {
         }
     }
 
-    fn handle_event(&mut self, event: &EventBox) {
+    fn handle_event(&mut self, event: &EventBox, app_state: &mut AppState) {
         if let Some(timeline) = &mut self.timeline {
-            timeline.handle_event(event);
+            timeline.handle_event(event, app_state);
         }
         for view in &mut self.controls.values_mut() {
-            view.handle_event(event);
+            view.handle_event(event, app_state);
         }
         for view in &mut self.views.values_mut() {
-            view.handle_event(event);
+            view.handle_event(event, app_state);
         }
 
         if let Ok(evt) = event.downcast_ref::<SceneEvent>() {
             log::debug!("{} SceneEvent={:?}", self.layer.debug_id(), evt);
-            log::debug!("Source={:?}", event.event_info());
+            // log::debug!("Source={:?}", event.event_source());
 
             match evt {
                 SceneEvent::Show(target) => {
@@ -418,56 +408,59 @@ impl Displayable for Scene {
         false
     }
 
-    fn get_routes(&mut self) -> Vec<String> {
-        let mut routes: Vec<String> = Vec::new();
-        let base = format!("{}-{}", gui_print_type(&self.get_type_id()), self.get_id());
-        let route = format!("/{}", &base);
-        routes.push(route);
-        for view in &mut self.views.values_mut() {
-            for path in view.get_routes() {
-                let route = format!("/{}/{}", &base, path);
-                routes.push(route);
+    /// This should find all of the views/controls that have been queued for creation
+    /// and move them into the corresponding Maps, while assigning unique id values
+    /// for each.
+    fn view_will_load(&mut self, ctx: &mut StageContext, app_state: &mut AppState) {
+        let parent_nodes = self.get_layer().node_path.nodes.clone();
+        let parent_path = NodePath::new(parent_nodes.clone());
+        app_state.append_node(parent_path.clone());
+
+        for mut view in self.views_queue.drain(..) {
+            let id = app_state.new_id();
+            view.set_id(id);
+            view.get_layer_mut().set_path(&parent_nodes);
+            view.view_will_load(ctx, app_state);
+
+            let subscriber = view.get_layer().node_path.clone();
+            if let Some(tag) = view.get_layer().tag {
+                app_state.assign_tag(tag, subscriber.clone());
             }
+            // If the scene is subscriber to notifications, add them here.
+            for key in &view.get_layer().queued_observers {
+                app_state.register_observer(key.clone(), subscriber.clone())
+            }
+            // Add event listeners from node to AppState
+            for (key, cb) in view.get_layer_mut().event_listeners.drain() {
+                ctx.add_event_listener(key, cb, subscriber.clone());
+            }
+
+            self.views.insert(id, view);
         }
-        for view in &mut self.controls.values_mut() {
-            for path in view.get_routes() {
-                let route = format!("/{}/{}", &base, path);
-                routes.push(route);
+        for mut view in self.controls_queue.drain(..) {
+            let id = app_state.new_id();
+            view.set_id(id);
+            view.get_layer_mut().set_path(&parent_nodes);
+            if let Some(tag) = view.get_layer().tag {
+                app_state.assign_tag(tag, view.get_layer().node_path.clone());
             }
+            // If the scene is subscriber to notifications, add them here.
+            for key in &view.get_layer().queued_observers {
+                app_state.register_observer(key.clone(), view.get_layer().node_path.clone())
+            }
+            // Add event listeners from node to AppState
+            let subscriber = view.get_layer().node_path.clone();
+            for (key, cb) in view.get_layer_mut().event_listeners.drain() {
+                ctx.add_event_listener(key, cb, subscriber.clone());
+            }
+
+            self.controls.insert(id, view);
         }
         if let Some(timeline) = &mut self.timeline {
-            for path in timeline.get_routes() {
-                let route = format!("/{}/{}", &base, path);
-                routes.push(route);
-            }
+            timeline.set_id(app_state.new_id());
+            timeline.get_layer_mut().set_path(&parent_nodes);
+            timeline.view_will_load(ctx, app_state);
         }
-        routes
-    }
-
-    fn get_layer_for_route(&mut self, route: &str) -> Option<&mut Layer> {
-        let parts: Vec<&str> = route.split("/").filter(|x| x.len() > 0).collect();
-
-        // If the last segment of the route is this Scene, then return it.
-        if let Some(part) = parts.last() {
-            if *part == self.node_key() {
-                return Some(self.get_layer_mut());
-            }
-        }
-        // Try find the route in subviews
-        // let part = parts.swap_remove(0);
-        let subpath = parts.join("/");
-        for view in &mut self.views.values_mut() {
-            if view.get_layer_for_route(&subpath).is_some() {
-                return view.get_layer_for_route(&subpath);
-            }
-        }
-        for view in &mut self.controls.values_mut() {
-            if view.get_layer_for_route(&subpath).is_some() {
-                return view.get_layer_for_route(&subpath);
-            }
-        }
-        // TBD: Also check timeline sprites?
-        None
     }
 }
 
@@ -543,41 +536,6 @@ impl Responder for Scene {
             // TODO: Check other listeners
         }
         false
-    }
-}
-
-impl ViewLifecycle for Scene {
-    fn view_will_load(&mut self, theme: &mut Theme, app_state: &mut AppState) {
-        let path = self.get_layer().node_path.clone();
-        for mut view in self.views_queue.drain(..) {
-            let id = app_state.new_id();
-            view.set_id(id);
-            view.get_layer_mut().set_path(&path);
-            log::debug!("full_path={:?}", view.get_layer().full_path());
-
-            if let Some(tag) = view.get_layer().tag {
-                log::debug!("Adding tag={:?} for path={:?}", tag, view.get_layer().node_path);
-                app_state.assign_tag(tag, view.get_layer().node_path.clone());
-            }
-            self.views.insert(id, view);
-        }
-        for mut view in self.controls_queue.drain(..) {
-            let id = app_state.new_id();
-            view.set_id(id);
-            view.get_layer_mut().set_path(&path);
-            log::debug!("full_path={:?}", view.get_layer().full_path());
-            if let Some(tag) = view.get_layer().tag {
-                log::debug!("Adding tag={:?} for path={:?}", tag, view.get_layer().node_path);
-                app_state.assign_tag(tag, view.get_layer().node_path.clone());
-            }
-            self.controls.insert(id, view);
-        }
-        if let Some(timeline) = &mut self.timeline {
-            timeline.set_id(app_state.new_id());
-            timeline.get_layer_mut().set_path(&path);
-            log::debug!("full_path={:?}", timeline.get_layer().full_path());
-            timeline.view_will_load(theme, app_state);
-        }
     }
 }
 
