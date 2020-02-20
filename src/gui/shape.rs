@@ -82,16 +82,6 @@ impl ShapeView {
         self
     }
 
-    /// Method to update the MeshTask
-    /// FIXME: This is a dumb idea
-    // pub fn build(&mut self) {
-    //     let mut mesh = self.build_mesh();
-    //     let mut task = MeshTask::new(0);
-    //     task.vertices.append(&mut mesh.vertices);
-    //     task.triangles.append(&mut mesh.triangles);
-    //     self.mesh_task = task;
-    // }
-
     /// Builder method to copy vertices and triangles from Mesh
     pub fn with_mesh(mut self, mesh: &mut Mesh) -> Self {
         let mut task = MeshTask::new(0);
