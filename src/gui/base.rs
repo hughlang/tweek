@@ -5,7 +5,7 @@ use crate::events::*;
 
 use std::any::{Any, TypeId};
 
-use super::{gui_print_type, layer::Layer, theme::Theme};
+use super::{gui_print_type, layer::Layer, stage::StageContext, theme::Theme};
 
 use quicksilver::{
     geom::{Rectangle, Vector},
@@ -13,25 +13,6 @@ use quicksilver::{
     input::Key,
     lifecycle::Window,
 };
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Node {
-    pub id: u32,
-    pub type_id: TypeId,
-    pub position: (i32, i32),
-}
-
-impl Node {
-    pub fn new(id: u32, type_id: TypeId) -> Self {
-        Node { id, type_id, position: (0, 0) }
-    }
-
-    pub fn id_string(&self) -> String {
-        format!("{}-{}", gui_print_type(&self.type_id), self.id)
-    }
-}
-
-pub type NodeID = (u32, TypeId);
 
 /// Enum used as return type for Responder get_field_value() method to wrap the value
 /// of the field
@@ -53,10 +34,21 @@ pub enum FieldValue {
 /// display, and render them.
 pub trait Displayable: Any {
     /// Get the layer id
-    fn get_id(&self) -> u32;
+    fn get_id(&self) -> u32 {
+        self.get_layer().id
+    }
 
-    /// Set the layer.id to identify it
-    fn set_id(&mut self, id: u32);
+    /// Set the layer.id to identify it. This is called from the view_did_load() function
+    /// using u32 values assigned from the AppState object.
+    /// It also assigns the same value to Tween.tween_id which helps with console debugging
+    /// See also: https://github.com/rayet-inc/tweek/issues/33#issuecomment-578890730
+    fn set_id(&mut self, id: u32) {
+        self.get_layer_mut().id = id;
+        self.get_layer_mut().type_id = self.get_type_id();
+        if let Some(tween) = &mut self.get_layer_mut().animation {
+            tween.tween_id = id;
+        }
+    }
 
     /// Method that provides unique identifier for each displayable object type. Useful for custom handling of
     /// UI behaviors
@@ -89,7 +81,7 @@ pub trait Displayable: Any {
     fn set_origin(&mut self, origin: Vector) {
         let offset = self.get_frame().pos - origin;
         self.get_layer_mut().anchor_pt = offset;
-        log::debug!("set_origin for {} – anchor_pt={:?}", self.debug_id(), offset);
+        // log::debug!("set_origin for {} – anchor_pt={:?}", self.debug_id(), offset);
     }
 
     /// A helper method that moves a Displayable component layer by the specified offset. For Scene objects, all child
@@ -98,7 +90,7 @@ pub trait Displayable: Any {
     fn align_view(&mut self, origin: Vector) {
         let anchor_pt = self.get_layer().anchor_pt;
         self.get_layer_mut().frame.pos = anchor_pt + origin;
-        log::debug!("align_view {} pos={:?} anchor_pt={:?}", self.debug_id(), self.get_layer().frame.pos, anchor_pt);
+        log::trace!("align_view {} pos={:?} anchor_pt={:?}", self.debug_id(), self.get_layer().frame.pos, anchor_pt);
     }
 
     fn validate_position(&self, origin: Vector) {
@@ -131,7 +123,7 @@ pub trait Displayable: Any {
     fn notify(&mut self, _event: &DisplayEvent);
 
     /// Top-down event handling to child objects
-    fn handle_event(&mut self, _event: &EventBox) {}
+    fn handle_event(&mut self, _event: &EventBox, _app_state: &mut AppState) {}
 
     /// Method to update the UI state of an object in every pass of the run loop.
     /// This is used in motion animation and internal Tween animation so that each
@@ -190,26 +182,10 @@ pub trait Displayable: Any {
         format!("{}-{}", gui_print_type(&self.get_type_id()), self.get_id())
     }
 
-    /// A String builder for representing the string path of an object. Any GUI object that has nested objects (i.e.
-    /// Scene, Button, OptionGroup, etc) that need be accessible from other objects should override this method and
-    /// return customized paths. This will be used in creating a URL-like path system for the UI hierarchy to help in
-    /// targeting objects in other Scenes.
-    fn get_routes(&mut self) -> Vec<String> {
-        vec![self.node_key()]
-    }
-
-    /// A function that returns its own Layer if the last route path segment matches node_key()
-    /// It will rely on the parent caller to verify that it is the last segment before asking its child objects
-    /// to run this. Of course, it returns a mutable Layer that can be manipulated.
-    fn get_layer_for_route(&mut self, route: &str) -> Option<&mut Layer> {
-        let parts: Vec<&str> = route.split("/").filter(|x| x.len() > 0).collect();
-        if let Some(part) = parts.last() {
-            // log::debug!("Eval part: {}", part);
-            if *part == self.node_key() {
-                return Some(self.get_layer_mut());
-            }
-        }
-        None
+    fn view_will_load(&mut self, _ctx: &mut StageContext, app_state: &mut AppState) {
+        let path = self.get_layer().node_path.nodes.clone();
+        let node_path = NodePath::new(path);
+        app_state.append_node(node_path);
     }
 }
 

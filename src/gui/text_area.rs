@@ -149,15 +149,6 @@ impl TextArea {
 }
 
 impl Displayable for TextArea {
-    fn get_id(&self) -> u32 {
-        self.layer.get_id()
-    }
-
-    fn set_id(&mut self, id: u32) {
-        self.layer.set_id(id);
-        self.layer.type_id = self.get_type_id();
-    }
-
     fn get_type_id(&self) -> TypeId {
         TypeId::of::<TextArea>()
     }
@@ -199,20 +190,6 @@ impl Displayable for TextArea {
     fn get_perimeter_frame(&self) -> Option<Rectangle> {
         let perimeter = self.layer.offset_by(10.0, 0.0, 10.0, 0.0);
         Some(perimeter)
-    }
-
-    fn handle_event(&mut self, event: &EventBox) {
-        if let Ok(evt) = event.downcast_ref::<MouseEvent>() {
-            if let Some(propset) = self.layer.mouse_event_handlers.get(evt) {
-                log::debug!("Found event={:?}", evt);
-                self.layer.animate_with_props(propset.clone(), true);
-                // assuming visual change, redraw screen
-                self.layer.meshes.clear();
-                let end_frame = self.layer.evaluate_end_rect();
-                self.input_frame = UITools::inset_rect(&end_frame, 5.0, 0.0, 5.0, 0.0);
-                self.update_rendered_text();
-            }
-        }
     }
 
     fn notify(&mut self, event: &DisplayEvent) {

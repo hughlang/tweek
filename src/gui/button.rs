@@ -77,13 +77,6 @@ impl Button {
     {
         self.layer.on_click = Some(Box::new(cb));
     }
-
-    pub fn set_click_event<E: AnyEvent>(&mut self, event: E) {
-        self.layer.click_action = Some(Box::new(move |state: &mut AppState, source: String| {
-            log::debug!("info={:?}", source);
-            state.event_bus.dispatch_event(event, source);
-        }));
-    }
 }
 
 // *****************************************************************************************************
@@ -91,10 +84,7 @@ impl Button {
 // *****************************************************************************************************
 
 impl Displayable for Button {
-    fn get_id(&self) -> u32 {
-        self.layer.get_id()
-    }
-
+    // Override to set id values for child objects
     fn set_id(&mut self, id: u32) {
         self.layer.set_id(id);
         self.layer.type_id = self.get_type_id();
@@ -171,7 +161,7 @@ impl Displayable for Button {
         self.layer.bg_style = BackgroundStyle::Solid(theme.button_bg_color);
     }
 
-    fn handle_event(&mut self, event: &EventBox) {
+    fn handle_event(&mut self, event: &EventBox, _app_state: &mut AppState) {
         if let Ok(evt) = event.downcast_ref::<PlayerEvent>() {
             log::debug!("{} PlayerEvent={:?}", self.debug_id(), evt);
             match evt {
@@ -304,10 +294,11 @@ impl Responder for Button {
             if let Some(cb) = &mut self.layer.on_click {
                 (&mut *cb)(state);
             }
-            let path = self.layer.full_path();
-            if let Some(cb) = &mut self.layer.click_action {
-                (&mut *cb)(state, path);
-            }
+            // FIXME: This was disabled because EventBox no longer accepts a string message
+            // let path = self.layer.full_path();
+            // if let Some(cb) = &mut self.layer.click_action {
+            //     (&mut *cb)(state, path);
+            // }
             return true;
         }
         false

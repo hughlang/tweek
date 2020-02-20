@@ -82,16 +82,6 @@ impl ShapeView {
         self
     }
 
-    /// Method to update the MeshTask
-    /// FIXME: This is a dumb idea
-    pub fn build(&mut self) {
-        let mut mesh = self.build_mesh();
-        let mut task = MeshTask::new(0);
-        task.vertices.append(&mut mesh.vertices);
-        task.triangles.append(&mut mesh.triangles);
-        self.mesh_task = task;
-    }
-
     /// Builder method to copy vertices and triangles from Mesh
     pub fn with_mesh(mut self, mesh: &mut Mesh) -> Self {
         let mut task = MeshTask::new(0);
@@ -99,36 +89,6 @@ impl ShapeView {
         task.triangles.append(&mut mesh.triangles);
         self.layer.meshes.push(task);
         self
-    }
-
-    fn build_mesh(&mut self) -> Mesh {
-        let mesh = {
-            let border: (Option<Color>, f32) = {
-                match self.layer.border_style {
-                    BorderStyle::None => (None, 0.0),
-                    BorderStyle::SolidLine(color, width) => (Some(color), width),
-                }
-            };
-            // let border: (Color, f32) = {
-            //     match self.layer.border_style {
-            //         BorderStyle::None => (Color::WHITE, 0.0),
-            //         BorderStyle::SolidLine(color, width) => (color, width),
-            //     }
-            // };
-            let color = Some(self.layer.bg_style.get_color());
-            match self.shape_def {
-                ShapeDef::Rectangle => DrawShape::rectangle(&self.layer.frame, color, border.0, border.1, 0.0),
-                ShapeDef::Circle => DrawShape::circle(
-                    &self.layer.frame.center(),
-                    &self.layer.frame.width() / 2.0,
-                    color,
-                    border.0,
-                    border.1,
-                ),
-                _ => Mesh::new(),
-            }
-        };
-        mesh
     }
 
     /// Generate the Mesh from the animating props
@@ -186,15 +146,6 @@ impl ShapeView {
 }
 
 impl Displayable for ShapeView {
-    fn get_id(&self) -> u32 {
-        self.layer.get_id()
-    }
-
-    fn set_id(&mut self, id: u32) {
-        self.layer.set_id(id);
-        self.layer.type_id = self.get_type_id();
-    }
-
     fn get_type_id(&self) -> TypeId {
         TypeId::of::<ShapeView>()
     }

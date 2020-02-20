@@ -144,12 +144,12 @@ impl DemoHelper {
 
         let mut buttons = DemoHelper::make_next_prev_buttons(&screen);
         buttons.drain(..).for_each(|x| {
-            let _ = scene.add_control(Box::new(x));
+            scene.add_control(Box::new(x));
         });
 
         let mut buttons = DemoHelper::make_theme_buttons(&screen);
         buttons.drain(..).for_each(|x| {
-            let _ = scene.add_control(Box::new(x));
+            scene.add_control(Box::new(x));
         });
 
         let x = 20.0;

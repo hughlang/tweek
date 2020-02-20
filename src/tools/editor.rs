@@ -507,39 +507,33 @@ impl TextFieldEditor {
 
     /// Locate the closest cursor insertion point based on the mouse position
     pub fn find_cursor_position(&self, mouse_x: f32) -> Option<usize> {
-        // if let Some(text) = self.get_visible_text(0.0) {
+        if self.ctx.metrics.len() > 0 {
+            let chars = &self.ctx.metrics[self.ctx.visible_range.clone()];
+            log::debug!("mouse_x={:?} chars={:?}", mouse_x, chars);
+            let mut xpos: usize = 0;
 
-        // }
-        let chars = &self.ctx.metrics[self.ctx.visible_range.clone()];
-        log::debug!("mouse_x={:?} chars={:?}", mouse_x, chars);
-        let mut xpos: usize = 0;
-
-        let start_pos: usize = 0;
-        for data in chars {
-            if mouse_x < data.x + data.width / 2.0 {
-                // Found intra-text insertion point
-                break;
-            } else {
-                log::debug!("char={:?}", data);
+            let start_pos: usize = 0;
+            for data in chars {
+                if mouse_x < data.x + data.width / 2.0 {
+                    // Found intra-text insertion point
+                    break;
+                } else {
+                    log::debug!("char={:?}", data);
+                }
+                xpos += 1;
             }
-            xpos += 1;
+            let cursor_pos = start_pos + xpos;
+            log::debug!(
+                "FOUND char mouse_x={} // start_pos={} + xpos={} = cursor_pos={}",
+                mouse_x,
+                start_pos,
+                xpos,
+                cursor_pos
+            );
+            Some(cursor_pos)
+        } else {
+            None
         }
-        let cursor_pos = start_pos + xpos;
-        log::debug!(
-            "FOUND char mouse_x={} // start_pos={} + xpos={} = cursor_pos={}",
-            mouse_x,
-            start_pos,
-            xpos,
-            cursor_pos
-        );
-        return Some(cursor_pos);
-
-        // let y1 = scroll_y;
-        // // Some letters extend below the baseline, so add a little extra
-        // let y2 = scroll_y + self.ctx.frame.height() + self.ctx.font_size * 0.2;
-        // let filter = self.ctx.metrics.iter().filter(|m| m.1 > y1 && m.1 < y2);
-        // let results: String = filter.map(|m| m.3).collect();
-        // Some(results)
     }
 }
 

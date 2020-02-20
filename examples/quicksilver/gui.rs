@@ -210,9 +210,13 @@ impl StageBuilder {
 
         let frame = Rectangle::new((xpos, ypos), (200.0, 40.0));
         let mut textfield = TextField::new(frame, true);
-        // textfield.set_text("ABCDEFGHIJK");
+        textfield.set_placeholder("Enter name");
+        scene.add_control(Box::new(textfield));
+
+        ypos += 50.0;
+        let frame = Rectangle::new((xpos, ypos), (200.0, 40.0));
+        let mut textfield = TextField::new(frame, true);
         textfield.set_placeholder("Enter email address");
-        // textfield.set_text("čćdđe ёєжзѕиіїйјк");  // FIXME: Special chars not accepted
         scene.add_control(Box::new(textfield));
 
         // xpos += 170.0;
