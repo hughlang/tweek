@@ -52,12 +52,7 @@ impl ImageView {
     /// Constructor
     pub fn new(frame: Rectangle, asset: Option<Asset<Vec<u8>>>) -> Self {
         let layer = Layer::new(frame);
-        ImageView {
-            layer,
-            loader: asset,
-            image_size: Vector::ZERO,
-            scale_mode: ImageScaleMode::ScaleToFill
-        }
+        ImageView { layer, loader: asset, image_size: Vector::ZERO, scale_mode: ImageScaleMode::ScaleToFill }
     }
 
     pub fn with_scale_mode(mut self, scale_mode: ImageScaleMode) -> Self {
@@ -75,9 +70,9 @@ impl ImageView {
         let frame = self.layer.frame;
         if let Some(loader) = &mut self.loader {
             loader
-            .execute(|bytes| {
-                if let Ok(image) = Image::from_bytes(bytes.as_slice()) {
-                    // FIXME: Need way for defining and preserving aspect ratio
+                .execute(|bytes| {
+                    if let Ok(image) = Image::from_bytes(bytes.as_slice()) {
+                        // FIXME: Need way for defining and preserving aspect ratio
                         let trans = ImageView::scale_image(image.area().size, scale_mode, &frame);
                         let bkg = Img(&image);
                         let tex_trans = bkg.image().map(|img| img.projection(Rectangle::new_sized((1, 1))));
@@ -159,7 +154,6 @@ impl ImageView {
             }
         }
     }
-
 }
 
 impl Displayable for ImageView {
