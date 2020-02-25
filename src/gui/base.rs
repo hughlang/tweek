@@ -183,9 +183,7 @@ pub trait Displayable: Any {
     }
 
     fn view_will_load(&mut self, _ctx: &mut StageContext, app_state: &mut AppState) {
-        let path = self.get_layer().node_path.nodes.clone();
-        let node_path = NodePath::new(path);
-        app_state.append_node(node_path);
+        app_state.append_node(self.get_layer().node_path.clone());
     }
 }
 

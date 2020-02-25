@@ -441,15 +441,17 @@ impl Displayable for Scene {
             let id = app_state.new_id();
             view.set_id(id);
             view.get_layer_mut().set_path(&parent_nodes);
+            view.view_will_load(ctx, app_state);
+
+            let subscriber = view.get_layer().node_path.clone();
             if let Some(tag) = view.get_layer().tag {
-                app_state.assign_tag(tag, view.get_layer().node_path.clone());
+                app_state.assign_tag(tag, subscriber.clone());
             }
             // If the scene is subscriber to notifications, add them here.
             for key in &view.get_layer().queued_observers {
-                app_state.register_observer(key.clone(), view.get_layer().node_path.clone())
+                app_state.register_observer(key.clone(), subscriber.clone())
             }
             // Add event listeners from node to AppState
-            let subscriber = view.get_layer().node_path.clone();
             for (key, cb) in view.get_layer_mut().event_listeners.drain() {
                 ctx.add_event_listener(key, cb, subscriber.clone());
             }
