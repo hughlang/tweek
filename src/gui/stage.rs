@@ -76,6 +76,8 @@ impl Stage {
                             return Some(view.get_layer_mut());
                         }
                     }
+                } else {
+                    return Some(scene.get_layer_mut());
                 }
             }
         }
@@ -100,12 +102,18 @@ impl Displayable for Stage {
             scene.get_layer_mut().set_path(&[]);
             // Pass AppState into scene to let it build the tree
             scene.view_will_load(ctx, app_state);
+
+            let subscriber = scene.get_layer().node_path.clone();
+
+            // Assign tag if it exists
+            if let Some(tag) = scene.get_layer().tag {
+                app_state.assign_tag(tag, subscriber.clone());
+            }
             // If the scene is subscriber to notifications, add them here.
             for key in &scene.get_layer().queued_observers {
-                app_state.register_observer(key.clone(), scene.get_layer().node_path.clone())
+                app_state.register_observer(key.clone(), subscriber.clone())
             }
             // Add event listeners from node to AppState
-            let subscriber = scene.get_layer().node_path.clone();
             for (key, cb) in scene.get_layer_mut().event_listeners.drain() {
                 ctx.add_event_listener(key, cb, subscriber.clone());
             }

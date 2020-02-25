@@ -462,16 +462,15 @@ impl Layer {
                     DrawShape::rectangle(&self.frame, Some(color), border.0, border.1, self.corner_radius)
                 }
             }
-            _ => Mesh::new(),
+            BackgroundStyle::None => {
+                if self.is_transitioning() {
+                    DrawShape::rectangle(&self.transition.frame, None, border.0, border.1, self.corner_radius)
+                } else {
+                    DrawShape::rectangle(&self.frame, None, border.0, border.1, self.corner_radius)
+                }
+            }
         };
         if mesh.vertices.len() > 0 {
-            // for v in &mesh.vertices {
-            //     eprintln!("{:?} {:?} {:?}", self.debug_id(), v.pos, v.col);
-            // }
-            // for g in &mesh.triangles {
-            //     eprintln!("{:?} {:?}", self.debug_id(), g.indices);
-            // }
-
             let mut task = MeshTask::new(0);
             task.vertices.append(&mut mesh.vertices);
             task.triangles.append(&mut mesh.triangles);

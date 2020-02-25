@@ -72,7 +72,6 @@ impl ImageView {
             loader
                 .execute(|bytes| {
                     if let Ok(image) = Image::from_bytes(bytes.as_slice()) {
-                        // FIXME: Need way for defining and preserving aspect ratio
                         let trans = ImageView::scale_image(image.area().size, scale_mode, &frame);
                         let bkg = Img(&image);
                         let tex_trans = bkg.image().map(|img| img.projection(Rectangle::new_sized((1, 1))));
@@ -100,19 +99,16 @@ impl ImageView {
     fn scale_image(img_size: Vector, scale_mode: ImageScaleMode, frame: &Rectangle) -> Transform {
         let img_aspect = img_size.x / img_size.y;
         let frame_aspect = frame.size.x / frame.size.y;
-        log::debug!("img_size={:?} aspect={:?}", img_size, img_aspect);
         match scale_mode {
             ImageScaleMode::AspectFit => {
-                // Image needs to be sized smaller based on shortest dimension
                 let img_frame: Rectangle = {
                     if img_aspect > frame_aspect {
-                        // image is too wide
+                        // Image is too wide. Fill the width and letterbox the top/bottom.
                         let h = frame.size.y / img_aspect;
                         let pos = Vector::new(frame.x(), frame.center().y - h / 2.0);
-                        log::debug!("height={:?} pos={:?}", h, pos);
                         Rectangle::new(pos, Vector::new(frame.width(), h))
                     } else {
-                        // image is too tall
+                        // Image is too tall. Fill the height and letterbox the left/right.
                         let w = frame.size.x * img_aspect;
                         let pos = Vector::new(frame.center().x - w / 2.0, frame.y());
                         Rectangle::new(pos, Vector::new(w, frame.height()))
@@ -124,19 +120,16 @@ impl ImageView {
                 trans
             }
             ImageScaleMode::AspectFill => {
-                // Image needs to be sized to fill the shortest dimension
                 let img_frame: Rectangle = {
                     if img_aspect > frame_aspect {
-                        // image is too wide. Fill the height and set position to outside left
+                        // Image is too wide. Fill the height and set position to outside left
                         let w = frame.size.x * img_aspect;
                         let pos = Vector::new(frame.center().x - w / 2.0, frame.y());
-                        log::debug!("width={:?} pos={:?}", w, pos);
                         Rectangle::new(pos, Vector::new(w, frame.height()))
                     } else {
-                        // image is too tall
+                        // Image is too tall. Fill the width and set position to outside top
                         let h = frame.size.y / img_aspect;
                         let pos = Vector::new(frame.x(), frame.center().y - h / 2.0);
-                        log::debug!("height={:?} pos={:?}", h, pos);
                         Rectangle::new(pos, Vector::new(frame.width(), h))
                     }
                 };
