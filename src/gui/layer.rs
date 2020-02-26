@@ -214,6 +214,9 @@ impl Layer {
     pub(super) fn on_ready(&mut self) {
         self.init_props();
         self.initial = self.frame;
+        if self.debug {
+            log::trace!("on_ready {:?} frame={:?}", self.debug_out(), self.frame);
+        }
         self.defaults = Tween::load_props(self);
     }
 
@@ -425,6 +428,9 @@ impl Layer {
     pub fn animate_with_props(&mut self, propset: PropSet, autoplay: bool) {
         self.init_props();
         let mut tween = Tween::with(self.id, self).using_props(propset.clone());
+        if self.debug {
+            tween.debug = true;
+        }
         if autoplay {
             &tween.play();
         }
@@ -771,7 +777,7 @@ impl Tweenable for Layer {
 
     /// Method to copy initialise the Transition with the official values
     fn init_props(&mut self) {
-        // log::trace!("init_props {} origin={:?} anchor_pt={:?}", self.debug_id(), self.frame.pos, self.anchor_pt);
+        log::trace!("init_props {} origin={:?} anchor_pt={:?}", self.debug_id(), self.frame.pos, self.anchor_pt);
         // FIXME: With ShapeView, this is wrong because the initial mesh has a fill color. However, with animation,
         // that color is not set properly
         self.transition.color = self.bg_style.get_color();

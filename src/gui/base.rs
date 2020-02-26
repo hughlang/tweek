@@ -89,15 +89,10 @@ pub trait Displayable: Any {
     fn align_view(&mut self, origin: Vector) {
         let anchor_pt = self.get_layer().anchor_pt;
         self.get_layer_mut().frame.pos = anchor_pt + origin;
-        log::trace!(
-            "align_view for {}: origin={} // anchor_pt={:?} // pos={:?}",
-            self.debug_id(),
-            origin,
-            anchor_pt,
-            self.get_layer().frame.pos
-        );
+        log::trace!("align_view {}: pos={:?}", self.node_key(), self.get_layer().frame.pos);
     }
 
+    // TODO: return Result and Err messages
     fn validate_position(&self, origin: Vector) {
         let offset = self.get_layer().frame.pos - origin;
         let anchor = self.get_layer().anchor_pt;

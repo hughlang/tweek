@@ -14,15 +14,6 @@ use quicksilver::{
 
 use log::Level;
 
-/// Enum wrapper for actions that can be applied to a Scene and its child objects.
-#[derive(Clone, Debug)]
-pub enum SceneAction {
-    /// Undefined
-    None,
-    /// An action that specifies a Tween that is applied to a specific GUI object
-    Animate(PropSet, NodeID),
-}
-
 /// Container for holding a collection of views and controls and propagating events, movements, and other
 /// actions up and down the hierarchy.
 pub struct Scene {
@@ -50,7 +41,7 @@ pub struct Scene {
     /// Optional background that displays full screen and does not move. It also prevents lower scenes from
     /// receiving mouse events.
     pub bg_mask: Option<MeshTask>,
-    /// Cac
+    /// The size of the screen
     screen_size: Vector,
 }
 
@@ -75,6 +66,7 @@ impl Scene {
     }
 
     /// Builder method to set the id and name for this Scene
+    /// TODO: Deprecate/change this since id values are auto-assigned.
     pub fn with_id(mut self, id: u32, name: &str) -> Self {
         self.set_id(id);
         self.name = name.to_string();
@@ -134,7 +126,7 @@ impl Scene {
     /// debug_out() function which returns a String information about itself and display frame.
     /// This is aggregated in this function and printed out. It is called in the notify() method
     /// in Scene, so it does not need to be public.
-    fn print_scene(&self) {
+    pub fn print_scene(&self) {
         if log_enabled!(Level::Debug) {
             // Don't bother building the text output if log level is not enabled
             let mut rows: Vec<String> = Vec::new();
@@ -234,25 +226,18 @@ impl Displayable for Scene {
         }
     }
 
-    fn handle_event(&mut self, event: &EventBox, app_state: &mut AppState) {
+    fn handle_event(&mut self, event: &EventBox, _app_state: &mut AppState) {
         let sender = event.sender();
         if let Ok(evt) = event.downcast_ref::<TweenEvent>() {
-            let event_key = evt.to_string();
+            // let event_key = evt.to_string();
             if sender == self.layer.node_id() {
-                // log::trace!("Matched self as sender={:?} layer_state={:?}", sender.id_string(), self.layer.layer_state);
                 match evt {
                     TweenEvent::Completed => match self.layer.layer_state {
                         LayerState::Moving => {
-                            // log::debug!(
-                            //     "{:?} {:?} frame.pos={:?} anchor_pt={:?}",
-                            //     evt,
-                            //     self.layer.layer_state,
-                            //     self.layer.frame.pos,
-                            //     self.layer.anchor_pt
-                            // );
                             // Get the target frame since the Layer.frame may not have finished moving.
                             let rect = self.get_layer().evaluate_end_rect();
                             let origin = rect.pos;
+                            log::debug!("Event={:?} set origin={:?}", evt, origin);
 
                             self.align_view(origin);
                             self.notify(&DisplayEvent::Moved);
