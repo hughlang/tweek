@@ -81,7 +81,6 @@ pub trait Displayable: Any {
     fn set_origin(&mut self, origin: Vector) {
         let offset = self.get_frame().pos - origin;
         self.get_layer_mut().anchor_pt = offset;
-        // log::debug!("set_origin for {} – anchor_pt={:?}", self.debug_id(), offset);
     }
 
     /// A helper method that moves a Displayable component layer by the specified offset. For Scene objects, all child
@@ -90,7 +89,13 @@ pub trait Displayable: Any {
     fn align_view(&mut self, origin: Vector) {
         let anchor_pt = self.get_layer().anchor_pt;
         self.get_layer_mut().frame.pos = anchor_pt + origin;
-        log::trace!("align_view {} pos={:?} anchor_pt={:?}", self.debug_id(), self.get_layer().frame.pos, anchor_pt);
+        log::trace!(
+            "align_view for {}: origin={} // anchor_pt={:?} // pos={:?}",
+            self.debug_id(),
+            origin,
+            anchor_pt,
+            self.get_layer().frame.pos
+        );
     }
 
     fn validate_position(&self, origin: Vector) {

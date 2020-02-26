@@ -221,12 +221,7 @@ impl Layer {
     /// Note: do not save any animation props or reset to original state.
     /// That should be explicitly called through reset()
     pub(super) fn on_move_complete(&mut self) {
-        log::debug!(
-            "on_move_complete: <{}> [{}] >> {}",
-            gui_print_type(&self.type_id),
-            self.get_id(),
-            self.debug_out()
-        );
+        self.frame = self.evaluate_end_rect();
         self.meshes.clear();
         self.layer_state = LayerState::Completed;
     }
@@ -288,6 +283,9 @@ impl Layer {
                 match evt {
                     TweenEvent::Started => {
                         log::trace!("Event: {} {:?}", self.debug_id(), self.tween_type);
+                    }
+                    TweenEvent::Finishing => {
+                        app_state.event_bus.dispatch_event(evt, self.node_id(), self.tag);
                     }
                     TweenEvent::Completed => {
                         log::trace!("Event: {} {:?}", self.debug_id(), self.tween_type);

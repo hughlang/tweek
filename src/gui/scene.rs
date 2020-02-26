@@ -190,10 +190,17 @@ impl Displayable for Scene {
     }
 
     fn align_view(&mut self, origin: Vector) {
-        log::debug!("New origin={:?}", origin);
+        log::debug!("Scene::align_view {} to origin={:?}", self.node_key(), origin);
         let anchor_pt = self.get_layer().anchor_pt;
         self.get_layer_mut().frame.pos = anchor_pt + origin;
 
+        // If view_will_load() has not run, then all the controls and views are still queued
+        for view in &mut self.controls_queue {
+            view.align_view(origin);
+        }
+        for view in &mut self.views_queue {
+            view.align_view(origin);
+        }
         for view in &mut self.controls.values_mut() {
             view.align_view(origin);
         }
@@ -236,16 +243,19 @@ impl Displayable for Scene {
                 match evt {
                     TweenEvent::Completed => match self.layer.layer_state {
                         LayerState::Moving => {
-                            log::debug!(
-                                "{:?} {:?} frame.pos={:?} anchor_pt={:?}",
-                                evt,
-                                self.layer.layer_state,
-                                self.layer.frame.pos,
-                                self.layer.anchor_pt
-                            );
-                            self.align_view(self.layer.frame.pos);
+                            // log::debug!(
+                            //     "{:?} {:?} frame.pos={:?} anchor_pt={:?}",
+                            //     evt,
+                            //     self.layer.layer_state,
+                            //     self.layer.frame.pos,
+                            //     self.layer.anchor_pt
+                            // );
+                            // Get the target frame since the Layer.frame may not have finished moving.
+                            let rect = self.get_layer().evaluate_end_rect();
+                            let origin = rect.pos;
+
+                            self.align_view(origin);
                             self.notify(&DisplayEvent::Moved);
-                            self.layer.layer_state = LayerState::Completed;
                         }
                         _ => (),
                     },

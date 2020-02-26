@@ -543,6 +543,7 @@ impl NotifyDispatcher for Tween {
                     if self.play_count > self.repeat_count {
                         // If repeat_count is zero, tween is Completed.
                         self.state = PlayState::Finishing;
+                        notifier.notify(TweenEvent::Finishing);
                     } else {
                         // set state=Idle means wait for repeat_delay to finish
                         self.state = PlayState::Idle;
