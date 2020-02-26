@@ -448,25 +448,26 @@ impl Layer {
                 BorderStyle::SolidLine(color, width) => (Some(color), width),
             }
         };
-        let mut mesh = match self.bg_style {
-            BackgroundStyle::Solid(color) => {
-                if self.is_transitioning() {
-                    DrawShape::rectangle(
-                        &self.transition.frame,
-                        Some(self.transition.color),
-                        border.0,
-                        border.1,
-                        self.corner_radius,
-                    )
-                } else {
-                    DrawShape::rectangle(&self.frame, Some(color), border.0, border.1, self.corner_radius)
+        let bg_color = {
+            match self.bg_style {
+                BackgroundStyle::Solid(color) => {
+                    if self.is_transitioning() {
+                        Some(self.transition.color)
+                    } else {
+                        Some(color)
+                    }
                 }
+                BackgroundStyle::None => None,
             }
-            BackgroundStyle::None => {
+        };
+        let mut mesh = {
+            if self.layer_state == LayerState::Moving {
+                DrawShape::rectangle(&self.frame, bg_color, border.0, border.1, self.corner_radius)
+            } else {
                 if self.is_transitioning() {
-                    DrawShape::rectangle(&self.transition.frame, None, border.0, border.1, self.corner_radius)
+                    DrawShape::rectangle(&self.transition.frame, bg_color, border.0, border.1, self.corner_radius)
                 } else {
-                    DrawShape::rectangle(&self.frame, None, border.0, border.1, self.corner_radius)
+                    DrawShape::rectangle(&self.frame, bg_color, border.0, border.1, self.corner_radius)
                 }
             }
         };
