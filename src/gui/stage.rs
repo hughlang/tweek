@@ -50,6 +50,15 @@ impl Stage {
         self.context = context;
     }
 
+    /// Find the NodePath of an object given the u32 NodeTag that was set
+    pub fn find_view_with_tag(&mut self, tag: NodeTag, app_state: &mut AppState) -> Option<&mut Layer> {
+        if let Some(node_path) = app_state.find_node_by_tag(tag) {
+            self.find_view_by_path(node_path)
+        } else {
+            None
+        }
+    }
+
     /// Given a NodePath path, find the corresponding UI Displayable object
     pub fn find_view_by_path(&mut self, path: NodePath) -> Option<&mut Layer> {
         let mut i: usize = 0;

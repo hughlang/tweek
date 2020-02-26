@@ -394,11 +394,11 @@ impl Layer {
         } else {
             match self.mouse_state {
                 MouseState::Hover => {
-                    log::debug!("Mouse out at: {:?} // layer_state={:?}", pt, self.layer_state);
                     if let Some(_) = &self.hover_effect {
-                        if self.layer_state != LayerState::Moving {
-                            // self.apply_props(&self.defaults.clone());
-                        }
+                        // log::trace!("Mouse out at: {:?} // layer_state={:?}", pt, self.layer_state);
+                        // if self.layer_state != LayerState::Moving {
+                        // self.apply_props(&self.defaults.clone());
+                        // }
                         self.mouse_state = MouseState::None;
                         self.animation = None;
                     }
