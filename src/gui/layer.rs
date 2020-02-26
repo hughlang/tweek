@@ -145,7 +145,7 @@ impl Layer {
             transition: Transition::new(frame, Color::WHITE, 0.0),
             rotation: 0.0,
             corner_radius: 0.0,
-            anchor_pt: frame.center(),
+            anchor_pt: frame.top_left(),
             bg_style: BackgroundStyle::None,
             border_style: BorderStyle::None,
             font_style: FontStyle::new(14.0, Color::BLACK),
@@ -394,11 +394,13 @@ impl Layer {
         } else {
             match self.mouse_state {
                 MouseState::Hover => {
-                    // log::debug!("Mouse out at: {:?}", pt);
+                    log::debug!("Mouse out at: {:?} // layer_state={:?}", pt, self.layer_state);
                     if let Some(_) = &self.hover_effect {
-                        self.apply_props(&self.defaults.clone());
+                        if self.layer_state != LayerState::Moving {
+                            // self.apply_props(&self.defaults.clone());
+                        }
                         self.mouse_state = MouseState::None;
-                        // self.animation = None;
+                        self.animation = None;
                     }
                 }
                 _ => (),
@@ -461,13 +463,16 @@ impl Layer {
             }
         };
         let mut mesh = {
-            if self.layer_state == LayerState::Moving {
-                DrawShape::rectangle(&self.frame, bg_color, border.0, border.1, self.corner_radius)
-            } else {
-                if self.is_transitioning() {
-                    DrawShape::rectangle(&self.transition.frame, bg_color, border.0, border.1, self.corner_radius)
-                } else {
+            match self.layer_state {
+                LayerState::Moving | LayerState::Completed => {
                     DrawShape::rectangle(&self.frame, bg_color, border.0, border.1, self.corner_radius)
+                }
+                _ => {
+                    if self.is_transitioning() {
+                        DrawShape::rectangle(&self.transition.frame, bg_color, border.0, border.1, self.corner_radius)
+                    } else {
+                        DrawShape::rectangle(&self.frame, bg_color, border.0, border.1, self.corner_radius)
+                    }
                 }
             }
         };

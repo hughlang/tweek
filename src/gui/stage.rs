@@ -169,6 +169,9 @@ impl Displayable for Stage {
                 // the sender so that the controller can determine correct action.
                 (*cb)(app_state, node_path.clone());
             }
+            for scene in &mut self.scenes.values_mut() {
+                scene.handle_event(event, app_state);
+            }
         }
     }
 

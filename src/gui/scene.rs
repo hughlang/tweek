@@ -7,7 +7,7 @@ use std::{any::TypeId, collections::BTreeMap};
 
 use quicksilver::{
     geom::{Rectangle, Vector},
-    graphics::{Color, MeshTask},
+    graphics::MeshTask,
     input::Key,
     lifecycle::Window,
 };
@@ -228,39 +228,32 @@ impl Displayable for Scene {
     }
 
     fn handle_event(&mut self, event: &EventBox, app_state: &mut AppState) {
-        if let Some(timeline) = &mut self.timeline {
-            timeline.handle_event(event, app_state);
-        }
-        for view in &mut self.controls.values_mut() {
-            view.handle_event(event, app_state);
-        }
-        for view in &mut self.views.values_mut() {
-            view.handle_event(event, app_state);
-        }
-
-        if let Ok(evt) = event.downcast_ref::<SceneEvent>() {
-            log::debug!("{} SceneEvent={:?}", self.layer.debug_id(), evt);
-            // log::debug!("Source={:?}", event.event_source());
-
-            match evt {
-                SceneEvent::Show(target) => {
-                    if target.id == self.get_id() && target.type_id == self.get_type_id() {
-                        let frame = Rectangle::new((0.0, 0.0), (self.screen_size.x, self.screen_size.y));
-                        // TODO: set from theme?
-                        let mut fill_color = Color::from_hex("#000000");
-                        fill_color.a = 0.7;
-                        let mut mesh = DrawShape::rectangle(&frame, Some(fill_color), None, 0.0, 0.0);
-                        let mut mesh_task = MeshTask::new(0);
-                        mesh_task.append(&mut mesh);
-                        self.bg_mask = Some(mesh_task);
-                    }
+        let sender = event.sender();
+        if let Ok(evt) = event.downcast_ref::<TweenEvent>() {
+            let event_key = evt.to_string();
+            if sender == self.layer.node_id() {
+                // log::trace!("Matched self as sender={:?} layer_state={:?}", sender.id_string(), self.layer.layer_state);
+                match evt {
+                    TweenEvent::Completed => match self.layer.layer_state {
+                        LayerState::Moving => {
+                            log::debug!(
+                                "{:?} {:?} frame.pos={:?} anchor_pt={:?}",
+                                evt,
+                                self.layer.layer_state,
+                                self.layer.frame.pos,
+                                self.layer.anchor_pt
+                            );
+                            self.align_view(self.layer.frame.pos);
+                            self.notify(&DisplayEvent::Moved);
+                            self.layer.layer_state = LayerState::Completed;
+                        }
+                        _ => (),
+                    },
+                    _ => (),
                 }
-                SceneEvent::Hide(_) => {
-                    self.bg_mask = None;
-                }
-                _ => (),
             }
         }
+
         if let Ok(evt) = event.downcast_ref::<PlayerEvent>() {
             log::debug!("{} PlayerEvent={:?}", self.debug_id(), evt);
             match evt {
@@ -327,7 +320,6 @@ impl Displayable for Scene {
             if state.offset != Vector::ZERO {
                 self.layer.layer_state = LayerState::Moving;
             }
-        // log::trace!("{} scene offset={:?}", self.layer.debug_id(), state.offset);
         } else {
             state.offset = Vector::ZERO;
         }
@@ -340,30 +332,6 @@ impl Displayable for Scene {
         }
         if let Some(timeline) = &mut self.timeline {
             timeline.update(window, state);
-        }
-
-        let events = self.layer.notifications.borrow_mut().events.filter::<LayerEvent>();
-        for evt in events {
-            match evt {
-                LayerEvent::Move(_id, _type_id, evt_state) => match evt_state {
-                    PlayState::Completed => {
-                        state.offset = Vector::ZERO;
-                        // This was added for ads-sandbox carousel view. However, this will broadcast the event to all
-                        // Scenes in a Stage or Controller hierarchy.
-                        // TODO: Decide how to target this event at a specific Scene in a view hierarchy
-                        state.event_bus.register_event(DisplayEvent::Moved);
-                        log::debug!(
-                            "self.layer.frame.pos={:?} anchor_pt={:?}",
-                            self.layer.frame.pos,
-                            self.layer.anchor_pt
-                        );
-                        self.align_view(self.layer.frame.pos);
-                        self.notify(&DisplayEvent::Moved);
-                    }
-                    _ => (),
-                },
-                _ => (),
-            }
         }
     }
 
