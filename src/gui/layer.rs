@@ -263,6 +263,7 @@ impl Layer {
 
     /// If animation is running, run updates
     pub(crate) fn tween_update(&mut self, app_state: &mut AppState) {
+        // FIXME: This should be driven by Scene in a direct way on its child objects.
         if app_state.offset != Vector::ZERO {
             self.frame.pos = self.initial.pos + app_state.offset;
             self.layer_state = LayerState::Moving;
@@ -287,9 +288,9 @@ impl Layer {
                     TweenEvent::Started => {
                         log::trace!("Event: {} {:?}", self.debug_id(), self.tween_type);
                     }
-                    TweenEvent::Finishing => {
-                        app_state.event_bus.dispatch_event(evt, self.node_id(), self.tag);
-                    }
+                    // TweenEvent::Finishing => {
+                    //     app_state.event_bus.dispatch_event(evt, self.node_id(), self.tag);
+                    // }
                     TweenEvent::Completed => {
                         log::trace!("Event: {} {:?}", self.debug_id(), self.tween_type);
                         log::trace!("Layer: {:?}", self);
@@ -337,7 +338,7 @@ impl Layer {
                     // Layer is moving, so translate the cached meshes to current position
                     let offset = self.get_movement_offset();
                     if self.debug {
-                        log::trace!("{:?} @{:?} offset={:?}", self.debug_id(), self.debug_out(), offset);
+                        log::trace!("{:?} @{:?} offset={:?}", self.layer_state, self.debug_out(), offset);
                     }
 
                     for task in &self.meshes {

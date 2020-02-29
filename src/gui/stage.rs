@@ -148,11 +148,11 @@ impl Displayable for Stage {
 
     // Note: A Stage never moves and is always represents the full screen/window.
     // Only reposition the child scenes
-    fn align_view(&mut self, origin: Vector) {
-        for scene in &mut self.scenes.values_mut() {
-            scene.align_view(origin);
-        }
-    }
+    // fn align_view(&mut self, origin: Vector) {
+    //     for scene in &mut self.scenes.values_mut() {
+    //         scene.align_view(origin);
+    //     }
+    // }
 
     fn move_to(&mut self, pos: (f32, f32)) {
         self.layer.frame.pos.x = pos.0;
