@@ -581,15 +581,6 @@ impl NotifyDispatcher for Tween {
                         if animator.start_time < elapsed && animator.end_time >= elapsed {
                             let playhead = elapsed - animator.start_time;
                             let ui_state = animator.update(playhead, self.time_scale as f64);
-                            // TODO: log event
-                            if self.debug {
-                                log::trace!(
-                                    "request_update [{}.{}]  >>  {:?}",
-                                    animator.id.0,
-                                    animator.id.1,
-                                    ui_state.props
-                                );
-                            }
                             return Some(Box::new(ui_state));
                         }
                     } else {
@@ -606,11 +597,9 @@ impl NotifyDispatcher for Tween {
             }
             PlayState::Finishing => {
                 // FIXME: Getting the last animator does not mean it is always the last one to finish
-                log::trace!("request_update {:?}", self.state);
+                // log::trace!("request_update {:?}", self.state);
                 if let Some(animator) = self.animators.last_mut() {
                     self.state = PlayState::Completed;
-                    // if self.debug {
-                    // }
                     // ======== Notify Completed =======
                     notifier.notify(TweenEvent::Completed);
 

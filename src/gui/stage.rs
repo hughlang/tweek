@@ -185,7 +185,7 @@ impl Displayable for Stage {
                         scene.print_scene();
                     }
                 }
-                _ => ()
+                _ => (),
             }
         }
     }

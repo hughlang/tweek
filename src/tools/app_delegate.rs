@@ -162,7 +162,6 @@ impl State for AppDelegate {
             self.stage.handle_event(&event, &mut self.app_state);
         }
 
-        self.app_state.zero_offset();
         let _ = self.nav_scene.update(window, &mut self.app_state);
         let _ = self.stage.update(window, &mut self.app_state);
 

@@ -43,6 +43,9 @@ pub struct Scene {
     pub bg_mask: Option<MeshTask>,
     /// The size of the screen
     screen_size: Vector,
+    /// Optional object to define transforms for a Scene and its child objects.
+    /// For now, this is copied to AppState.transformer in every call to update()
+    transformer: Transformer,
 }
 
 impl Scene {
@@ -62,6 +65,7 @@ impl Scene {
             is_interactive: true,
             bg_mask: None,
             screen_size: Vector::ZERO,
+            transformer: Transformer::default(),
         }
     }
 
@@ -207,7 +211,6 @@ impl Displayable for Scene {
     fn move_to(&mut self, pos: (f32, f32)) {
         self.layer.frame.pos.x = pos.0;
         self.layer.frame.pos.y = pos.1;
-        // TODO: Move child objects
     }
 
     fn set_theme(&mut self, theme: &mut Theme) {
@@ -229,15 +232,15 @@ impl Displayable for Scene {
     fn handle_event(&mut self, event: &EventBox, _app_state: &mut AppState) {
         let sender = event.sender();
         if let Ok(evt) = event.downcast_ref::<TweenEvent>() {
-            // let event_key = evt.to_string();
             if sender == self.layer.node_id() {
+                log::trace!("Matched event={:?} for sender={:?}", evt, sender.id_string());
                 match evt {
                     TweenEvent::Completed => match self.layer.layer_state {
                         LayerState::Moving => {
                             // Get the target frame since the Layer.frame may not have finished moving.
                             let rect = self.get_layer().evaluate_end_rect();
                             let origin = rect.pos;
-                            log::debug!("Event={:?} set origin={:?}", evt, origin);
+                            log::trace!("Event={:?} set origin={:?}", evt, origin);
 
                             self.align_view(origin);
                             self.notify(&DisplayEvent::Moved);
@@ -310,13 +313,15 @@ impl Displayable for Scene {
             }
         }
 
-        if self.layer.is_animating() {
-            state.offset = self.layer.get_movement_offset();
-            if state.offset != Vector::ZERO {
-                self.layer.layer_state = LayerState::Moving;
+        match self.layer.tween_type {
+            TweenType::Move => {
+                // Update the transformer offset
+                self.transformer.offset = self.layer.get_movement_offset();
+                state.transformers.insert(self.get_id(), self.transformer.clone());
             }
-        } else {
-            state.offset = Vector::ZERO;
+            _ => {
+                state.transformers.remove(&self.get_id());
+            }
         }
 
         for view in &mut self.controls.values_mut() {
@@ -337,13 +342,15 @@ impl Displayable for Scene {
             window.add_task(mask.clone());
         }
 
+        // FIXME： If Scene has background color, it could mask another Scene
         self.layer.draw_background(window);
         self.layer.draw_border(window);
 
+        // Q: What does this filter do?
         for view in &mut self.views.values_mut().filter(|x| x.get_layer().visibility == Visibility::Visible) {
             view.render(theme, window);
         }
-        for view in &mut self.controls.values_mut() {
+        for view in &mut self.controls.values_mut().filter(|x| x.get_layer().visibility == Visibility::Visible) {
             view.render(theme, window);
         }
         if let Some(timeline) = &mut self.timeline {

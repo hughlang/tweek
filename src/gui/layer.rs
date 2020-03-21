@@ -227,6 +227,7 @@ impl Layer {
         self.frame = self.evaluate_end_rect();
         self.meshes.clear();
         self.layer_state = LayerState::Completed;
+        self.tween_type = TweenType::None;
     }
 
     /// Set the default animations
@@ -263,10 +264,15 @@ impl Layer {
 
     /// If animation is running, run updates
     pub(crate) fn tween_update(&mut self, app_state: &mut AppState) {
-        // FIXME: This should be driven by Scene in a direct way on its child objects.
-        if app_state.offset != Vector::ZERO {
-            self.frame.pos = self.initial.pos + app_state.offset;
+        let first_node = self.node_path.first_node();
+        // FIXME: child objects are not moving
+        if let Some(transformer) = app_state.transformers.get(&first_node.id) {
+            // Parent Scene is currently moving/changing. Child objects need to follow
+            self.frame.pos = self.initial.pos + transformer.offset;
             self.layer_state = LayerState::Moving;
+            if self.debug {
+                log::debug!("tween_update: {:?} pos={:?}", self.debug_id(), self.frame.pos);
+            }
         }
 
         self.notifications.borrow_mut().clear();
@@ -287,6 +293,7 @@ impl Layer {
                 match evt {
                     TweenEvent::Started => {
                         log::trace!("Event: {} {:?}", self.debug_id(), self.tween_type);
+                        app_state.event_bus.dispatch_event(evt, self.node_id(), self.tag);
                     }
                     // TweenEvent::Finishing => {
                     //     app_state.event_bus.dispatch_event(evt, self.node_id(), self.tag);
@@ -299,6 +306,7 @@ impl Layer {
                         app_state.event_bus.dispatch_event(evt, self.node_id(), self.tag);
                         // Normalize rotation to 0-360
                         self.rotation = self.transition.rotation % 360.0;
+                        self.tween_type = TweenType::None;
                     }
                     _ => (),
                 }
@@ -311,9 +319,6 @@ impl Layer {
     /// If the object is being moved by its parent Scene, then try to translate the
     /// position based on that.
     pub(crate) fn prepare_render(&mut self, window: &mut Window) -> Vec<MeshTask> {
-        if self.debug {
-            self.draw_border(window);
-        }
         let mut results: Vec<MeshTask> = Vec::new();
         if self.meshes.is_empty() {
             return results;
@@ -327,29 +332,31 @@ impl Layer {
                 results.push(task);
             }
         } else {
-            match self.layer_state {
-                LayerState::Normal | LayerState::Completed => {
-                    // Layer is not moving and cached meshes are expected to be accurate.
-                    for task in &self.meshes {
-                        results.push(task.clone());
-                    }
-                }
-                LayerState::Moving => {
-                    // Layer is moving, so translate the cached meshes to current position
-                    let offset = self.get_movement_offset();
-                    if self.debug {
-                        log::trace!("{:?} @{:?} offset={:?}", self.layer_state, self.debug_out(), offset);
-                    }
-
-                    for task in &self.meshes {
-                        let mut task = task.clone();
-                        for (_, vertex) in task.vertices.iter_mut().enumerate() {
-                            vertex.pos = Transform::translate(offset) * vertex.pos;
-                        }
-                        results.push(task);
-                    }
-                }
+            for task in &self.meshes {
+                results.push(task.clone());
             }
+            // match self.layer_state {
+            //     LayerState::Normal | LayerState::Completed => {
+            //         // Layer is not moving and cached meshes are expected to be accurate.
+            //         for task in &self.meshes {
+            //             results.push(task.clone());
+            //         }
+            //     }
+            //     LayerState::Moving => {
+            //         // Layer is moving, so translate the cached meshes to current position
+            //         let offset = self.get_movement_offset();
+            //         if self.debug {
+            //             log::trace!("{:?} @{:?} offset={:?}", self.layer_state, self.debug_out(), offset);
+            //         }
+            // for task in &self.meshes {
+            //     let mut task = task.clone();
+            //     for (_, vertex) in task.vertices.iter_mut().enumerate() {
+            //         vertex.pos = Transform::translate(offset) * vertex.pos;
+            //     }
+            //     results.push(task);
+            // }
+            //     }
+            // }
         }
         results
     }
@@ -403,6 +410,7 @@ impl Layer {
                         // }
                         self.mouse_state = MouseState::None;
                         self.animation = None;
+                        self.tween_type = TweenType::None;
                     }
                 }
                 _ => (),
@@ -468,17 +476,11 @@ impl Layer {
             }
         };
         let mut mesh = {
-            match self.layer_state {
-                LayerState::Moving | LayerState::Completed => {
-                    DrawShape::rectangle(&self.frame, bg_color, border.0, border.1, self.corner_radius)
-                }
-                _ => {
-                    if self.is_transitioning() {
-                        DrawShape::rectangle(&self.transition.frame, bg_color, border.0, border.1, self.corner_radius)
-                    } else {
-                        DrawShape::rectangle(&self.frame, bg_color, border.0, border.1, self.corner_radius)
-                    }
-                }
+            // FIXME: transitioning is defined poorly.
+            if self.is_transitioning() {
+                DrawShape::rectangle(&self.transition.frame, bg_color, border.0, border.1, self.corner_radius)
+            } else {
+                DrawShape::rectangle(&self.frame, bg_color, border.0, border.1, self.corner_radius)
             }
         };
         if mesh.vertices.len() > 0 {
@@ -559,8 +561,16 @@ impl Layer {
                     return false;
                 }
             }
+        } else {
+            match self.layer_state {
+                LayerState::Moving => {
+                    return true;
+                }
+                _ => {
+                    return false;
+                }
+            }
         }
-        false
     }
 
     pub fn is_transitioning(&self) -> bool {
@@ -778,7 +788,6 @@ impl Tweenable for Layer {
 
     /// Method to copy initialise the Transition with the official values
     fn init_props(&mut self) {
-        log::trace!("init_props {} origin={:?} anchor_pt={:?}", self.debug_id(), self.frame.pos, self.anchor_pt);
         // FIXME: With ShapeView, this is wrong because the initial mesh has a fill color. However, with animation,
         // that color is not set properly
         self.transition.color = self.bg_style.get_color();

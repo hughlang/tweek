@@ -200,9 +200,6 @@ impl Displayable for ImageView {
 
     fn update(&mut self, _window: &mut Window, state: &mut AppState) {
         self.layer.tween_update(state);
-        if self.layer.debug && state.offset != Vector::ZERO {
-            log::debug!("IMAGE_frame={:?}", self.layer.frame);
-        }
     }
 
     fn render(&mut self, _theme: &mut Theme, window: &mut Window) {

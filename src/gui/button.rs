@@ -227,6 +227,7 @@ impl Displayable for Button {
 
     fn render(&mut self, theme: &mut Theme, window: &mut Window) {
         self.layer.draw_background(window);
+        // self.layer.draw_border(window);
         if let Some(view) = &mut self.text {
             view.render(theme, window);
         }
