@@ -174,7 +174,7 @@ impl Displayable for ListBox {
     /// meshes. This is necessary to support theme changes that can affect the row height and font color.
     fn set_theme(&mut self, theme: &mut Theme) {
         // Don't allow style to be locked
-        let _ = self.layer.apply_theme(theme);
+        // let _ = self.layer.apply_theme(theme);
 
         // Create only the rows needed to fill the visible range. Each row is a template
         // that is populated during the render phase

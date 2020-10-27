@@ -22,7 +22,7 @@ fn main() {
     // You can configure the amount of debug output for each module here. In this example, the default
     // log level for the tweek crate is debug
     #[cfg(not(target_arch = "wasm32"))]
-    std::env::set_var("RUST_LOG", "main=debug,tweek=debug,quicksilver=debug");
+    std::env::set_var("RUST_LOG", "main=debug,tweek=debug,quicksilver=info");
 
     #[cfg(not(target_arch = "wasm32"))]
     env_logger::builder().default_format_timestamp(false).default_format_module_path(true).init();
@@ -115,7 +115,7 @@ impl StageBuilder {
         let frame = Rectangle::new((100.0, 200.0), (300.0, 200.0));
         let mut listbox = ListBox::new(frame);
         listbox.set_datasource(ds);
-        listbox.row_border_style = BorderStyle::SolidLine(Color::from_hex("#EEEEEE"), 1.0);
+        listbox.row_border_style = BorderStyle::SolidLine(Color::from_hex("#333333"), 1.0);
         scene.add_control(Box::new(listbox));
 
         /* Ignore: This is just an experiment in text clipping */
