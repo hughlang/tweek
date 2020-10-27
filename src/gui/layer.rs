@@ -445,6 +445,12 @@ impl Layer {
         }
         self.animation = Some(tween);
         self.tween_type = propset.event;
+        // match self.type_id {
+        //     TypeId::of::<Scene>() => {
+        //         // Create Transformer here?
+        //     }
+        //     _ => ()
+        // }
     }
 
     /// Method to call when starting an animation. This will copy the current properties into Transition

@@ -316,6 +316,7 @@ impl Displayable for Scene {
         match self.layer.tween_type {
             TweenType::Move => {
                 // Update the transformer offset
+                // FIXME: Modify the existing entry or insert new one
                 self.transformer.offset = self.layer.get_movement_offset();
                 state.transformers.insert(self.get_id(), self.transformer.clone());
             }

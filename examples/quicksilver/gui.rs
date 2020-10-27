@@ -105,9 +105,9 @@ impl StageBuilder {
     fn listbox_demo(screen: Vector) -> Stage {
         let frame = Rectangle::new_sized(screen);
         let mut stage = Stage::new(frame.clone());
-        stage.title = "Listbox Demo".to_string();
-
-        let mut scene = Scene::new(frame);
+        let title = "Listbox Demo";
+        stage.title = title.to_string();
+        let mut scene = Scene::new(frame).with_id(MAIN_SCENE, title);
 
         let numbers: Vec<u32> = (0..21).collect();
         let ds: Vec<String> = numbers.into_iter().map(|x| x.to_string()).collect();
@@ -146,7 +146,9 @@ impl StageBuilder {
     fn buttons_demo(screen: Vector) -> Stage {
         let frame = Rectangle::new_sized(screen);
         let mut stage = Stage::new(frame.clone());
-        stage.title = "Buttons Demo".to_string();
+        let title = "Buttons Demo";
+        stage.title = title.to_string();
+        let mut scene = Scene::new(frame).with_id(MAIN_SCENE, title);
 
         const GRID_COLUMN_INTERVAL: f32 = 120.0;
         const GRID_ROW_INTERVAL: f32 = 80.0;
@@ -154,7 +156,6 @@ impl StageBuilder {
         const BUTTON_H: f32 = 40.0;
         const TITLE_H: f32 = 30.0;
         const ROW_GAP: f32 = 20.0;
-        let mut scene = Scene::new(frame);
 
         let mut xpos = 100.0;
         let mut ypos = 100.0;
@@ -200,9 +201,9 @@ impl StageBuilder {
     fn text_editor_demo(screen: Vector) -> Stage {
         let frame = Rectangle::new_sized(screen);
         let mut stage = Stage::new(frame.clone());
-        stage.title = "Text Editor Demo".to_string();
-
-        let mut scene = Scene::new(frame);
+        let title = "Text Editor Demo";
+        stage.title = title.to_string();
+        let mut scene = Scene::new(frame).with_id(MAIN_SCENE, title);
 
         let text: String = include_str!("../../static/lipsum.txt").into();
         let mut xpos = 200.0;
@@ -242,8 +243,9 @@ impl StageBuilder {
         let frame = Rectangle::new_sized(screen);
 
         let mut stage = Stage::new(frame.clone());
-        stage.title = "Checkboxes and Radio button groups".to_string();
-        let mut scene = Scene::new(frame);
+        let title = "Checkboxes and Radio button groups";
+        stage.title = title.to_string();
+        let mut scene = Scene::new(frame).with_id(MAIN_SCENE, title);
 
         let mut xpos = 100.0;
         let mut ypos = 100.0;
@@ -310,8 +312,9 @@ impl StageBuilder {
         let frame = Rectangle::new_sized(screen);
 
         let mut stage = Stage::new(frame.clone());
-        stage.title = "Shapes".to_string();
-        let mut scene = Scene::new(frame);
+        let title = "Shapes";
+        stage.title = title.to_string();
+        let mut scene = Scene::new(frame).with_id(MAIN_SCENE, title);
 
         let mut xpos = 100.0;
         let mut ypos = 100.0;

@@ -59,6 +59,7 @@ impl AppDelegate {
             let theme = ThemeBuilder::night_owl();
             theme
         });
+
         let frame = Rectangle::new_sized(screen);
         let nav_scene = Scene::new(frame);
         let stage = Stage::new(frame);
@@ -92,17 +93,28 @@ impl AppDelegate {
 
     /// Application lifecycle event called before runloop starts
     pub fn application_ready(&mut self) {
+        if let Some(theme) = self.theme_picker.load_theme(LIGHT_THEME) {
+            println!(">>> application_ready: LIGHT_THEME");
+            self.theme = theme;
+            self.stage.set_theme(&mut self.theme);
+        }
         self.load_scene();
-        self.nav_scene.view_will_load(&mut self.stage.context, &mut self.app_state);
-        self.nav_scene.set_field_value(&FieldValue::Text(self.stage.title.clone()), TypeId::of::<Text>(), TITLE_TAG);
-        // Important: Must initalize the stage
-        self.stage.stage_ready(&mut self.app_state);
     }
 
     pub fn load_scene(&mut self) {
         if let Some(cb) = self.stage_builders.get_mut(self.view_index) {
             let stage = cb();
             self.stage = stage;
+            log::debug!("Stage title={:?}", self.stage.title);
+            self.nav_scene.view_will_load(&mut self.stage.context, &mut self.app_state);
+            self.nav_scene.set_field_value(
+                &FieldValue::Text(self.stage.title.clone()),
+                TypeId::of::<Text>(),
+                TITLE_TAG,
+            );
+            // Important: Must initalize the stage
+            self.stage.set_theme(&mut self.theme);
+            self.stage.stage_ready(&mut self.app_state);
         }
     }
 }
