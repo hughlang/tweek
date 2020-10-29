@@ -55,9 +55,9 @@ impl MainApp {
         // This is where all the demos are loaded. Each builder function returns a container object that
         // can lazy load a scene that is displayed through the AppDelegate. Each demo builder appears in
         // sequence by navigating with the Previous/Next buttons.
+        delegate.add_stage_builder(move || StageBuilder::listbox_demo(screen_size));
         delegate.add_stage_builder(move || StageBuilder::buttons_demo(screen_size));
         delegate.add_stage_builder(move || StageBuilder::shapes_demo(screen_size));
-        delegate.add_stage_builder(move || StageBuilder::listbox_demo(screen_size));
         delegate.add_stage_builder(move || StageBuilder::text_editor_demo(screen_size));
         delegate.add_stage_builder(move || StageBuilder::checkboxes_demo(screen_size));
 
@@ -117,19 +117,6 @@ impl StageBuilder {
         listbox.set_datasource(ds);
         listbox.row_border_style = BorderStyle::SolidLine(Color::from_hex("#333333"), 1.0);
         scene.add_control(Box::new(listbox));
-
-        /* Ignore: This is just an experiment in text clipping */
-        // let frame = Rectangle::new((500.0, 200.0), (200.0, 30.0));
-        // let mut text = Text::new(frame, "Clip this title");
-        // text.layer.font_style = FontStyle::new(20.0, Color::BLACK);
-        // text.layer.lock_style = true;
-        // text.text_align = TextAlign::Left;
-        // text.vert_align = VertAlign::Bottom;
-        // text.layer.debug = true;
-        // text.layer.border_style = BorderStyle::SolidLine(Color::from_hex("#CCCCCC"), 0.5);
-        // let subframe = Rectangle::new((500.0, 220.0), (200.0, 10.0));
-        // text.subframe = Some(subframe);
-        // scene.add_control(Box::new(text));
 
         stage.add_scene(scene);
         stage

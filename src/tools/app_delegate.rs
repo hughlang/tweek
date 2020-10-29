@@ -96,7 +96,6 @@ impl AppDelegate {
         if let Some(theme) = self.theme_picker.load_theme(LIGHT_THEME) {
             println!(">>> application_ready: LIGHT_THEME");
             self.theme = theme;
-            self.stage.set_theme(&mut self.theme);
         }
         self.load_scene();
     }
@@ -113,8 +112,8 @@ impl AppDelegate {
                 TITLE_TAG,
             );
             // Important: Must initalize the stage
-            self.stage.set_theme(&mut self.theme);
             self.stage.stage_ready(&mut self.app_state);
+            self.stage.set_theme(&mut self.theme);
         }
     }
 }

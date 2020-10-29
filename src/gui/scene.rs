@@ -409,11 +409,13 @@ impl Displayable for Scene {
             self.views.insert(id, view);
         }
         for mut view in self.controls_queue.drain(..) {
+            
             let id = app_state.new_id();
             view.set_id(id);
             view.get_layer_mut().set_path(&parent_nodes);
             view.view_will_load(ctx, app_state);
-
+            
+            log::trace!(">>>> view_will_load: <{}> [{}]", gui_print_type(&view.get_type_id()), view.get_id());
             let subscriber = view.get_layer().node_path.clone();
             if let Some(tag) = view.get_layer().tag {
                 app_state.assign_tag(tag, subscriber.clone());

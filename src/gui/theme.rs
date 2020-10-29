@@ -85,7 +85,7 @@ impl Default for Theme {
         Theme {
             name: "Default".to_string(),
             theme_type: ThemeType::Light,
-            font_size: 16.0,
+            font_size: 20.0,
             bg_color: Color::WHITE,
             fg_color: Color::BLACK,
             border_color: Color::from_hex("#AAAAAA"),

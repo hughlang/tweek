@@ -110,6 +110,7 @@ impl Displayable for Stage {
             // Stage doesn't exist as a parent path, so set empty slice as path for scene
             scene.get_layer_mut().set_path(&[]);
             // Pass AppState into scene to let it build the tree
+            log::debug!("STAGE LOADING SCENE {}", scene.name);
             scene.view_will_load(ctx, app_state);
 
             let subscriber = scene.get_layer().node_path.clone();
