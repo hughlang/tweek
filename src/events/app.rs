@@ -22,9 +22,9 @@ pub enum NavEvent {
     /// Navigate to first view controller in nav
     Root,
     /// Display modal
-    Modal(usize),
+    Modal(u32),
     /// Open detail view for selected index
-    Selected(usize),
+    Selected(u32),
 }
 impl AnyEvent for NavEvent {}
 

@@ -18,7 +18,7 @@ use image::{imageops, DynamicImage, GenericImageView, ImageBuffer, Rgba};
 /// The main function serves as an entrypoint into the event loop
 fn main() {
     #[cfg(not(target_arch = "wasm32"))]
-    std::env::set_var("RUST_LOG", "main=debug,tweek=trace,quicksilver=debug");
+    std::env::set_var("RUST_LOG", "main=debug,tweek=trace,quicksilver=info");
 
     #[cfg(not(target_arch = "wasm32"))]
     env_logger::builder().default_format_timestamp(false).default_format_module_path(true).init();
@@ -107,23 +107,24 @@ impl StageBuilder {
         let draw_area = DemoHelper::get_draw_area(screen);
         let frame = Rectangle::new((draw_area.pos.x, 200.0), (80.0, 80.0));
         let fill_color = Color::RED;
-        let mut square = ShapeView::new(frame, ShapeDef::Rectangle).with_background(BackgroundStyle::Solid(fill_color));
-        square.build();
+
+        let mut square = DrawShape::rectangle(&frame, Some(fill_color), None, 0.0, 0.0);
+        let mut bg = ShapeView::new(frame, ShapeDef::Rectangle).with_mesh(&mut square);
 
         let target_x = draw_area.pos.x + draw_area.size.x - 120.0;
 
         // let propset = PropSet::new(vec![shift(2.0, 2.0)], 0.1).for_type(TweenType::Click);
 
-        let mut tween1 = Tween::with(item_id, &square.layer)
+        let mut tween1 = Tween::with(item_id, &bg.layer)
             .to(&[position(target_x, 400.0), size(120.0, 120.0), color(HexColors::Gold)])
             .duration(1.0)
             .ease(Ease::SineInOut)
             .repeat(u32::max_value(), 0.2)
             .yoyo();
 
-        square.layer.start_animation(tween1);
+        bg.layer.start_animation(tween1);
         // square.layer.tween_type = TweenType::Move;
-        scene.add_view(Box::new(square));
+        scene.add_view(Box::new(bg));
 
         stage.add_scene(scene);
         stage
@@ -144,11 +145,11 @@ impl StageBuilder {
         // Add a circle
         let frame = Rectangle::new(center_pt, (80.0, 80.0));
         let item_id = 2;
-        let mut shape =
-            ShapeView::new(frame, ShapeDef::Circle).with_background(BackgroundStyle::Solid(Color::from_hex("#CD09AA")));
-        shape.build();
+        let fill_color = Color::from_hex("#CD09AA");
+        let mut shape = DrawShape::circle(&center_pt, 40.0, Some(fill_color), None, 0.0);
+        let mut bg = ShapeView::new(frame, ShapeDef::Circle).with_mesh(&mut shape);
 
-        let mut tween = Tween::with(item_id, &shape.layer)
+        let mut tween = Tween::with(item_id, &bg.layer)
             .to(&[size(200.0, 200.0), alpha(0.9)])
             .duration(4.0)
             .to(&[position(700.0, draw_area.pos.y + 40.0), size(100.0, 100.0), alpha(0.8)])
@@ -163,8 +164,8 @@ impl StageBuilder {
             // .repeat(1, 2.0)
             ;
 
-        shape.layer.start_animation(tween);
-        scene.add_view(Box::new(shape));
+        bg.layer.start_animation(tween);
+        scene.add_view(Box::new(bg));
 
         stage.add_scene(scene);
         stage
@@ -211,12 +212,15 @@ impl StageBuilder {
         let w = 640.0;
         let h = 400.0;
 
-        let mut shape = ShapeView::new(frame, ShapeDef::Rectangle)
-            .with_background(BackgroundStyle::Solid(Color::from_hex(HexColors::HotPink)));
-        shape.build();
+        // let mut shape = DrawShape::circle(&center_pt, 40.0, Some(fill_color), None, 0.0);
+        // let bg = ShapeView::new(frame, ShapeDef::Circle).with_mesh(&mut shape);
+        // scene.add_view(Box::new(bg));
+        let fill_color = Color::from_hex(HexColors::HotPink);
+        let mut shape = DrawShape::rectangle(&frame, Some(fill_color), None, 0.0, 0.0);
+        let mut bg = ShapeView::new(frame, ShapeDef::Rectangle).with_mesh(&mut shape);
 
         let item_id = 1;
-        let mut tween = Tween::with(item_id, &shape.layer)
+        let mut tween = Tween::with(item_id, &bg.layer)
             .to(&[size(w, 20.0)])
             .duration(1.0)
             .ease(Ease::ElasticIn)
@@ -243,8 +247,8 @@ impl StageBuilder {
             .ease(Ease::SineOut)
             .repeat(u32::max_value(), 0.2);
 
-        shape.layer.start_animation(tween);
-        scene.add_view(Box::new(shape));
+        bg.layer.start_animation(tween);
+        scene.add_view(Box::new(bg));
 
         stage.add_scene(scene);
         stage

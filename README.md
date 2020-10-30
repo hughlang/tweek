@@ -52,15 +52,12 @@ buttons. These serve as a good example of how real applications can be developed
 
 * cargo run --example gui
 * cargo run --example animate
-* cargo run --example modals
-    * *this demo is limited*
 
 The examples can also run via WebAssembly, but there is a crashing bug that still needs to be fixed. Still, you can at
 least see the first demo. Use the bash script (if you are not on windows), like this:
 
-* ./runweb.sh gui
-* ./runweb.sh animate
-* ./runweb.sh modals
+* ./web.sh gui
+* ./web.sh animate
 
 For windows, use the full command: `cargo web start --target=wasm32-unknown-unknown --auto-reload --example gui`
 

@@ -143,14 +143,10 @@ execute the update() method. In particular, it needs to pass in mutable referenc
 example, the code is asking whether a specific string constant notification was posted. Also, additional lookups take
 place to find the view based on a magic number tag and manipulate the underlying Layer.
 
-> TODO: Provide helper method to simplify this lookup.
-
 ```rust
     if let Some(notification) = app_state.lookup_notification(LINE_6_COMPLETED) {
-        if let Some(node_path) = app_state.find_node_by_tag(SHAPE_1) {
-            if let Some(layer) = &mut stage.find_view_by_path(node_path.clone()) {
-                layer.visibility = Visibility::Visible;
-            }
+        if let Some(layer) = stage.find_view_with_tag(SHAPE_1, app_state) {
+            layer.visibility = Visibility::Visible;
         }
     }
 ```

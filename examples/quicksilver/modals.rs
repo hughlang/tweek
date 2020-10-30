@@ -46,10 +46,10 @@ impl MainApp {
 
         delegate.add_stage_builder(move || StageBuilder::load_modals_scene(screen_size));
         // delegate.add_stage_builder(move || StageBuilder::load_themes_demo(screen_size));
-        delegate.add_stage_builder(move || StageBuilder::build_dots_demo(screen_size));
+        // delegate.add_stage_builder(move || StageBuilder::build_dots_demo(screen_size));
 
         // Set the nav scene
-        delegate.set_nav_scene(DemoHelper::build_nav_scene(screen));
+        // delegate.set_nav_scene(DemoHelper::build_nav_scene(screen));
 
         let mut app = MainApp { delegate, screen, frames: 0 };
         app.delegate.application_ready();
@@ -275,56 +275,56 @@ impl StageBuilder {
         stage
     }
 
-    fn build_dots_demo(screen: Vector) -> Stage {
-        let mut stage = Stage::new(Rectangle::new_sized(screen));
-        stage.title = "Rotating dots".to_string();
+    // fn build_dots_demo(screen: Vector) -> Stage {
+    //     let mut stage = Stage::new(Rectangle::new_sized(screen));
+    //     stage.title = "Rotating dots".to_string();
 
-        let frame = Rectangle::new((0.0, 0.0), (screen.x, screen.y));
-        let mut scene = Scene::new(frame.clone());
+    //     let frame = Rectangle::new((0.0, 0.0), (screen.x, screen.y));
+    //     let mut scene = Scene::new(frame.clone());
 
-        let draw_area = DemoHelper::get_draw_area(screen);
-        let center_pt = Vector { x: screen.x / 2.0, y: screen.y / 2.0 };
-        // let start_pt = center_pt - Vector::new(100.0, 100.0);
-        let start_pt = Vector::new(0, -5.0);
+    //     let draw_area = DemoHelper::get_draw_area(screen);
+    //     let center_pt = Vector { x: screen.x / 2.0, y: screen.y / 2.0 };
+    //     // let start_pt = center_pt - Vector::new(100.0, 100.0);
+    //     let start_pt = Vector::new(0, -5.0);
 
-        let dot_radius = 10.0;
-        let scene_radius = 96.0;
-        let dot_count = 8;
+    //     let dot_radius = 10.0;
+    //     let scene_radius = 96.0;
+    //     let dot_count = 8;
 
-        let mut shapes: Vec<Box<dyn Displayable>> = Vec::with_capacity(dot_count);
-        let mut tweens: Vec<Tween> = Vec::with_capacity(dot_count);
-        let mut timeline = Timeline::new(frame);
+    //     let mut shapes: Vec<Box<dyn Displayable>> = Vec::with_capacity(dot_count);
+    //     let mut tweens: Vec<Tween> = Vec::with_capacity(dot_count);
+    //     let mut timeline = Timeline::new(frame);
 
-        for i in 0..dot_count {
-            let frame = Rectangle::new(start_pt, (dot_radius * 2.0, dot_radius * 2.0));
+    //     for i in 0..dot_count {
+    //         let frame = Rectangle::new(start_pt, (dot_radius * 2.0, dot_radius * 2.0));
 
-            let item_id = i as u32;
-            let mut color = Color::RED;
-            let alpha = 1.0 - (i as f32 / dot_count as f32) / 2.0;
-            color.a = alpha;
-            let mut dot = ShapeView::new(frame, ShapeDef::Circle).with_background(BackgroundStyle::Solid(color));
-            // dot.layer.anchor_pt = Vector::new(0.0, 100.0);
-            dot.layer.anchor_pt = center_pt;
-            dot.build();
-            let mut tween = Tween::with(item_id, &dot.layer)
-                .to(&[rotate(360.0)])
-                .duration(1.8)
-                .ease(Ease::SineInOut)
-                .repeat(u32::max_value(), 0.8);
-            tween.state = PlayState::Pending;
-            dot.layer.set_animation(tween);
-            timeline.add_sprite(Box::new(dot), 0.0);
-        }
-        timeline.stagger(0.125);
-        &timeline.play();
-        scene.set_timeline(timeline);
+    //         let item_id = i as u32;
+    //         let mut color = Color::RED;
+    //         let alpha = 1.0 - (i as f32 / dot_count as f32) / 2.0;
+    //         color.a = alpha;
+    //         let mut dot = ShapeView::new(frame, ShapeDef::Circle).with_background(BackgroundStyle::Solid(color));
+    //         // dot.layer.anchor_pt = Vector::new(0.0, 100.0);
+    //         dot.layer.anchor_pt = center_pt;
+    //         dot.build();
+    //         let mut tween = Tween::with(item_id, &dot.layer)
+    //             .to(&[rotate(360.0)])
+    //             .duration(1.8)
+    //             .ease(Ease::SineInOut)
+    //             .repeat(u32::max_value(), 0.8);
+    //         tween.state = PlayState::Pending;
+    //         dot.layer.set_animation(tween);
+    //         timeline.add_sprite(Box::new(dot), 0.0);
+    //     }
+    //     timeline.stagger(0.125);
+    //     &timeline.play();
+    //     scene.set_timeline(timeline);
 
-        // let timeline = Timeline::add(tweens).stagger(0.12);
-        // stage.timelines.push(timeline);
-        stage.add_scene(scene);
+    //     // let timeline = Timeline::add(tweens).stagger(0.12);
+    //     // stage.timelines.push(timeline);
+    //     stage.add_scene(scene);
 
-        stage
-    }
+    //     stage
+    // }
     /// ********************************************************************************
     /// This is a template for creating a new animation.
     /// Copy it and try out different animation techniques.

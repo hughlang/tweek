@@ -132,11 +132,11 @@ impl Displayable for Text {
     }
 
     fn update(&mut self, _window: &mut Window, state: &mut AppState) {
-        if self.layer.is_animating() {
-            self.offset = self.layer.get_movement_offset();
-        } else {
-            self.offset = state.offset;
-        }
+        // if self.layer.is_animating() {
+        //     self.offset = self.layer.get_movement_offset();
+        // } else {
+        //     self.offset = state.offset;
+        // }
         self.layer.tween_update(state);
     }
 

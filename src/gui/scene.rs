@@ -7,21 +7,12 @@ use std::{any::TypeId, collections::BTreeMap};
 
 use quicksilver::{
     geom::{Rectangle, Vector},
-    graphics::{Color, MeshTask},
+    graphics::MeshTask,
     input::Key,
     lifecycle::Window,
 };
 
 use log::Level;
-
-/// Enum wrapper for actions that can be applied to a Scene and its child objects.
-#[derive(Clone, Debug)]
-pub enum SceneAction {
-    /// Undefined
-    None,
-    /// An action that specifies a Tween that is applied to a specific GUI object
-    Animate(PropSet, NodeID),
-}
 
 /// Container for holding a collection of views and controls and propagating events, movements, and other
 /// actions up and down the hierarchy.
@@ -50,8 +41,11 @@ pub struct Scene {
     /// Optional background that displays full screen and does not move. It also prevents lower scenes from
     /// receiving mouse events.
     pub bg_mask: Option<MeshTask>,
-    /// Cac
+    /// The size of the screen
     screen_size: Vector,
+    /// Optional object to define transforms for a Scene and its child objects.
+    /// For now, this is copied to AppState.transformer in every call to update()
+    transformer: Transformer,
 }
 
 impl Scene {
@@ -71,10 +65,12 @@ impl Scene {
             is_interactive: true,
             bg_mask: None,
             screen_size: Vector::ZERO,
+            transformer: Transformer::default(),
         }
     }
 
     /// Builder method to set the id and name for this Scene
+    /// TODO: Deprecate/change this since id values are auto-assigned.
     pub fn with_id(mut self, id: u32, name: &str) -> Self {
         self.set_id(id);
         self.name = name.to_string();
@@ -134,7 +130,7 @@ impl Scene {
     /// debug_out() function which returns a String information about itself and display frame.
     /// This is aggregated in this function and printed out. It is called in the notify() method
     /// in Scene, so it does not need to be public.
-    fn print_scene(&self) {
+    pub fn print_scene(&self) {
         if log_enabled!(Level::Debug) {
             // Don't bother building the text output if log level is not enabled
             let mut rows: Vec<String> = Vec::new();
@@ -190,10 +186,17 @@ impl Displayable for Scene {
     }
 
     fn align_view(&mut self, origin: Vector) {
-        log::debug!("New origin={:?}", origin);
+        log::debug!("Scene::align_view {} to origin={:?}", self.node_key(), origin);
         let anchor_pt = self.get_layer().anchor_pt;
         self.get_layer_mut().frame.pos = anchor_pt + origin;
 
+        // If view_will_load() has not run, then all the controls and views are still queued
+        for view in &mut self.controls_queue {
+            view.align_view(origin);
+        }
+        for view in &mut self.views_queue {
+            view.align_view(origin);
+        }
         for view in &mut self.controls.values_mut() {
             view.align_view(origin);
         }
@@ -208,7 +211,6 @@ impl Displayable for Scene {
     fn move_to(&mut self, pos: (f32, f32)) {
         self.layer.frame.pos.x = pos.0;
         self.layer.frame.pos.y = pos.1;
-        // TODO: Move child objects
     }
 
     fn set_theme(&mut self, theme: &mut Theme) {
@@ -227,40 +229,29 @@ impl Displayable for Scene {
         }
     }
 
-    fn handle_event(&mut self, event: &EventBox, app_state: &mut AppState) {
-        if let Some(timeline) = &mut self.timeline {
-            timeline.handle_event(event, app_state);
-        }
-        for view in &mut self.controls.values_mut() {
-            view.handle_event(event, app_state);
-        }
-        for view in &mut self.views.values_mut() {
-            view.handle_event(event, app_state);
-        }
+    fn handle_event(&mut self, event: &EventBox, _app_state: &mut AppState) {
+        let sender = event.sender();
+        if let Ok(evt) = event.downcast_ref::<TweenEvent>() {
+            if sender == self.layer.node_id() {
+                log::trace!("Matched event={:?} for sender={:?}", evt, sender.id_string());
+                match evt {
+                    TweenEvent::Completed => match self.layer.layer_state {
+                        LayerState::Moving => {
+                            // Get the target frame since the Layer.frame may not have finished moving.
+                            let rect = self.get_layer().evaluate_end_rect();
+                            let origin = rect.pos;
+                            log::trace!("Event={:?} set origin={:?}", evt, origin);
 
-        if let Ok(evt) = event.downcast_ref::<SceneEvent>() {
-            log::debug!("{} SceneEvent={:?}", self.layer.debug_id(), evt);
-            // log::debug!("Source={:?}", event.event_source());
-
-            match evt {
-                SceneEvent::Show(target) => {
-                    if target.id == self.get_id() && target.type_id == self.get_type_id() {
-                        let frame = Rectangle::new((0.0, 0.0), (self.screen_size.x, self.screen_size.y));
-                        // TODO: set from theme?
-                        let mut fill_color = Color::from_hex("#000000");
-                        fill_color.a = 0.7;
-                        let mut mesh = DrawShape::rectangle(&frame, Some(fill_color), None, 0.0, 0.0);
-                        let mut mesh_task = MeshTask::new(0);
-                        mesh_task.append(&mut mesh);
-                        self.bg_mask = Some(mesh_task);
-                    }
+                            self.align_view(origin);
+                            self.notify(&DisplayEvent::Moved);
+                        }
+                        _ => (),
+                    },
+                    _ => (),
                 }
-                SceneEvent::Hide(_) => {
-                    self.bg_mask = None;
-                }
-                _ => (),
             }
         }
+
         if let Ok(evt) = event.downcast_ref::<PlayerEvent>() {
             log::debug!("{} PlayerEvent={:?}", self.debug_id(), evt);
             match evt {
@@ -322,14 +313,16 @@ impl Displayable for Scene {
             }
         }
 
-        if self.layer.is_animating() {
-            state.offset = self.layer.get_movement_offset();
-            if state.offset != Vector::ZERO {
-                self.layer.layer_state = LayerState::Moving;
+        match self.layer.tween_type {
+            TweenType::Move => {
+                // Update the transformer offset
+                // FIXME: Modify the existing entry or insert new one
+                self.transformer.offset = self.layer.get_movement_offset();
+                state.transformers.insert(self.get_id(), self.transformer.clone());
             }
-        // log::trace!("{} scene offset={:?}", self.layer.debug_id(), state.offset);
-        } else {
-            state.offset = Vector::ZERO;
+            _ => {
+                state.transformers.remove(&self.get_id());
+            }
         }
 
         for view in &mut self.controls.values_mut() {
@@ -341,30 +334,6 @@ impl Displayable for Scene {
         if let Some(timeline) = &mut self.timeline {
             timeline.update(window, state);
         }
-
-        let events = self.layer.notifications.borrow_mut().events.filter::<LayerEvent>();
-        for evt in events {
-            match evt {
-                LayerEvent::Move(_id, _type_id, evt_state) => match evt_state {
-                    PlayState::Completed => {
-                        state.offset = Vector::ZERO;
-                        // This was added for ads-sandbox carousel view. However, this will broadcast the event to all
-                        // Scenes in a Stage or Controller hierarchy.
-                        // TODO: Decide how to target this event at a specific Scene in a view hierarchy
-                        state.event_bus.register_event(DisplayEvent::Moved);
-                        log::debug!(
-                            "self.layer.frame.pos={:?} anchor_pt={:?}",
-                            self.layer.frame.pos,
-                            self.layer.anchor_pt
-                        );
-                        self.align_view(self.layer.frame.pos);
-                        self.notify(&DisplayEvent::Moved);
-                    }
-                    _ => (),
-                },
-                _ => (),
-            }
-        }
     }
 
     /// The top-level objects in the scene should all use the scene's coordinate system and
@@ -374,13 +343,15 @@ impl Displayable for Scene {
             window.add_task(mask.clone());
         }
 
+        // FIXME： If Scene has background color, it could mask another Scene
         self.layer.draw_background(window);
         self.layer.draw_border(window);
 
+        // Q: What does this filter do?
         for view in &mut self.views.values_mut().filter(|x| x.get_layer().visibility == Visibility::Visible) {
             view.render(theme, window);
         }
-        for view in &mut self.controls.values_mut() {
+        for view in &mut self.controls.values_mut().filter(|x| x.get_layer().visibility == Visibility::Visible) {
             view.render(theme, window);
         }
         if let Some(timeline) = &mut self.timeline {
@@ -441,15 +412,18 @@ impl Displayable for Scene {
             let id = app_state.new_id();
             view.set_id(id);
             view.get_layer_mut().set_path(&parent_nodes);
+            view.view_will_load(ctx, app_state);
+
+            log::trace!(">>>> view_will_load: <{}> [{}]", gui_print_type(&view.get_type_id()), view.get_id());
+            let subscriber = view.get_layer().node_path.clone();
             if let Some(tag) = view.get_layer().tag {
-                app_state.assign_tag(tag, view.get_layer().node_path.clone());
+                app_state.assign_tag(tag, subscriber.clone());
             }
             // If the scene is subscriber to notifications, add them here.
             for key in &view.get_layer().queued_observers {
-                app_state.register_observer(key.clone(), view.get_layer().node_path.clone())
+                app_state.register_observer(key.clone(), subscriber.clone())
             }
             // Add event listeners from node to AppState
-            let subscriber = view.get_layer().node_path.clone();
             for (key, cb) in view.get_layer_mut().event_listeners.drain() {
                 ctx.add_event_listener(key, cb, subscriber.clone());
             }

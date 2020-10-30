@@ -25,6 +25,7 @@ impl AnyEvent for PlayerEvent {}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TweenEvent {
     Started,
+    Finishing,
     Restarting,
     Completed,
 }

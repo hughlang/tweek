@@ -182,6 +182,7 @@ impl Displayable for ListBox {
         self.rows.clear();
         // FIXME: row height should be themed.
         let row_count = (self.layer.frame.size.y / self.row_height) as usize + 1;
+        log::debug!("Row count={}", row_count);
         for i in 0..row_count {
             let rect = Rectangle::new(
                 (self.layer.frame.pos.x, self.layer.frame.pos.y + self.row_height * i as f32),
@@ -494,6 +495,7 @@ impl Displayable for ListBoxRow {
         if !ok {
             return;
         }
+        self.layer.border_style = BorderStyle::SolidLine(theme.cursor_color, 1.0);
     }
 
     fn notify(&mut self, event: &DisplayEvent) {

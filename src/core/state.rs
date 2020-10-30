@@ -46,8 +46,9 @@ pub struct AppState {
     pub elapsed_time: f64,
     /// Total time
     pub total_time: f64,
-    /// Offset x-y when Scene is animating/moving
-    pub offset: Vector,
+    /// Optional object to define transforms for a Scene and its child objects
+    /// TODO: Move this to StageContext and change update() method sig
+    pub transformers: HashMap<u32, Transformer>,
     /// The event queue
     pub event_bus: EventBus,
     /// The observers that have been declared
@@ -74,7 +75,7 @@ impl AppState {
             time_scale: 1.0,
             elapsed_time: 0.0,
             total_time: 0.0,
-            offset: Vector::ZERO,
+            transformers: HashMap::new(),
             event_bus: EventBus::default(),
             node_tags: HashMap::new(),
             observers_map: HashMap::new(),
@@ -148,11 +149,6 @@ impl AppState {
         }
     }
 
-    /// Hacky way of forcing top-level controller to zero
-    pub fn zero_offset(&mut self) {
-        self.offset = Vector::ZERO;
-    }
-
     pub fn print_tree(&self) {
         for (path, _) in &self.node_tree {
             log::debug!("{:?}", path);
@@ -213,6 +209,24 @@ impl NodePath {
         }
     }
 
+    pub fn first_node(&self) -> NodeID {
+        if let Some(node) = self.nodes.first() {
+            node.clone()
+        } else {
+            NodeID::default()
+        }
+    }
+
+    pub fn parent_node(&self) -> NodeID {
+        let path_len = self.nodes.len();
+        if path_len > 1 {
+            self.nodes[path_len - 2].clone()
+        } else {
+            // return Stage default
+            NodeID::default()
+        }
+    }
+
     /// Serialize the nodes as a string
     /// TODO: Implement from_string() -> NodePath
     pub fn as_string(&self) -> String {
@@ -257,5 +271,31 @@ impl NotificationData {
     /// Constructor using only the name
     pub fn with_name(name: String) -> Self {
         NotificationData { name, sender: NodePath::default(), receiver: NodePath::default(), info: None }
+    }
+}
+
+/// A wrapper for Tweenable values that is modified through update_props()
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Transformer {
+    /// The position offset
+    pub offset: Vector,
+    /// The x-y scale factor if size is changing
+    pub scale: f32,
+    /// The current opacity
+    pub alpha: f32,
+    /// The current rotation
+    pub rotate: f32,
+}
+
+impl Default for Transformer {
+    fn default() -> Self {
+        Transformer { offset: Vector::ZERO, scale: 1.0, alpha: 1.0, rotate: 0.0 }
+    }
+}
+
+impl Transformer {
+    /// Constructor
+    pub fn new(offset: Vector, scale: f32, alpha: f32, rotate: f32) -> Self {
+        Transformer { offset, scale, alpha, rotate }
     }
 }

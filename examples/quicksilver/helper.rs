@@ -56,7 +56,8 @@ impl DemoHelper {
         let ypos = 30.0;
 
         let style = FontStyle::new(18.0, Color::BLACK);
-        let click_props = PropSet::new(vec![shift(2.0, 2.0)], 0.1).for_type(TweenType::Click);
+        let click_props =
+            PropSet::new(vec![color(HexColors::OrangeRed), tint(HexColors::White)], 0.0).for_type(TweenType::Click);
         let hover_props =
             PropSet::new(vec![color(HexColors::Chocolate), tint(HexColors::White)], 0.2).for_type(TweenType::Hover);
         // ---- Previous ---------------------

@@ -50,6 +50,15 @@ impl Stage {
         self.context = context;
     }
 
+    /// Find the NodePath of an object given the u32 NodeTag that was set
+    pub fn find_view_with_tag(&mut self, tag: NodeTag, app_state: &mut AppState) -> Option<&mut Layer> {
+        if let Some(node_path) = app_state.find_node_by_tag(tag) {
+            self.find_view_by_path(node_path)
+        } else {
+            None
+        }
+    }
+
     /// Given a NodePath path, find the corresponding UI Displayable object
     pub fn find_view_by_path(&mut self, path: NodePath) -> Option<&mut Layer> {
         let mut i: usize = 0;
@@ -76,6 +85,8 @@ impl Stage {
                             return Some(view.get_layer_mut());
                         }
                     }
+                } else {
+                    return Some(scene.get_layer_mut());
                 }
             }
         }
@@ -99,13 +110,20 @@ impl Displayable for Stage {
             // Stage doesn't exist as a parent path, so set empty slice as path for scene
             scene.get_layer_mut().set_path(&[]);
             // Pass AppState into scene to let it build the tree
+            log::debug!("STAGE LOADING SCENE {}", scene.name);
             scene.view_will_load(ctx, app_state);
+
+            let subscriber = scene.get_layer().node_path.clone();
+
+            // Assign tag if it exists
+            if let Some(tag) = scene.get_layer().tag {
+                app_state.assign_tag(tag, subscriber.clone());
+            }
             // If the scene is subscriber to notifications, add them here.
             for key in &scene.get_layer().queued_observers {
-                app_state.register_observer(key.clone(), scene.get_layer().node_path.clone())
+                app_state.register_observer(key.clone(), subscriber.clone())
             }
             // Add event listeners from node to AppState
-            let subscriber = scene.get_layer().node_path.clone();
             for (key, cb) in scene.get_layer_mut().event_listeners.drain() {
                 ctx.add_event_listener(key, cb, subscriber.clone());
             }
@@ -131,11 +149,11 @@ impl Displayable for Stage {
 
     // Note: A Stage never moves and is always represents the full screen/window.
     // Only reposition the child scenes
-    fn align_view(&mut self, origin: Vector) {
-        for scene in &mut self.scenes.values_mut() {
-            scene.align_view(origin);
-        }
-    }
+    // fn align_view(&mut self, origin: Vector) {
+    //     for scene in &mut self.scenes.values_mut() {
+    //         scene.align_view(origin);
+    //     }
+    // }
 
     fn move_to(&mut self, pos: (f32, f32)) {
         self.layer.frame.pos.x = pos.0;
@@ -160,6 +178,15 @@ impl Displayable for Stage {
                 // TODO: Consider providing NodePath of subscriber so that posted notification can include
                 // the sender so that the controller can determine correct action.
                 (*cb)(app_state, node_path.clone());
+            }
+            match evt {
+                TweenEvent::Completed => {
+                    for scene in &mut self.scenes.values_mut() {
+                        scene.handle_event(event, app_state);
+                        scene.print_scene();
+                    }
+                }
+                _ => (),
             }
         }
     }

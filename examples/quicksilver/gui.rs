@@ -22,7 +22,7 @@ fn main() {
     // You can configure the amount of debug output for each module here. In this example, the default
     // log level for the tweek crate is debug
     #[cfg(not(target_arch = "wasm32"))]
-    std::env::set_var("RUST_LOG", "main=debug,tweek=debug,quicksilver=debug");
+    std::env::set_var("RUST_LOG", "main=debug,tweek=debug,quicksilver=info");
 
     #[cfg(not(target_arch = "wasm32"))]
     env_logger::builder().default_format_timestamp(false).default_format_module_path(true).init();
@@ -55,9 +55,9 @@ impl MainApp {
         // This is where all the demos are loaded. Each builder function returns a container object that
         // can lazy load a scene that is displayed through the AppDelegate. Each demo builder appears in
         // sequence by navigating with the Previous/Next buttons.
+        delegate.add_stage_builder(move || StageBuilder::listbox_demo(screen_size));
         delegate.add_stage_builder(move || StageBuilder::buttons_demo(screen_size));
         delegate.add_stage_builder(move || StageBuilder::shapes_demo(screen_size));
-        delegate.add_stage_builder(move || StageBuilder::listbox_demo(screen_size));
         delegate.add_stage_builder(move || StageBuilder::text_editor_demo(screen_size));
         delegate.add_stage_builder(move || StageBuilder::checkboxes_demo(screen_size));
 
@@ -105,9 +105,9 @@ impl StageBuilder {
     fn listbox_demo(screen: Vector) -> Stage {
         let frame = Rectangle::new_sized(screen);
         let mut stage = Stage::new(frame.clone());
-        stage.title = "Listbox Demo".to_string();
-
-        let mut scene = Scene::new(frame);
+        let title = "Listbox Demo";
+        stage.title = title.to_string();
+        let mut scene = Scene::new(frame).with_id(MAIN_SCENE, title);
 
         let numbers: Vec<u32> = (0..21).collect();
         let ds: Vec<String> = numbers.into_iter().map(|x| x.to_string()).collect();
@@ -115,21 +115,8 @@ impl StageBuilder {
         let frame = Rectangle::new((100.0, 200.0), (300.0, 200.0));
         let mut listbox = ListBox::new(frame);
         listbox.set_datasource(ds);
-        listbox.row_border_style = BorderStyle::SolidLine(Color::from_hex("#EEEEEE"), 1.0);
+        listbox.row_border_style = BorderStyle::SolidLine(Color::from_hex("#333333"), 1.0);
         scene.add_control(Box::new(listbox));
-
-        /* Ignore: This is just an experiment in text clipping */
-        // let frame = Rectangle::new((500.0, 200.0), (200.0, 30.0));
-        // let mut text = Text::new(frame, "Clip this title");
-        // text.layer.font_style = FontStyle::new(20.0, Color::BLACK);
-        // text.layer.lock_style = true;
-        // text.text_align = TextAlign::Left;
-        // text.vert_align = VertAlign::Bottom;
-        // text.layer.debug = true;
-        // text.layer.border_style = BorderStyle::SolidLine(Color::from_hex("#CCCCCC"), 0.5);
-        // let subframe = Rectangle::new((500.0, 220.0), (200.0, 10.0));
-        // text.subframe = Some(subframe);
-        // scene.add_control(Box::new(text));
 
         stage.add_scene(scene);
         stage
@@ -146,7 +133,9 @@ impl StageBuilder {
     fn buttons_demo(screen: Vector) -> Stage {
         let frame = Rectangle::new_sized(screen);
         let mut stage = Stage::new(frame.clone());
-        stage.title = "Buttons Demo".to_string();
+        let title = "Buttons Demo";
+        stage.title = title.to_string();
+        let mut scene = Scene::new(frame).with_id(MAIN_SCENE, title);
 
         const GRID_COLUMN_INTERVAL: f32 = 120.0;
         const GRID_ROW_INTERVAL: f32 = 80.0;
@@ -154,7 +143,6 @@ impl StageBuilder {
         const BUTTON_H: f32 = 40.0;
         const TITLE_H: f32 = 30.0;
         const ROW_GAP: f32 = 20.0;
-        let mut scene = Scene::new(frame);
 
         let mut xpos = 100.0;
         let mut ypos = 100.0;
@@ -200,9 +188,9 @@ impl StageBuilder {
     fn text_editor_demo(screen: Vector) -> Stage {
         let frame = Rectangle::new_sized(screen);
         let mut stage = Stage::new(frame.clone());
-        stage.title = "Text Editor Demo".to_string();
-
-        let mut scene = Scene::new(frame);
+        let title = "Text Editor Demo";
+        stage.title = title.to_string();
+        let mut scene = Scene::new(frame).with_id(MAIN_SCENE, title);
 
         let text: String = include_str!("../../static/lipsum.txt").into();
         let mut xpos = 200.0;
@@ -242,8 +230,9 @@ impl StageBuilder {
         let frame = Rectangle::new_sized(screen);
 
         let mut stage = Stage::new(frame.clone());
-        stage.title = "Checkboxes and Radio button groups".to_string();
-        let mut scene = Scene::new(frame);
+        let title = "Checkboxes and Radio button groups";
+        stage.title = title.to_string();
+        let mut scene = Scene::new(frame).with_id(MAIN_SCENE, title);
 
         let mut xpos = 100.0;
         let mut ypos = 100.0;
@@ -310,8 +299,9 @@ impl StageBuilder {
         let frame = Rectangle::new_sized(screen);
 
         let mut stage = Stage::new(frame.clone());
-        stage.title = "Shapes".to_string();
-        let mut scene = Scene::new(frame);
+        let title = "Shapes";
+        stage.title = title.to_string();
+        let mut scene = Scene::new(frame).with_id(MAIN_SCENE, title);
 
         let mut xpos = 100.0;
         let mut ypos = 100.0;
